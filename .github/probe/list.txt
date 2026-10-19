@@ -1,0 +1,9 @@
+# Regexes; matching class names are listed.
+^net\.minecraft\.client\.renderer\.blockentity\.[A-Za-z.]*$
+^net\.minecraft\.client\.renderer\.(SubmitNodeCollector|RenderType|rendertype\.|RenderPipelines|texture\.)
+^net\.minecraft\.client\.gui\.(GuiGraphics|Font|render\.)
+^net\.minecraft\.client\.gui\.components\.(Button|AbstractWidget|Tooltip)
+^net\.neoforged\.neoforge\.network\.
+^net\.neoforged\.neoforge\.client\.event\.[A-Za-z]*$
+^net\.neoforged\.neoforge\.event\.(tick\.|RegisterCommandsEvent|entity\.player\.PlayerEvent)
+^net\.fabricmc\.fabric\.api\.(networking|client\.networking|client\.rendering|event\.lifecycle|command|client\.keymapping|client\.keybinding|object\.builder|entity|client\.event)

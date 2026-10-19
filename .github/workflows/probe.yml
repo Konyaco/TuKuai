@@ -1,0 +1,31 @@
+name: API probe
+
+# Development aid: push a probe/** branch with .github/probe/*.txt filled in to print
+# Minecraft and loader class signatures that are not available offline.
+on:
+  push:
+    branches: ['probe/**']
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        loader: [neoforge, fabric]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Probe
+        run: ./gradlew -I .github/probe/probe.gradle :${{ matrix.loader }}:apiProbe --no-daemon -q
+      - uses: actions/upload-artifact@v7
+        with:
+          name: probe-${{ matrix.loader }}
+          path: ${{ matrix.loader }}/build/probe.txt

@@ -1,0 +1,43 @@
+// Development aid, not part of the mod. Prints the public API of Minecraft, loader and
+// library classes listed in classes.txt, and the class names matching list.txt, using
+// each loader's compile classpath. Run with: ./gradlew -I .github/probe/probe.gradle apiProbe
+allprojects {
+    afterEvaluate { p ->
+        if (!(p.name in ['neoforge', 'fabric'])) return
+        p.tasks.register('apiProbe') {
+            def classpath = p.sourceSets.main.compileClasspath
+            def root = p.rootProject.file('.github/probe')
+            def out = p.layout.buildDirectory.file('probe.txt').get().asFile
+            doLast {
+                def jars = classpath.files.findAll { it.name.endsWith('.jar') }
+                def lines = { String name -> new File(root, name).readLines()*.trim().findAll { it && !it.startsWith('#') } }
+                def text = new StringBuilder()
+                text << "== ${p.name} classpath\n"
+                jars.each { text << "JAR ${it.name}\n" }
+                lines('list.txt').each { rx ->
+                    def pattern = java.util.regex.Pattern.compile(rx)
+                    jars.each { f ->
+                        new java.util.zip.ZipFile(f).withCloseable { zip ->
+                            zip.entries().each { e ->
+                                if (e.name.endsWith('.class')) {
+                                    def cn = e.name[0..-7].replace('/', '.')
+                                    if (pattern.matcher(cn).find()) text << "LIST ${cn}\n"
+                                }
+                            }
+                        }
+                    }
+                }
+                def classes = lines('classes.txt')
+                if (classes) {
+                    def cmd = ['javap', '-protected', '-cp', jars.join(File.pathSeparator)] + classes
+                    def proc = new ProcessBuilder(cmd).redirectErrorStream(true).start()
+                    text << proc.inputStream.text
+                    proc.waitFor()
+                }
+                out.parentFile.mkdirs()
+                out.text = text.toString()
+                println text
+            }
+        }
+    }
+}
