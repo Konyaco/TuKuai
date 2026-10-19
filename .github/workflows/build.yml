@@ -48,10 +48,18 @@ jobs:
           path: neoforge/build/libs/tukuai-neoforge-${{ steps.versions.outputs.minecraft }}-${{ steps.versions.outputs.version }}.jar
           if-no-files-found: error
 
-      - name: Upload test reports
+      - name: Start Fabric server
+        run: .github/scripts/server-smoke.sh fabric
+
+      - name: Start NeoForge server
+        run: .github/scripts/server-smoke.sh neoforge
+
+      - name: Upload diagnostics
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-reports
-          path: "**/build/reports/tests/**"
+          name: diagnostics
+          path: |
+            **/build/reports/tests/**
+            */runs/server/logs/**
           if-no-files-found: ignore
