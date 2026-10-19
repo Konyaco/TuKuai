@@ -414,7 +414,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
     companion object {
         private const val RAISE = 8
         private const val PILE_SCALE = 1.25f
-        private const val RESULT_WIDTH = 220
+        private const val RESULT_WIDTH = 212
         /** Room for the score, "-129" at most in practice, plus a gap. */
         private const val SCORE_COLUMN = 40
 
