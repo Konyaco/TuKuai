@@ -19,6 +19,8 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
+import net.minecraft.core.registries.Registries
+import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
 
 /**
@@ -32,6 +34,9 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             world.clientLevel.waitForChunksRender()
             val server = world.server
             val table = server.computeOnServer<BlockPos, RuntimeException> { s -> buildScene(s) }
+            check(server.computeOnServer<Boolean, RuntimeException> { s ->
+                s.recipeManager.byKey(ResourceKey.create(Registries.RECIPE, TuKuai.id("card_table"))).isPresent
+            }) { "The card table recipe did not load" }
             context.waitTicks(40)
             world.clientLevel.waitForChunksRender()
 
