@@ -19,6 +19,13 @@ interface MatchHandle {
     /** Lets a computer player choose and apply the move for [seat]. */
     fun playBot(seat: Seat, level: BotLevel)
 
+    /**
+     * Gets a computer's move for [seat] ready without applying it. Call this on the thread
+     * that owns the match; the returned function does the thinking, touches nothing shared,
+     * and may run on another thread. Pass its result to [submit].
+     */
+    fun prepareBot(seat: Seat, level: BotLevel): () -> ByteArray
+
     fun encodedView(seat: Seat?): ByteArray
 
     /** Like [encodedView] but with every hidden card shown, for replays. */
@@ -75,6 +82,12 @@ class Match<R : Any, S : Any, A : Any, V : Any>(
             if (level == BotLevel.EASY) throw IllegalStateException("Easy bot made an illegal move", e)
             playBot(seat, BotLevel.EASY)
         }
+    }
+
+    override fun prepareBot(seat: Seat, level: BotLevel): () -> ByteArray {
+        val view = game.view(state, seat)
+        val bot = game.createBot(level, seed * 31 + seat + actions.size * 7919L)
+        return { game.actionCodec.encode(bot.act(view)) }
     }
 
     fun view(seat: Seat?): V = game.view(state, seat)

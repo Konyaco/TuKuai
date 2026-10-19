@@ -20,6 +20,8 @@ import io.github.konyaco.tukuai.network.TableSyncPayload
 import io.github.konyaco.tukuai.platform.Services
 import java.util.Base64
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
@@ -67,6 +69,11 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private var ticks = 0L
     private var lastStep = -1
+
+    /** A computer's move being worked out on [BOT_THREADS], for [thinkingFor] at [thinkingStep]. */
+    private var thinking: CompletableFuture<ByteArray>? = null
+    private var thinkingFor: MatchHandle? = null
+    private var thinkingStep = -1
 
     /** File name of the last finished game's replay, if it was saved since the world loaded. */
     private var lastReplay: String? = null
@@ -309,10 +316,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         if (m.step != lastStep) resetTurnClock(level, m)
         turnTicks++
         when (val occupant = seats.getOrNull(seat)) {
-            is Occupant.Computer -> if (turnTicks >= actDelay) {
-                m.playBot(seat, occupant.level)
-                afterStep(level, m)
-            }
+            is Occupant.Computer -> driveComputer(level, m, seat, occupant.level)
             is Occupant.Human -> {
                 val away = auto[seat] || !present[seat]
                 if (away) {
@@ -331,6 +335,40 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 m.playBot(seat, STAND_IN)
                 afterStep(level, m)
             }
+        }
+    }
+
+    /**
+     * The computer thinks on a worker thread while it "considers" its move, so a hard
+     * computer never holds up the server tick. If thinking takes far too long, a quick
+     * NORMAL move is played instead.
+     */
+    private fun driveComputer(level: ServerLevel, m: MatchHandle, seat: Seat, botLevel: BotLevel) {
+        var plan = thinking
+        if (plan == null || thinkingFor !== m || thinkingStep != m.step) {
+            plan?.cancel(false)
+            val think = m.prepareBot(seat, botLevel)
+            plan = CompletableFuture.supplyAsync({ think() }, BOT_THREADS)
+            thinking = plan
+            thinkingFor = m
+            thinkingStep = m.step
+        }
+        if (turnTicks < actDelay) return
+        if (plan.isDone) {
+            thinking = null
+            val action = try {
+                plan.join()
+            } catch (e: Exception) {
+                TuKuai.LOGGER.warn("A computer player failed to choose a move", e)
+                null
+            }
+            if (action == null || m.submit(seat, action) != null) m.playBot(seat, BotLevel.EASY)
+            afterStep(level, m)
+        } else if (turnTicks >= actDelay + MAX_THINK_TICKS) {
+            plan.cancel(false)
+            thinking = null
+            m.playBot(seat, BotLevel.NORMAL)
+            afterStep(level, m)
         }
     }
 
@@ -465,6 +503,14 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         const val SYNC_RANGE = 40.0
 
         const val LOBBY_ABSENT_SECONDS = 30
+
+        /** Ten seconds past the usual delay before giving up on a slow computer. */
+        const val MAX_THINK_TICKS = 200
+
+        /** Shared by every table; computers rarely think at the same moment. */
+        private val BOT_THREADS = Executors.newFixedThreadPool(2) { task ->
+            Thread(task, "TuKuai computer player").apply { isDaemon = true }
+        }
         const val TIMEOUTS_BEFORE_AUTO = 2
         const val BOT_DELAY_MIN = 14
         const val BOT_DELAY_SPREAD = 16
