@@ -1,5 +1,8 @@
 {
   "variants": {
-    "": { "model": "tukuai:block/card_table" }
+    "facing=north": { "model": "tukuai:block/card_table" },
+    "facing=east": { "model": "tukuai:block/card_table" },
+    "facing=south": { "model": "tukuai:block/card_table" },
+    "facing=west": { "model": "tukuai:block/card_table" }
   }
 }
