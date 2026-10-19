@@ -80,5 +80,7 @@
   "tukuai.command.stats.line": " %s: %s games, %s won (%s%%), %s points",
   "tukuai.command.top.none": "Nobody has played at a card table yet.",
   "tukuai.command.top.header": "Most points:",
-  "tukuai.command.top.line": " %s. %s  %s (%s games, %s won)"
+  "tukuai.command.top.line": " %s. %s  %s (%s games, %s won)",
+  "modmenu.descriptionTranslation.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money.",
+  "fml.menu.mods.info.description.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money."
 }
