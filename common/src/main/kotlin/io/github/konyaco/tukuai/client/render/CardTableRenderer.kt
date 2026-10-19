@@ -56,7 +56,7 @@ class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityRender
 
     override fun submit(state: State, poseStack: PoseStack, collector: SubmitNodeCollector, camera: CameraRenderState) {
         val light = state.lightCoords
-        val felt = 0xFF000000.toInt() or (state.feltColor and 0xFFFFFF)
+        val felt = 0xFF000000.toInt() or lighten(state.feltColor)
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(FELT)) { pose, buffer ->
             val lo = 2f / 16f
             val hi = 14f / 16f
@@ -120,6 +120,12 @@ class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityRender
     }
 
     companion object {
+        /** Dye colours are dark for cloth seen from above, so mix in a quarter of white. */
+        private fun lighten(rgb: Int): Int {
+            fun channel(shift: Int) = ((rgb shr shift and 0xFF) * 3 + 255) / 4 shl shift
+            return channel(16) or channel(8) or channel(0)
+        }
+
         private val FELT = TuKuai.id("textures/block/card_table_felt.png")
 
         /** Width of a card on the table at scale 1, in blocks. */

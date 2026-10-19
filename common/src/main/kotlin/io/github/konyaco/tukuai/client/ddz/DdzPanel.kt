@@ -84,7 +84,7 @@ class DdzPanel(private val screen: TableScreen) : GamePanel {
         }
         if (s.status == TableStatus.FINISHED) {
             val ready = me != null && s.seats.all { it.occupant != null }
-            screen.button(Component.translatable("tukuai.table.again"), width / 2 - 50, resultBottom(view) + 6, 100, ready) {
+            screen.button(Component.translatable("tukuai.table.again"), width / 2 - 50, RESULT_TOP + 74, 100, ready) {
                 screen.send(TableOp.START)
             }
         }
@@ -209,7 +209,7 @@ class DdzPanel(private val screen: TableScreen) : GamePanel {
         val recent = recentActions(view)
         val finished = s.status == TableStatus.FINISHED
 
-        renderTop(g, table, view)
+        if (!finished) renderTop(g, table, view) else renderTitle(g, table)
         renderOpponent(g, table, view, left, recent[left], onLeft = true)
         renderOpponent(g, table, view, right, recent[right], onLeft = false)
 
@@ -222,11 +222,15 @@ class DdzPanel(private val screen: TableScreen) : GamePanel {
         if (finished) renderResult(g, table, view)
     }
 
-    private fun renderTop(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView) {
+    private fun renderTitle(g: GuiGraphicsExtractor, table: ClientTable) {
         val s = table.snapshot
         g.text(font, TableScreen.presetName(s.gameId, s.presetId), 6, 6, TableScreen.GRAY, true)
         val round = s.rounds + if (s.status == TableStatus.PLAYING) 1 else 0
         g.text(font, Component.translatable("tukuai.table.rounds", round), 6, 17, TableScreen.GRAY, true)
+    }
+
+    private fun renderTop(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView) {
+        renderTitle(g, table)
 
         // The landlord's three cards: face down until someone takes them.
         val scale = 0.75f
@@ -273,7 +277,8 @@ class DdzPanel(private val screen: TableScreen) : GamePanel {
         val align = if (onLeft) Align.LEFT else Align.RIGHT
         val revealed = view.revealedHands.getOrNull(seat)
         if (table.snapshot.status == TableStatus.FINISHED && revealed != null) {
-            renderCards(g, revealed.sortedWith(DDZ_ORDER.reversed()), playX, y + 4, 0.6f, 10, align)
+            // Below the box, so the result in the middle does not cover them.
+            renderCards(g, revealed.sortedWith(DDZ_ORDER.reversed()), if (onLeft) x else x + boxW, y + 60, 0.5f, 7, align)
         } else if (recent != null) {
             renderEvent(g, view, recent, playX, y + 4, align)
         }
@@ -342,16 +347,12 @@ class DdzPanel(private val screen: TableScreen) : GamePanel {
         cards.forEachIndexed { i, card -> CardArt.drawCard(g, card, x0 + i * step, y, scale) }
     }
 
-    private fun resultTop(view: DdzView) = height / 2 - 60
-
-    private fun resultBottom(view: DdzView) = resultTop(view) + 30 + DouDizhu.SEATS * 12 + 14
-
     private fun renderResult(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView) {
         val settlement = view.settlement ?: return
-        val w = 220
+        val w = 210
         val x = width / 2 - w / 2
-        val top = resultTop(view)
-        g.fill(x, top, x + w, resultBottom(view), 0xD0101010.toInt())
+        val top = RESULT_TOP
+        g.fill(x, top, x + w, top + 98, 0xE0101010.toInt())
         val me = table.snapshot.you
         val iWon = me != null && settlement.scores.getOrElse(me) { 0 } > 0
         val title = Component.translatable(if (settlement.landlordWon) "tukuai.ddz.landlord_won" else "tukuai.ddz.farmers_won")
@@ -375,6 +376,9 @@ class DdzPanel(private val screen: TableScreen) : GamePanel {
 
     companion object {
         private const val RAISE = 10
+
+        /** The result box sits at the top, over the landlord's cards, clear of both players' boxes. */
+        private const val RESULT_TOP = 4
 
         fun eventText(event: DdzEvent): Component? = when (event.kind) {
             DdzEventKind.BID -> if (event.value == 0) Component.translatable("tukuai.ddz.no_bid") else Component.translatable("tukuai.ddz.bid", event.value)

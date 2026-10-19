@@ -5,6 +5,7 @@ import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
+import io.github.konyaco.tukuai.content.SeatEntity
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.network.TableActionPayload
@@ -33,6 +34,9 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             world.clientLevel.waitForChunksRender()
 
             act(server, table, TableOp.SIT, 0)
+            check(server.computeOnServer<Boolean, RuntimeException> { s -> s.playerList.players.first().vehicle is SeatEntity }) {
+                "Sitting down did not put the player on a seat"
+            }
             act(server, table, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
             context.waitTicks(20)
             context.input.lookAt(table)
@@ -57,9 +61,15 @@ class TuKuaiClientGameTest : FabricClientGameTest {
 
             // Let the computer play for us until the round ends.
             act(server, table, TableOp.AUTO, 1)
+            context.runOnClient<RuntimeException> {
+                ClientConfig.immersive = false
+                (it.screen as? TableScreen)?.refresh()
+            }
+            context.waitTicks(300)
+            shot(context, "5-screen-midgame")
             context.setScreen { null }
-            context.waitTicks(400)
-            shot(context, "5-world-midgame")
+            context.waitTicks(5)
+            shot(context, "6-world-midgame")
 
             var waited = 0
             while (status(server, table) != TableStatus.FINISHED) {
@@ -68,13 +78,12 @@ class TuKuaiClientGameTest : FabricClientGameTest {
                 waited += 100
             }
             context.waitTicks(20)
-            context.runOnClient<RuntimeException> { ClientConfig.immersive = false }
             context.setScreen { TableScreen(table) }
             context.waitTicks(10)
-            shot(context, "6-screen-result")
+            shot(context, "7-screen-result")
             context.setScreen { null }
             context.waitTicks(5)
-            shot(context, "7-world-result")
+            shot(context, "8-world-result")
         }
     }
 
