@@ -42,3 +42,7 @@
 提交信息统一写成 `[type](scope) Title`，例如 `[feat](engine) Add Dou Dizhu hand types`。
 
 依赖版本都在 `gradle.properties`。`kotlin_version` 不能高于 Kotlin for Forge 和 Fabric Language Kotlin 自带的 Kotlin 版本。
+
+## 许可证
+
+[MIT](LICENSE)
