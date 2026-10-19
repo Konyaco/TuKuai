@@ -94,7 +94,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     private fun lobbyLeft() = (width - lobbyWidth) / 2
 
-    private fun lobbyTop(t: ClientTable) = (height - (90 + t.snapshot.seats.size * 24)) / 2
+    private fun lobbyTop(t: ClientTable) = (height - (SEATS_Y + 46 + t.snapshot.seats.size * 24)) / 2
 
     private fun initLobby(t: ClientTable) {
         val s = t.snapshot
@@ -103,18 +103,22 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val game = GameRegistry[s.gameId]
         val canEdit = s.status != TableStatus.PLAYING
 
-        val presets = game?.presets?.map { it.id } ?: listOf(s.presetId)
-        button(Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), left, top + 16, 196, canEdit) {
-            val next = presets[(presets.indexOf(s.presetId) + 1).mod(presets.size)]
-            send(TableOp.PRESET, text = next)
+        val games = GameRegistry.all.map { it.id }.filter { GameUis[it] != null }
+        button(Component.translatable("tukuai.table.game", gameName(s.gameId)), left, top + 16, 196, canEdit && games.size > 1) {
+            send(TableOp.GAME, text = games[(games.indexOf(s.gameId) + 1).mod(games.size)])
         }
         val timers = listOf(0, 15, 30, 60)
         button(timerText(s.turnSeconds), left + 200, top + 16, 100, canEdit) {
             send(TableOp.TIMER, timers[(timers.indexOf(s.turnSeconds) + 1).mod(timers.size)])
         }
+        val presets = game?.presets?.map { it.id } ?: listOf(s.presetId)
+        button(Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), left, top + 40, lobbyWidth, canEdit) {
+            val next = presets[(presets.indexOf(s.presetId) + 1).mod(presets.size)]
+            send(TableOp.PRESET, text = next)
+        }
 
         s.seats.forEachIndexed { i, seat ->
-            val y = top + 44 + i * 24
+            val y = top + SEATS_Y + i * 24
             val x = left + 150
             when (val o = seat.occupant) {
                 null -> {
@@ -132,7 +136,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             }
         }
 
-        val bottom = top + 44 + s.seats.size * 24 + 6
+        val bottom = top + SEATS_Y + s.seats.size * 24 + 6
         button(botLevelText(ClientConfig.botLevel), left, bottom, 96) {
             ClientConfig.botLevel = BotLevel.entries[(ClientConfig.botLevel.ordinal + 1) % BotLevel.entries.size]
             ClientConfig.save()
@@ -155,15 +159,15 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val s = t.snapshot
         val left = lobbyLeft()
         val top = lobbyTop(t)
-        val panelBottom = top + 44 + s.seats.size * 24 + 32
+        val panelBottom = top + SEATS_Y + s.seats.size * 24 + 32
         g.fill(left - 8, top - 8, left + lobbyWidth + 8, panelBottom, 0xB0000000.toInt())
-        g.text(font, Component.translatable("tukuai.game.${s.gameId}"), left, top, WHITE, true)
+        g.text(font, Component.translatable("tukuai.table.title"), left, top, WHITE, true)
         if (s.rounds > 0) {
             val text = Component.translatable("tukuai.table.played", s.rounds)
             g.text(font, text, left + lobbyWidth - font.width(text), top, GRAY, false)
         }
         s.seats.forEachIndexed { i, seat ->
-            val y = top + 44 + i * 24
+            val y = top + SEATS_Y + i * 24
             val name = seatName(seat.occupant)
             val color = when {
                 seat.occupant == null -> GRAY
@@ -234,6 +238,9 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         const val GREEN = 0xFF66DD66.toInt()
         const val RED = 0xFFFF6666.toInt()
 
+        /** Where the rows of seats start in the lobby, below the game and rules buttons. */
+        private const val SEATS_Y = 68
+
         fun open(pos: BlockPos) {
             val mc = net.minecraft.client.Minecraft.getInstance()
             if (mc.screen !is TableScreen) mc.setScreen(TableScreen(pos))
@@ -248,6 +255,8 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         fun botLevelName(level: BotLevel): Component = Component.translatable("tukuai.bot.${level.name.lowercase()}")
 
         fun botLevelText(level: BotLevel): Component = Component.translatable("tukuai.table.bot_level", botLevelName(level))
+
+        fun gameName(gameId: String): Component = Component.translatable("tukuai.game.$gameId")
 
         fun presetName(gameId: String, presetId: String): Component = Component.translatable("tukuai.preset.$gameId.$presetId")
 

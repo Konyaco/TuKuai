@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai
 
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
+import io.github.konyaco.tukuai.engine.uno.Uno
 import net.minecraft.resources.Identifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,6 +16,6 @@ object TuKuai {
 
     /** Runs once on both sides when the mod loads, before any world opens. */
     fun init() {
-        if (GameRegistry[DouDizhu.id] == null) GameRegistry.register(DouDizhu)
+        for (game in listOf(DouDizhu, Uno)) if (GameRegistry[game.id] == null) GameRegistry.register(game)
     }
 }

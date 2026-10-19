@@ -148,4 +148,7 @@ enum class TableOp {
 
     /** Send me the replay of the game that just ended. */
     REPLAY,
+
+    /** Switch to the game with the id `text`, with its first rule preset. */
+    GAME,
 }

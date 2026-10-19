@@ -123,6 +123,12 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private fun resizeSeats(count: Int) {
         if (count == seats.size) return
+        // Players in seats that go away stand up.
+        val server = (level as? ServerLevel)?.server
+        for (seat in count until seats.size) {
+            val occupant = seats[seat] as? Occupant.Human ?: continue
+            server?.playerList?.getPlayer(occupant.uuid)?.let(::dismount)
+        }
         seats = MutableList(count) { seats.getOrNull(it) }
         auto = BooleanArray(count)
         present = BooleanArray(count)
@@ -267,6 +273,17 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 presetId = request.text
                 resizeSeats(game.seatCount(presetId))
                 if (match != null) match = null
+                changed()
+            }
+            TableOp.GAME -> {
+                val next = GameRegistry[request.text] ?: return
+                if (!idle || next.id == gameId) return
+                gameId = next.id
+                presetId = next.presets.first().id
+                resizeSeats(next.seatCount(presetId))
+                tally.fill(0)
+                rounds = 0
+                match = null
                 changed()
             }
             TableOp.TIMER -> {

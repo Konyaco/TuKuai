@@ -78,7 +78,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         state.cards = motions.getOrPut(table.blockPos) { CardMotion() }.cards(client.scene(sides), now)
         val snapshot = client.snapshot
         val lines = if (snapshot.status == TableStatus.LOBBY || client.view == null) {
-            listOf(Component.translatable("tukuai.game.${snapshot.gameId}"), TableScreen.presetName(snapshot.gameId, snapshot.presetId))
+            listOf(TableScreen.gameName(snapshot.gameId), TableScreen.presetName(snapshot.gameId, snapshot.presetId))
         } else {
             client.ui?.displayLines(client) ?: emptyList()
         }
@@ -248,7 +248,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         private const val CARD_WIDTH = 0.3f
 
         /** Thickness of a card at scale 1, in blocks. */
-        private const val CARD_THICKNESS = 0.008f
+        const val CARD_THICKNESS = 0.008f
 
         /** How much higher each flat card in a row sits than the one before it. */
         private const val LAYER_LIFT = 0.002f
@@ -270,8 +270,11 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         private const val ARGB_OPAQUE = 0xFF000000.toInt()
         private const val FULL_BRIGHT = 0xF000F0
 
-        private const val DISPLAY_HALF_WIDTH = 0.35f
-        private const val DISPLAY_HEIGHT = 0.2f
+        /** Half the width of the display box in the middle of the table, in blocks. */
+        const val DISPLAY_HALF_WIDTH = 0.35f
+
+        /** Height of the display box; games may lay cards on its top. */
+        const val DISPLAY_HEIGHT = 0.2f
         private const val DISPLAY_COLOR = 0xFF33373D.toInt()
         private const val TURN_STRIP = 0.05f
         private const val TURN_COLOR = 0xFFFFC23A.toInt()
