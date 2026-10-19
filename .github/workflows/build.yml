@@ -90,7 +90,7 @@ jobs:
       - name: Print screenshots
         if: always()
         run: |
-          find fabric -path '*screenshots*' -name 'tukuai-*.png' | sort | while read -r f; do
+          find fabric -path '*screenshots*' -name '*tukuai-*.png' | sort | while read -r f; do
             echo "BEGIN_SCREENSHOT $(basename "$f")"
             base64 -w 0 "$f"
             echo
