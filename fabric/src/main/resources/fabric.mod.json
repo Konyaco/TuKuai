@@ -11,7 +11,8 @@
   "license": "${license}",
   "environment": "*",
   "entrypoints": {
-    "main": ["io.github.konyaco.tukuai.fabric.TuKuaiFabric"]
+    "main": ["io.github.konyaco.tukuai.fabric.TuKuaiFabric"],
+    "client": ["io.github.konyaco.tukuai.fabric.TuKuaiFabricClient"]
   },
   "depends": {
     "fabricloader": ">=${fabric_loader_version}",
