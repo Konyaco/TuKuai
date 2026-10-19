@@ -70,3 +70,26 @@ object GameRegistry {
 
     val all: Collection<GameDefinition<*, *, *, *>> get() = games.values
 }
+
+/** Starts a match of any registered game from one of its presets, without knowing its types. */
+@Suppress("UNCHECKED_CAST")
+fun GameDefinition<*, *, *, *>.newMatch(presetId: String, seed: Long): MatchHandle {
+    val game = this as GameDefinition<Any, Any, Any, Any>
+    val preset = game.presets.firstOrNull { it.id == presetId } ?: game.presets.first()
+    return Match(game, preset.rules, seed)
+}
+
+/** Rebuilds a match of any registered game from a replay, without knowing its types. */
+@Suppress("UNCHECKED_CAST")
+fun Replay.rebuildAny(stepCount: Int = steps.size): MatchHandle {
+    val game = GameRegistry[gameId] as? GameDefinition<Any, Any, Any, Any>
+        ?: throw WireFormatException("Unknown game $gameId")
+    return rebuild(game, stepCount)
+}
+
+/** How many seats a table needs for one of this game's presets. */
+@Suppress("UNCHECKED_CAST")
+fun GameDefinition<*, *, *, *>.seatCount(presetId: String): Int {
+    val game = this as GameDefinition<Any, Any, Any, Any>
+    return game.seatCount((game.presets.firstOrNull { it.id == presetId } ?: game.presets.first()).rules)
+}
