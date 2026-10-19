@@ -42,6 +42,25 @@
 
 回放文件存在存档目录的 `tukuai/replays` 里。
 
+战绩：
+
+- `/tukuai stats` 看自己打了多少局、赢了多少、积分多少；`/tukuai stats <玩家名>` 看别人的。
+- `/tukuai top` 看积分排行前十。
+
+战绩存在存档目录的 `tukuai/stats.json` 里，只算真人，电脑不记。
+
+## 服务器设置
+
+第一次开服（或进单人存档）后会生成 `config/tukuai-server.properties`，改完后 `/reload` 或重启生效：
+
+| 设置 | 默认 | 作用 |
+| --- | --- | --- |
+| `allowBots` | `true` | 是否允许电脑玩家入座 |
+| `botDelaySeconds` | `1.1` | 电脑出牌前平均等几秒 |
+| `saveReplays` | `true` | 是否保存回放 |
+| `maxReplays` | `500` | 最多留多少局回放，多了先删最旧的；`0` 表示不限 |
+| `keepStats` | `true` | 是否记录战绩 |
+
 ## 玩家需要安装
 
 | 加载器 | 还需要 |

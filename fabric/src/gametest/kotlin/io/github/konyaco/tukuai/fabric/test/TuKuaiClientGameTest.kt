@@ -13,6 +13,7 @@ import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.ReplayStore
+import io.github.konyaco.tukuai.table.StatsStore
 import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableStatus
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
@@ -114,6 +115,12 @@ class TuKuaiClientGameTest : FabricClientGameTest {
                 context.waitTicks(100)
                 waited += 100
             }
+            check(server.computeOnServer<Boolean, RuntimeException> { s ->
+                val player = s.playerList.players.first()
+                s.commands.performPrefixedCommand(player.createCommandSourceStack(), "tukuai stats")
+                s.commands.performPrefixedCommand(player.createCommandSourceStack(), "tukuai top")
+                StatsStore.of(s, player.uuid)?.total?.games == 1
+            }) { "The finished game was not added to the player's record" }
             context.waitTicks(20)
             context.setScreen { TableScreen(table) }
             context.waitTicks(10)

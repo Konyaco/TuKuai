@@ -73,5 +73,12 @@
   "tukuai.command.replays.none": "No games have been saved yet.",
   "tukuai.command.replays.header": "%s saved games, newest first (click one to watch):",
   "tukuai.command.replays.hover": "Click to watch",
-  "tukuai.command.replay.missing": "There is no replay called %s."
+  "tukuai.command.replay.missing": "There is no replay called %s.",
+  "tukuai.table.no_bots": "Computer players are turned off on this server.",
+  "tukuai.command.stats.none": "%s has not played at a card table yet.",
+  "tukuai.command.stats.header": "%s's record:",
+  "tukuai.command.stats.line": " %s: %s games, %s won (%s%%), %s points",
+  "tukuai.command.top.none": "Nobody has played at a card table yet.",
+  "tukuai.command.top.header": "Most points:",
+  "tukuai.command.top.line": " %s. %s  %s (%s games, %s won)"
 }

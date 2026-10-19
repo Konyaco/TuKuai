@@ -9,11 +9,13 @@ import io.github.konyaco.tukuai.network.TableNetwork
 import io.github.konyaco.tukuai.network.TableSyncPayload
 import io.github.konyaco.tukuai.platform.Platform
 import io.github.konyaco.tukuai.platform.Services
+import java.nio.file.Path
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
+import net.fabricmc.loader.api.FabricLoader
 import net.fabricmc.fabric.api.`object`.builder.v1.block.entity.FabricBlockEntityTypeBuilder
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Registry
@@ -59,4 +61,6 @@ object FabricPlatform : Platform {
     override fun sendToPlayer(player: ServerPlayer, payload: CustomPacketPayload) {
         ServerPlayNetworking.send(player, payload)
     }
+
+    override fun configDir(): Path = FabricLoader.getInstance().configDir
 }
