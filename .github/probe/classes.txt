@@ -1,0 +1,13 @@
+net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
+net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
+net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext
+net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext
+net.fabricmc.fabric.api.client.gametest.v1.context.TestClientWorldContext
+net.fabricmc.fabric.api.client.gametest.v1.context.TestClientLevelContext
+net.fabricmc.fabric.api.client.gametest.v1.world.TestWorldBuilder
+net.fabricmc.fabric.api.client.gametest.v1.world.TestWorldSave
+net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
+net.fabricmc.fabric.api.client.gametest.v1.TestInput
+net.fabricmc.fabric.api.client.gametest.v1.input.TestInput
+net.fabricmc.fabric.api.client.gametest.v1.context.TestDedicatedServerContext
+net.minecraft.client.player.LocalPlayer

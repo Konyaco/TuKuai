@@ -1,0 +1,3 @@
+^net\.fabricmc\.fabric\.api\.client\.gametest\.
+^net\.fabricmc\.fabric\.api\.gametest\.
+^net\.fabricmc\.loom\.configuration\.fabricapi\.
