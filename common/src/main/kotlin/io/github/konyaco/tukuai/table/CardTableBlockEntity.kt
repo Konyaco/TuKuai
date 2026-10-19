@@ -456,11 +456,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private fun afterStep(level: ServerLevel, m: MatchHandle) {
         resetTurnClock(level, m)
         changed()
-        val result = m.result
-        if (result == null) {
-            level.playSound(null, worldPosition, SoundEvents.BOOK_PAGE_TURN, SoundSource.BLOCKS, 0.8f, 0.9f + level.random.nextFloat() * 0.3f)
-            return
-        }
+        // Each client plays the sound for a move itself, since only the game's client side knows what kind of move it was.
+        val result = m.result ?: return
         result.scores.forEachIndexed { seat, points -> if (seat < tally.size) tally[seat] += points }
         rounds++
         level.playSound(null, worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7f, 1f)

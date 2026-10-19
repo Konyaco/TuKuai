@@ -41,6 +41,8 @@ object CardArt {
 
     fun back(): Int = FIRST_BACK + ClientConfig.cardBack.coerceIn(0, BACK_COUNT - 1)
 
+    fun isBack(sprite: Int): Boolean = sprite >= FIRST_BACK
+
     fun u(sprite: Int): Int = (sprite % COLUMNS) * WIDTH
 
     fun v(sprite: Int): Int = (sprite / COLUMNS) * HEIGHT

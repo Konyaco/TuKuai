@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.client.ddz
 
 import io.github.konyaco.tukuai.client.CardArt
+import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
@@ -14,9 +15,11 @@ import io.github.konyaco.tukuai.engine.doudizhu.DdzEventKind
 import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
+import io.github.konyaco.tukuai.engine.doudizhu.PatternType
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
+import net.minecraft.sounds.SoundEvents
 
 object DdzUi : GameUi {
     override val gameId: String = DouDizhu.id
@@ -29,15 +32,28 @@ object DdzUi : GameUi {
      * Each seat's hand stands along its edge of the table, faces towards its owner, so
      * everyone else sees the backs; once the game is over the hands lie face up. Each
      * seat's latest play lies nearer the middle, and the landlord's three cards sit on
-     * the empty fourth side.
+     * the empty fourth side. Hands and the landlord's cards are dealt from a deck on that
+     * fourth side; a play comes from its player's hand.
      */
     override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
         val view = table.view as? DdzView ?: return emptyList()
         val cards = ArrayList<TableCard>()
         val finished = table.snapshot.status == TableStatus.FINISHED
         val recent = DdzPanel.recentActions(view)
+        val kittySide = sides.firstOrNull()?.let { first -> Direction.entries.firstOrNull { it.axis.isHorizontal && it !in sides } ?: first }
+        val deckX = (kittySide?.stepX ?: 0) * DECK_DISTANCE
+        val deckZ = (kittySide?.stepZ ?: 0) * DECK_DISTANCE
 
-        fun row(side: Direction, distance: Float, sprites: List<Int>, step: Float, scale: Float, standing: Boolean = false) {
+        fun row(
+            side: Direction,
+            distance: Float,
+            sprites: List<Int>,
+            step: Float,
+            scale: Float,
+            fromX: Float,
+            fromZ: Float,
+            standing: Boolean = false,
+        ) {
             if (sprites.isEmpty()) return
             // The player on this side faces the middle; cards run left to right as they see them.
             val upX = -side.stepX.toFloat()
@@ -56,10 +72,10 @@ object DdzUi : GameUi {
                     cards += TableCard(
                         cx + rightX * offset + side.stepX * nearer,
                         cz + rightZ * offset + side.stepZ * nearer,
-                        upX, upZ, sprite, scale, tilt = HAND_TILT,
+                        upX, upZ, sprite, scale, tilt = HAND_TILT, fromX = fromX, fromZ = fromZ,
                     )
                 } else {
-                    cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, i)
+                    cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, i, fromX = fromX, fromZ = fromZ)
                 }
             }
         }
@@ -74,15 +90,16 @@ object DdzUi : GameUi {
                 seat == view.seat -> faces(view.hand)
                 else -> List(view.handCounts[seat]) { CardArt.back() }
             }
-            row(side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, standing = !finished)
+            row(side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ, standing = !finished)
             val play = recent[seat]
-            if (play != null && play.kind == DdzEventKind.PLAY) row(side, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE)
+            if (play != null && play.kind == DdzEventKind.PLAY) {
+                row(side, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE, side.stepX * HAND_DISTANCE, side.stepZ * HAND_DISTANCE)
+            }
         }
 
-        val kittySide = sides.firstOrNull()?.let { first -> Direction.entries.firstOrNull { it.axis.isHorizontal && it !in sides } ?: first }
         if (kittySide != null && view.phase != DdzPhase.FINISHED) {
             val kitty = if (view.kitty.isNotEmpty()) faces(view.kitty) else List(3) { CardArt.back() }
-            row(kittySide, KITTY_DISTANCE, kitty, KITTY_STEP, PLAY_SCALE)
+            row(kittySide, KITTY_DISTANCE, kitty, KITTY_STEP, PLAY_SCALE, deckX, deckZ)
         }
         return cards
     }
@@ -109,6 +126,32 @@ object DdzUi : GameUi {
         return if (view.phase == DdzPhase.FINISHED) null else view.turn
     }
 
+    /** A sound for each thing that happened since the last update: a card for a play, a bang for a bomb. */
+    override fun onUpdate(previous: ClientTable?, table: ClientTable) {
+        val view = table.view as? DdzView ?: return
+        val before = (previous?.view as? DdzView)?.log
+        val log = view.log
+        // A shorter log, or one that no longer starts the same, is a new game: nothing to replay.
+        if (before == null || before.size > log.size || log.subList(0, before.size) != before) return
+        val pos = table.pos
+        for (event in log.subList(before.size, log.size)) {
+            when (event.kind) {
+                DdzEventKind.PLAY -> when (event.pattern?.type) {
+                    PatternType.ROCKET -> {
+                        ClientTables.playAt(pos, SoundEvents.FIREWORK_ROCKET_LAUNCH, 1f, 1f)
+                        ClientTables.playAt(pos, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, 1f, 1f)
+                    }
+                    PatternType.BOMB -> ClientTables.playAt(pos, SoundEvents.GENERIC_EXPLODE, 0.5f, 1.4f)
+                    else -> ClientTables.playAt(pos, SoundEvents.BOOK_PAGE_TURN, 1f, 1.1f + event.cards.size * 0.02f)
+                }
+                DdzEventKind.BID, DdzEventKind.CALL, DdzEventKind.ROB, DdzEventKind.DOUBLE ->
+                    ClientTables.playAt(pos, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1f + event.value * 0.15f)
+                DdzEventKind.LANDLORD -> ClientTables.playAt(pos, SoundEvents.NOTE_BLOCK_BELL, 0.8f, 1f)
+                else -> {}
+            }
+        }
+    }
+
     // Distances are from the middle of the 3-block table; its cloth reaches 1.375 out.
     private const val HAND_DISTANCE = 1.05f
     private const val HAND_STEP = 0.085f
@@ -124,4 +167,7 @@ object DdzUi : GameUi {
     private const val PLAY_SCALE = 0.75f
     private const val KITTY_DISTANCE = 0.95f
     private const val KITTY_STEP = 0.3f
+
+    /** Where the deck lies while cards are dealt, out from the middle towards the empty side. */
+    private const val DECK_DISTANCE = 0.6f
 }

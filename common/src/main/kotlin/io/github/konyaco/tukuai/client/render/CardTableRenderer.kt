@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer
 import net.minecraft.client.renderer.rendertype.RenderTypes
 import net.minecraft.client.renderer.state.level.CameraRenderState
 import net.minecraft.client.renderer.texture.OverlayTexture
+import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
 import net.minecraft.util.FormattedCharSequence
@@ -44,6 +45,9 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         var turnSide: Direction? = null
     }
 
+    /** Each table's cards on their way to where the latest update puts them. */
+    private val motions = HashMap<BlockPos, CardMotion>()
+
     override fun createRenderState(): State = State()
 
     override fun extractRenderState(
@@ -60,14 +64,18 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         state.cards = emptyList()
         state.lines = emptyList()
         state.turnSide = null
-        if (client == null) return
+        if (client == null) {
+            motions.remove(table.blockPos)
+            return
+        }
         val facing = table.blockState.getValue(CardTableBlock.FACING)
         val sides = List(client.snapshot.seats.size) { seat ->
             var side: Direction = facing
             repeat(seat) { side = side.counterClockWise }
             side
         }
-        state.cards = client.scene(sides)
+        val now = ClientTables.ticks + partialTick.toDouble()
+        state.cards = motions.getOrPut(table.blockPos) { CardMotion() }.cards(client.scene(sides), now)
         val snapshot = client.snapshot
         val lines = if (snapshot.status == TableStatus.LOBBY || client.view == null) {
             listOf(Component.translatable("tukuai.game.${snapshot.gameId}"), TableScreen.presetName(snapshot.gameId, snapshot.presetId))
@@ -170,7 +178,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         // its bottom edge; flat ones lift a little over the cards before them in their row.
         val c = floatArrayOf(
             card.x + 0.5f,
-            1f + sin * halfH + cos * halfT + if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f,
+            1f + sin * halfH + cos * halfT + card.lift + if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f,
             card.z + 0.5f,
         )
         val neg = { v: FloatArray -> floatArrayOf(-v[0], -v[1], -v[2]) }

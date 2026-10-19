@@ -78,9 +78,15 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             context.waitTicks(10)
             shot(context, "2-screen-lobby")
 
+            // Cards are dealt from a deck on the empty side of the table.
+            context.setScreen { null }
             act(server, table, TableOp.START)
             context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
-            context.waitTicks(10)
+            context.waitTicks(8)
+            shot(context, "3-world-dealing")
+
+            context.setScreen { TableScreen(table) }
+            context.waitTicks(30)
             shot(context, "3-screen-bidding")
 
             context.runOnClient<RuntimeException> {

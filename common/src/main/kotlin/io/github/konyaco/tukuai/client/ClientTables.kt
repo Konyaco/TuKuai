@@ -4,7 +4,10 @@ import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.table.TableSnapshot
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Holder
 import net.minecraft.core.Direction
+import net.minecraft.sounds.SoundEvent
+import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.Level
 
 /** A table as this client last heard about it. */
@@ -59,10 +62,18 @@ object ClientTables {
             return
         }
         val table = ClientTable(pos.immutable(), snapshot, ticks)
-        tables[table.pos] = table
+        val previous = tables.put(table.pos, table)
+        table.ui?.onUpdate(previous?.takeIf { it.snapshot.gameId == snapshot.gameId }, table)
         val screen = Minecraft.getInstance().screen
         if (screen is TableScreen && screen.pos == table.pos) screen.onTableChanged(table)
     }
+
+    /** Plays a sound at a table for this player only; everyone near it gets the same update and plays it too. */
+    fun playAt(pos: BlockPos, sound: SoundEvent, volume: Float, pitch: Float) {
+        Minecraft.getInstance().level?.playLocalSound(pos, sound, SoundSource.BLOCKS, volume, pitch, false)
+    }
+
+    fun playAt(pos: BlockPos, sound: Holder<SoundEvent>, volume: Float, pitch: Float) = playAt(pos, sound.value(), volume, pitch)
 
     fun tick() {
         ticks++
