@@ -5,6 +5,7 @@ import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.doudizhu.DDZ_ORDER
@@ -15,6 +16,7 @@ import io.github.konyaco.tukuai.engine.doudizhu.DdzView
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.core.Direction
+import net.minecraft.network.chat.Component
 
 object DdzUi : GameUi {
     override val gameId: String = DouDizhu.id
@@ -85,6 +87,28 @@ object DdzUi : GameUi {
         return cards
     }
 
+    /** The stake, then whose turn it is, or who won once the game is over. */
+    override fun displayLines(table: ClientTable): List<Component> {
+        val view = table.view as? DdzView ?: return emptyList()
+        val settlement = view.settlement
+        if (settlement != null) {
+            return listOf(
+                Component.translatable(if (settlement.landlordWon) "tukuai.ddz.landlord_won" else "tukuai.ddz.farmers_won"),
+                Component.translatable("tukuai.ddz.stake", view.rules.baseScore, settlement.multiplier),
+            )
+        }
+        val turn = TableScreen.seatName(table.snapshot.seats.getOrNull(view.turn)?.occupant)
+        return listOf(
+            Component.translatable("tukuai.ddz.stake", view.rules.baseScore, DdzPanel.multiplier(view)),
+            Component.translatable("tukuai.table.turn", turn),
+        )
+    }
+
+    override fun turnSeat(table: ClientTable): Int? {
+        val view = table.view as? DdzView ?: return null
+        return if (view.phase == DdzPhase.FINISHED) null else view.turn
+    }
+
     // Distances are from the middle of the 3-block table; its cloth reaches 1.375 out.
     private const val HAND_DISTANCE = 1.05f
     private const val HAND_STEP = 0.085f
@@ -95,7 +119,7 @@ object DdzUi : GameUi {
 
     /** Degrees up from flat: the face points at the eyes of someone sitting behind it. */
     private const val HAND_TILT = 60f
-    private const val PLAY_DISTANCE = 0.45f
+    private const val PLAY_DISTANCE = 0.6f
     private const val PLAY_STEP = 0.1f
     private const val PLAY_SCALE = 0.75f
     private const val KITTY_DISTANCE = 0.95f

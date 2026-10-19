@@ -22,6 +22,12 @@ interface GameUi {
      * [sides] gives the side of the table each seat sits on.
      */
     fun scene(table: ClientTable, sides: List<Direction>): List<TableCard>
+
+    /** One or two short lines for the display in the middle of the table while a game is on. */
+    fun displayLines(table: ClientTable): List<Component> = emptyList()
+
+    /** The seat whose turn it is, lit up on the display; null when nobody is to act. */
+    fun turnSeat(table: ClientTable): Int? = null
 }
 
 /** The screen a [GamePanel] is drawn in: the table screen, or the replay viewer. */

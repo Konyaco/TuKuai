@@ -10,8 +10,8 @@ import net.minecraft.resources.Identifier
 /**
  * The card atlas `textures/gui/cards.png`, made by `tools/gen_textures.py`: 32×44 cards
  * in rows of 14. Faces 0..53 follow [Decks.STANDARD_54], then come the card backs,
- * and two 16×16 hats sit at the bottom. A patch of plain paper right of the cards
- * colours the edges of cards on the table.
+ * and two 16×16 hats sit at the bottom. Right of the cards are a patch of plain paper
+ * for the edges of cards on the table and a 16×16 tile of pale cloth for the table top.
  */
 object CardArt {
     val ATLAS: Identifier = TuKuai.id("textures/gui/cards.png")
@@ -29,6 +29,11 @@ object CardArt {
     /** Middle of the paper patch, in atlas pixels. */
     const val EDGE_U = 452
     const val EDGE_V = 4
+
+    /** Top-left corner and size of the cloth tile, in atlas pixels. */
+    const val FELT_U = 464
+    const val FELT_V = 0
+    const val FELT_SIZE = 16
 
     private val faceIndex: Map<PlayingCard, Int> = Decks.STANDARD_54.withIndex().associate { it.value to it.index }
 

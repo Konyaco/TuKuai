@@ -2,12 +2,16 @@ package io.github.konyaco.tukuai.client.render
 
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.blaze3d.vertex.VertexConsumer
-import io.github.konyaco.tukuai.TuKuai
+import com.mojang.math.Axis
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
+import io.github.konyaco.tukuai.table.TableStatus
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.Font
 import net.minecraft.client.renderer.SubmitNodeCollector
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider
@@ -17,14 +21,17 @@ import net.minecraft.client.renderer.rendertype.RenderTypes
 import net.minecraft.client.renderer.state.level.CameraRenderState
 import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.core.Direction
+import net.minecraft.network.chat.Component
+import net.minecraft.util.FormattedCharSequence
 import net.minecraft.world.item.DyeColor
 import net.minecraft.world.phys.Vec3
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Draws the dyed cloth and the cards lying on a card table. It is attached to the
- * table's middle block and draws across all nine.
+ * Draws the dyed cloth, the cards and the display in the middle of a card table. It is
+ * attached to the table's middle block and draws across all nine.
  */
 open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityRendererProvider.Context) :
     BlockEntityRenderer<CardTableBlockEntity, CardTableRenderer.State> {
@@ -33,6 +40,8 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         var feltColor: Int = DyeColor.GREEN.textureDiffuseColor
         var cards: List<TableCard> = emptyList()
         var back: Int = 0
+        var lines: List<FormattedCharSequence> = emptyList()
+        var turnSide: Direction? = null
     }
 
     override fun createRenderState(): State = State()
@@ -48,40 +57,97 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         val client = ClientTables[table.blockPos]
         state.back = CardArt.back()
         state.feltColor = DyeColor.byId(client?.snapshot?.felt ?: DyeColor.GREEN.id).textureDiffuseColor
-        state.cards = if (client == null) {
-            emptyList()
-        } else {
-            val facing = table.blockState.getValue(CardTableBlock.FACING)
-            val sides = List(client.snapshot.seats.size) { seat ->
-                var side: Direction = facing
-                repeat(seat) { side = side.counterClockWise }
-                side
-            }
-            client.scene(sides)
+        state.cards = emptyList()
+        state.lines = emptyList()
+        state.turnSide = null
+        if (client == null) return
+        val facing = table.blockState.getValue(CardTableBlock.FACING)
+        val sides = List(client.snapshot.seats.size) { seat ->
+            var side: Direction = facing
+            repeat(seat) { side = side.counterClockWise }
+            side
         }
+        state.cards = client.scene(sides)
+        val snapshot = client.snapshot
+        val lines = if (snapshot.status == TableStatus.LOBBY || client.view == null) {
+            listOf(Component.translatable("tukuai.game.${snapshot.gameId}"), TableScreen.presetName(snapshot.gameId, snapshot.presetId))
+        } else {
+            client.ui?.displayLines(client) ?: emptyList()
+        }
+        state.lines = lines.map { it.visualOrderText }
+        state.turnSide = client.ui?.turnSeat(client)?.let { sides.getOrNull(it) }
     }
 
     override fun submit(state: State, poseStack: PoseStack, collector: SubmitNodeCollector, camera: CameraRenderState) {
         val light = state.lightCoords
-        val felt = 0xFF000000.toInt() or lighten(state.feltColor)
-        collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(FELT)) { pose, buffer ->
-            // One tile of the cloth texture per block, cut short at the wooden rim.
-            val y = 1f + 0.0005f
-            for (bx in -1..1) for (bz in -1..1) {
-                val x0 = if (bx == -1) RIM else 0f
-                val x1 = if (bx == 1) 1f - RIM else 1f
-                val z0 = if (bz == -1) RIM else 0f
-                val z1 = if (bz == 1) 1f - RIM else 1f
-                quad(
-                    buffer, pose, light, felt,
-                    bx + x0, y, bz + z0, bx + x1, y, bz + z0, bx + x1, y, bz + z1, bx + x0, y, bz + z1,
-                    x0, z0, x1, z1,
+        collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(CardArt.ATLAS)) { pose, buffer ->
+            drawFelt(buffer, pose, light, ARGB_OPAQUE or lighten(state.feltColor))
+            drawDisplay(buffer, pose, light, state.turnSide)
+            for (card in state.cards) drawCard(buffer, pose, light, card, state.back)
+        }
+        if (state.lines.isNotEmpty()) drawDisplayText(poseStack, collector, state.lines)
+    }
+
+    /** One tile of the cloth per block, cut short at the wooden rim. */
+    private fun drawFelt(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, color: Int) {
+        val tile = CardArt.FELT_SIZE.toFloat()
+        for (bx in -1..1) for (bz in -1..1) {
+            val x0 = if (bx == -1) RIM else 0f
+            val x1 = if (bx == 1) 1f - RIM else 1f
+            val z0 = if (bz == -1) RIM else 0f
+            val z1 = if (bz == 1) 1f - RIM else 1f
+            val uv = floatArrayOf(
+                (CardArt.FELT_U + x0 * tile) / CardArt.TEXTURE_WIDTH,
+                (CardArt.FELT_V + z0 * tile) / CardArt.TEXTURE_HEIGHT,
+                (CardArt.FELT_U + x1 * tile) / CardArt.TEXTURE_WIDTH,
+                (CardArt.FELT_V + z1 * tile) / CardArt.TEXTURE_HEIGHT,
+            )
+            val c = floatArrayOf(0.5f + bx + (x0 + x1) / 2, 1.0005f, 0.5f + bz + (z0 + z1) / 2)
+            side(buffer, pose, light, c, UP, 0f, EAST, (x1 - x0) / 2, NORTH, (z1 - z0) / 2, uv, color)
+        }
+    }
+
+    /** A dark box in the middle of the table, its top edge lit on the side whose turn it is. */
+    private fun drawDisplay(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, turn: Direction?) {
+        val c = floatArrayOf(0.5f, 1f + DISPLAY_HEIGHT / 2, 0.5f)
+        val w = DISPLAY_HALF_WIDTH
+        val h = DISPLAY_HEIGHT / 2
+        side(buffer, pose, light, c, UP, h, EAST, w, NORTH, w, EDGE, DISPLAY_COLOR)
+        side(buffer, pose, light, c, SOUTH, w, EAST, w, UP, h, EDGE, DISPLAY_COLOR)
+        side(buffer, pose, light, c, NORTH, w, WEST, w, UP, h, EDGE, DISPLAY_COLOR)
+        side(buffer, pose, light, c, EAST, w, NORTH, w, UP, h, EDGE, DISPLAY_COLOR)
+        side(buffer, pose, light, c, WEST, w, SOUTH, w, UP, h, EDGE, DISPLAY_COLOR)
+        if (turn == null) return
+        // A lamp strip along the top edge facing the player to act.
+        val strip = floatArrayOf(
+            0.5f + turn.stepX * (w - TURN_STRIP / 2),
+            1f + DISPLAY_HEIGHT + 0.001f,
+            0.5f + turn.stepZ * (w - TURN_STRIP / 2),
+        )
+        val halfX = if (turn.stepX == 0) w else TURN_STRIP / 2
+        val halfZ = if (turn.stepZ == 0) w else TURN_STRIP / 2
+        side(buffer, pose, FULL_BRIGHT, strip, UP, 0f, EAST, halfX, NORTH, halfZ, EDGE, TURN_COLOR)
+    }
+
+    /** The display's lines on each of its four sides, facing outwards, so every seat can read one. */
+    private fun drawDisplayText(poseStack: PoseStack, collector: SubmitNodeCollector, lines: List<FormattedCharSequence>) {
+        val font = Minecraft.getInstance().font
+        val widest = lines.maxOf { font.width(it) }.coerceAtLeast(1)
+        val scale = minOf(TEXT_SCALE, (DISPLAY_HALF_WIDTH * 2 - 0.04f) / widest)
+        val top = -(lines.size * LINE_HEIGHT - 1) / 2f
+        for (side in Direction.Plane.HORIZONTAL) {
+            poseStack.pushPose()
+            poseStack.translate(0.5f, 1f + DISPLAY_HEIGHT / 2, 0.5f)
+            poseStack.mulPose(Axis.YP.rotation(atan2(side.stepX.toFloat(), side.stepZ.toFloat())))
+            poseStack.translate(0f, 0f, DISPLAY_HALF_WIDTH + 0.002f)
+            poseStack.scale(scale, -scale, scale)
+            lines.forEachIndexed { i, line ->
+                collector.submitText(
+                    poseStack, -font.width(line) / 2f, top + i * LINE_HEIGHT, line, false,
+                    Font.DisplayMode.POLYGON_OFFSET, FULL_BRIGHT, TEXT_COLOR, 0, 0,
                 )
             }
-        }
-        if (state.cards.isEmpty()) return
-        collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(CardArt.ATLAS)) { pose, buffer ->
-            for (card in state.cards) drawCard(buffer, pose, light, card, state.back)
+            poseStack.popPose()
         }
     }
 
@@ -110,13 +176,12 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         val neg = { v: FloatArray -> floatArrayOf(-v[0], -v[1], -v[2]) }
         val face = sprite(card.sprite)
         val backUv = sprite(back)
-        val edge = floatArrayOf(EDGE_U, EDGE_V, EDGE_U, EDGE_V)
         side(buffer, pose, light, c, n, halfT, r, halfW, u, halfH, face)
         side(buffer, pose, light, c, neg(n), halfT, neg(r), halfW, u, halfH, backUv)
-        side(buffer, pose, light, c, r, halfW, neg(n), halfT, u, halfH, edge)
-        side(buffer, pose, light, c, neg(r), halfW, n, halfT, u, halfH, edge)
-        side(buffer, pose, light, c, u, halfH, r, halfW, neg(n), halfT, edge)
-        side(buffer, pose, light, c, neg(u), halfH, r, halfW, n, halfT, edge)
+        side(buffer, pose, light, c, r, halfW, neg(n), halfT, u, halfH, EDGE)
+        side(buffer, pose, light, c, neg(r), halfW, n, halfT, u, halfH, EDGE)
+        side(buffer, pose, light, c, u, halfH, r, halfW, neg(n), halfT, EDGE)
+        side(buffer, pose, light, c, neg(u), halfH, r, halfW, n, halfT, EDGE)
     }
 
     /** u0, v0, u1, v1 of a card in the atlas. */
@@ -143,6 +208,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         b: FloatArray,
         hb: Float,
         uv: FloatArray,
+        color: Int = -1,
     ) {
         fun corner(sa: Float, sb: Float, tu: Float, tv: Float) {
             buffer.addVertex(
@@ -151,7 +217,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
                 c[1] + normal[1] * d + a[1] * ha * sa + b[1] * hb * sb,
                 c[2] + normal[2] * d + a[2] * ha * sa + b[2] * hb * sb,
             )
-                .setColor(-1)
+                .setColor(color)
                 .setUv(tu, tv)
                 .setOverlay(OverlayTexture.NO_OVERLAY)
                 .setLight(light)
@@ -163,41 +229,12 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         corner(-1f, 1f, uv[0], uv[1])
     }
 
-    /** One upward-facing quad; (u0, v0) maps to the first corner and (u1, v1) to the third. */
-    private fun quad(
-        buffer: VertexConsumer,
-        pose: PoseStack.Pose,
-        light: Int,
-        color: Int,
-        x1: Float, y1: Float, z1: Float,
-        x2: Float, y2: Float, z2: Float,
-        x3: Float, y3: Float, z3: Float,
-        x4: Float, y4: Float, z4: Float,
-        u0: Float, v0: Float, u1: Float, v1: Float,
-    ) {
-        vertex(buffer, pose, light, color, x1, y1, z1, u0, v0)
-        vertex(buffer, pose, light, color, x2, y2, z2, u1, v0)
-        vertex(buffer, pose, light, color, x3, y3, z3, u1, v1)
-        vertex(buffer, pose, light, color, x4, y4, z4, u0, v1)
-    }
-
-    private fun vertex(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, color: Int, x: Float, y: Float, z: Float, u: Float, v: Float) {
-        buffer.addVertex(pose, x, y, z)
-            .setColor(color)
-            .setUv(u, v)
-            .setOverlay(OverlayTexture.NO_OVERLAY)
-            .setLight(light)
-            .setNormal(pose, 0f, 1f, 0f)
-    }
-
     companion object {
         /** Dye colours are dark for cloth seen from above, so mix in a quarter of white. */
         private fun lighten(rgb: Int): Int {
             fun channel(shift: Int) = ((rgb shr shift and 0xFF) * 3 + 255) / 4 shl shift
             return channel(16) or channel(8) or channel(0)
         }
-
-        private val FELT = TuKuai.id("textures/block/card_table_felt.png")
 
         /** Width of a card on the table at scale 1, in blocks. */
         private const val CARD_WIDTH = 0.3f
@@ -208,8 +245,33 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         /** How much higher each flat card in a row sits than the one before it. */
         private const val LAYER_LIFT = 0.002f
 
-        private val EDGE_U = CardArt.EDGE_U.toFloat() / CardArt.TEXTURE_WIDTH
-        private val EDGE_V = CardArt.EDGE_V.toFloat() / CardArt.TEXTURE_HEIGHT
+        /** The paper patch: one spot of plain colour, for card edges and anything tinted. */
+        private val EDGE = floatArrayOf(
+            CardArt.EDGE_U.toFloat() / CardArt.TEXTURE_WIDTH,
+            CardArt.EDGE_V.toFloat() / CardArt.TEXTURE_HEIGHT,
+            CardArt.EDGE_U.toFloat() / CardArt.TEXTURE_WIDTH,
+            CardArt.EDGE_V.toFloat() / CardArt.TEXTURE_HEIGHT,
+        )
+
+        private val UP = floatArrayOf(0f, 1f, 0f)
+        private val NORTH = floatArrayOf(0f, 0f, -1f)
+        private val SOUTH = floatArrayOf(0f, 0f, 1f)
+        private val EAST = floatArrayOf(1f, 0f, 0f)
+        private val WEST = floatArrayOf(-1f, 0f, 0f)
+
+        private const val ARGB_OPAQUE = 0xFF000000.toInt()
+        private const val FULL_BRIGHT = 0xF000F0
+
+        private const val DISPLAY_HALF_WIDTH = 0.35f
+        private const val DISPLAY_HEIGHT = 0.2f
+        private const val DISPLAY_COLOR = 0xFF33373D.toInt()
+        private const val TURN_STRIP = 0.05f
+        private const val TURN_COLOR = 0xFFFFC23A.toInt()
+        private const val TEXT_COLOR = 0xFFFFE6A0.toInt()
+
+        /** Blocks per font pixel at most; long lines shrink to fit the display. */
+        private const val TEXT_SCALE = 0.0085f
+        private const val LINE_HEIGHT = 10f
 
         /** Width of the bare wooden rim around the cloth, in blocks. */
         private const val RIM = 2f / 16f

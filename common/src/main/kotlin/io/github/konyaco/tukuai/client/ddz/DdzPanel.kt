@@ -251,9 +251,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
             val x = x0 + i * (cw + 2)
             if (card != null) CardArt.drawCard(g, card, x, 6, scale) else CardArt.draw(g, CardArt.back(), x, 6, scale)
         }
-        var multiplier = view.bidMultiplier
-        if (view.rules.bombsDouble) repeat(view.bombs) { multiplier *= 2 }
-        val line = Component.translatable("tukuai.ddz.stake", view.rules.baseScore, multiplier)
+        val line = Component.translatable("tukuai.ddz.stake", view.rules.baseScore, multiplier(view))
         g.centeredText(font, line, width / 2, 6 + (CardArt.HEIGHT * scale).toInt() + 4, TableScreen.WHITE)
     }
 
@@ -386,6 +384,13 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
 
     companion object {
         private const val RAISE = 10
+
+        /** The multiplier so far: the bid, doubled for each bomb when the rules say so. */
+        fun multiplier(view: DdzView): Int {
+            var multiplier = view.bidMultiplier
+            if (view.rules.bombsDouble) repeat(view.bombs) { multiplier *= 2 }
+            return multiplier
+        }
 
         /** The result box sits at the top, over the landlord's cards, clear of both players' boxes. */
         private const val RESULT_TOP = 4
