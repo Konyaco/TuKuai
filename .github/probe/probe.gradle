@@ -30,13 +30,17 @@ allprojects {
                         }
                     }
                 }
+                // A leading '!' also prints private members of that class.
                 def classes = lines('classes.txt')
-                if (classes) {
-                    def cmd = ['javap', '-protected', '-cp', jars.join(File.pathSeparator)] + classes
+                def runJavap = { String flag, List<String> names ->
+                    if (!names) return
+                    def cmd = ['javap', flag, '-cp', jars.join(File.pathSeparator)] + names
                     def proc = new ProcessBuilder(cmd).redirectErrorStream(true).start()
                     text << proc.inputStream.text
                     proc.waitFor()
                 }
+                runJavap('-protected', classes.findAll { !it.startsWith('!') })
+                runJavap('-p', classes.findAll { it.startsWith('!') }.collect { it.substring(1) })
                 out.parentFile.mkdirs()
                 out.text = text.toString()
                 println text
