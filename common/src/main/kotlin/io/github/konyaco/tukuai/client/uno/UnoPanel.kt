@@ -398,9 +398,13 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         g.centeredText(font, Component.translatable("tukuai.uno.result_detail"), width / 2, top + 18, TableScreen.GRAY)
         for (seat in 0 until view.players) {
             val y = top + 32 + seat * 11
-            g.text(font, seatLabel(table, seat), x + 8, y, if (seat == me) TableScreen.YELLOW else TableScreen.WHITE, false)
+            // Cards left sit right-aligned before the score column, and the name gives way to them.
             val left = Component.translatable("tukuai.uno.cards_left", view.handCounts[seat], settlement.handPoints[seat])
-            if (seat != settlement.winner) g.text(font, left, x + 100, y, TableScreen.GRAY, false)
+            val leftX = x + w - SCORE_COLUMN - font.width(left)
+            val nameRoom = (if (seat != settlement.winner) leftX - 6 else x + w - SCORE_COLUMN) - (x + 8)
+            val name = font.plainSubstrByWidth(seatLabel(table, seat).string, nameRoom)
+            g.text(font, Component.literal(name), x + 8, y, if (seat == me) TableScreen.YELLOW else TableScreen.WHITE, false)
+            if (seat != settlement.winner) g.text(font, left, leftX, y, TableScreen.GRAY, false)
             val points = settlement.scores[seat]
             val text = Component.literal(if (points > 0) "+$points" else points.toString())
             g.text(font, text, x + w - 8 - font.width(text), y, if (points >= 0) TableScreen.GREEN else TableScreen.RED, false)
@@ -410,7 +414,9 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
     companion object {
         private const val RAISE = 8
         private const val PILE_SCALE = 1.25f
-        private const val RESULT_WIDTH = 204
+        private const val RESULT_WIDTH = 220
+        /** Room for the score, "-129" at most in practice, plus a gap. */
+        private const val SCORE_COLUMN = 40
 
         fun eventText(event: UnoEvent): Component? = when (event.kind) {
             UnoEventKind.DRAW -> Component.translatable("tukuai.uno.drew", event.count)
