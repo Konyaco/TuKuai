@@ -1,0 +1,35 @@
+plugins {
+    id 'net.neoforged.moddev'
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+apply from: rootProject.file('gradle/loader.gradle')
+
+repositories {
+    exclusiveContent {
+        forRepository { maven { name = 'Kotlin for Forge'; url = 'https://thedarkcolour.github.io/KotlinForForge/' } }
+        filter { includeGroup 'thedarkcolour' }
+    }
+}
+
+neoForge {
+    version = neoforge_version
+    runs {
+        client {
+            client()
+            gameDirectory = file('runs/client')
+        }
+        server {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('runs/server')
+        }
+    }
+    mods {
+        "${mod_id}" { sourceSet sourceSets.main }
+    }
+}
+
+dependencies {
+    implementation "thedarkcolour:kotlinforforge-neoforge:${kotlin_for_forge_version}"
+}
