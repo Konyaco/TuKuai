@@ -1,8 +1,2 @@
-^net\.minecraft\.client\.input\.
-^net\.minecraft\.client\.gui\.components\.events\.
-^net\.neoforged\.neoforge\.network\.
-^net\.neoforged\.neoforge\.client\.event\.[A-Za-z]*$
-^net\.neoforged\.neoforge\.event\.(tick\.|RegisterCommandsEvent|entity\.player\.PlayerEvent)
-^net\.neoforged\.fml\.(loading\.FMLEnvironment|common\.Mod|event\.lifecycle\.)
-^net\.minecraft\.client\.renderer\.(LightTexture|OrderedSubmitNodeCollector|state\.)
-^com\.mojang\.blaze3d\.vertex\.(PoseStack|VertexConsumer)
+^net\.minecraft\.world\.level\.storage\.LevelResource
+^net\.minecraft\.sounds\.
