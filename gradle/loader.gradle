@@ -1,20 +1,18 @@
 // Shared setup for the fabric and neoforge projects, applied after their plugins.
 // Each loader compiles the engine and common sources itself, so a release is one jar
 // per loader and the engine never needs its own jar-in-jar packaging.
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 base {
     archivesName = "${mod_id}-${project.name}-${minecraft_version}"
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version.toInteger())
     withSourcesJar()
 }
 
+// Script plugins cannot see Kotlin plugin classes, so the JVM target follows the toolchain.
 kotlin {
-    jvmToolchain(java_version as int)
-    compilerOptions.jvmTarget = JvmTarget.fromTarget(java_version)
+    jvmToolchain(java_version.toInteger())
 }
 
 sourceSets.main {
