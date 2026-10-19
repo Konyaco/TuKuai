@@ -18,3 +18,15 @@ loom {
         server { runDir 'runs/server' }
     }
 }
+
+// Client game tests start a real client under a virtual display, play a round at a
+// card table and save screenshots: ./gradlew :fabric:runClientGameTest
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "${mod_id}-test"
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+    }
+}
