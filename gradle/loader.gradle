@@ -1,0 +1,47 @@
+// Shared setup for the fabric and neoforge projects, applied after their plugins.
+// Each loader compiles the engine and common sources itself, so a release is one jar
+// per loader and the engine never needs its own jar-in-jar packaging.
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+base {
+    archivesName = "${mod_id}-${project.name}-${minecraft_version}"
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
+    withSourcesJar()
+}
+
+kotlin {
+    jvmToolchain(java_version as int)
+    compilerOptions.jvmTarget = JvmTarget.fromTarget(java_version)
+}
+
+sourceSets.main {
+    kotlin.srcDir rootProject.file('engine/src/main/kotlin')
+    kotlin.srcDir rootProject.file('common/src/main/kotlin')
+    resources.srcDir rootProject.file('common/src/main/resources')
+}
+
+dependencies {
+    // Provided at runtime by Kotlin for Forge or Fabric Language Kotlin.
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}"
+}
+
+processResources {
+    def properties = [
+        version                       : project.version,
+        mod_id                        : mod_id,
+        mod_name                      : mod_name,
+        mod_author                    : mod_author,
+        license                       : license,
+        minecraft_version             : minecraft_version,
+        java_version                  : java_version,
+        fabric_loader_version         : fabric_loader_version,
+        fabric_language_kotlin_version: fabric_language_kotlin_version,
+        neoforge_version              : neoforge_version,
+        kotlin_for_forge_version      : kotlin_for_forge_version,
+    ]
+    inputs.properties properties
+    filesMatching(['fabric.mod.json', 'META-INF/neoforge.mods.toml']) { expand properties }
+}

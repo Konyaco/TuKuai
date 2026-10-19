@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "tukuai:block/card_table" }
+  }
+}

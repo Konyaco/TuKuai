@@ -1,0 +1,29 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+// Rules and computer players live here, with no Minecraft dependency. The loaders
+// compile these sources into the mod jar; this project exists so the rules can be
+// tested without starting the game. It targets Java 21 so any JDK from 21 up can
+// run the tests; the loaders recompile the same sources for Java 25.
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+kotlin {
+    compilerOptions.jvmTarget = JvmTarget.JVM_21
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlin_version}"
+    testImplementation platform("org.junit:junit-bom:${junit_version}")
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
