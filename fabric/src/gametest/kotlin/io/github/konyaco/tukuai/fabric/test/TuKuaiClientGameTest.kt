@@ -7,6 +7,7 @@ import io.github.konyaco.tukuai.client.ReplayScreen
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
+import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.network.TableActionPayload
@@ -25,6 +26,7 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.item.DyeColor
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.context.UseOnContext
 import net.minecraft.world.level.block.Blocks
@@ -57,9 +59,10 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             server.runOnServer<RuntimeException> { s -> checkOldTables(s) }
 
             act(server, table, TableOp.SIT, 0)
-            check(server.computeOnServer<Boolean, RuntimeException> { s -> s.playerList.players.first().vehicle is SeatEntity }) {
-                "Sitting down did not put the player on a seat"
-            }
+            check(server.computeOnServer<Boolean, RuntimeException> { s ->
+                val seat = s.playerList.players.first().vehicle
+                seat is SeatEntity && seat.y > table.y + 0.3 && seat.blockPosition() == table.south(StoolBlock.TABLE_DISTANCE)
+            }) { "Sitting down did not put the player on the stool" }
             act(server, table, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
             context.waitTicks(20)
             context.input.lookAt(table)
@@ -192,6 +195,10 @@ class TuKuaiClientGameTest : FabricClientGameTest {
                 CardTableBlock.posOf(table, part),
                 TuKuaiContent.CARD_TABLE.defaultBlockState().setValue(CardTableBlock.FACING, Direction.SOUTH).setValue(CardTableBlock.PART, part),
             )
+        }
+        // Stools on the three seat sides; sitting down at the table puts you on yours.
+        for ((side, color) in listOf(Direction.SOUTH to DyeColor.RED, Direction.EAST to DyeColor.YELLOW, Direction.NORTH to DyeColor.GREEN)) {
+            level.setBlockAndUpdate(table.relative(side, StoolBlock.TABLE_DISTANCE), TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.COLOR, color))
         }
         // A lone middle block is how a table from before 3x3 tables loads. One has room to grow, one does not.
         level.setBlockAndUpdate(OLD_ROOMY.offsetFrom(base), TuKuaiContent.CARD_TABLE.defaultBlockState())

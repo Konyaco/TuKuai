@@ -33,10 +33,12 @@ class TuKuaiFabric : ModInitializer {
 
         Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE)
         Registry.register(BuiltInRegistries.ITEM, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE_ITEM)
+        Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("stool"), TuKuaiContent.STOOL)
+        Registry.register(BuiltInRegistries.ITEM, TuKuai.id("stool"), TuKuaiContent.STOOL_ITEM)
         Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE_ENTITY)
         Registry.register(BuiltInRegistries.ENTITY_TYPE, TuKuai.id("seat"), TuKuaiContent.SEAT)
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register { entries ->
-            entries.accept(TuKuaiContent.CARD_TABLE_ITEM)
+            TuKuaiContent.creativeStacks().forEach(entries::accept)
         }
 
         PayloadTypeRegistry.clientboundPlay().register(TableSyncPayload.TYPE, TableSyncPayload.CODEC)

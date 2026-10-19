@@ -5,7 +5,6 @@ import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.RandomSource
@@ -152,7 +151,7 @@ class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(pr
         hand: InteractionHand,
         hit: BlockHitResult,
     ): InteractionResult {
-        val color: DyeColor = dyeColorOf(stack) ?: return InteractionResult.TRY_WITH_EMPTY_HAND
+        val color: DyeColor = Dyes.colorOf(stack) ?: return InteractionResult.TRY_WITH_EMPTY_HAND
         val table = level.getBlockEntity(centerOf(pos, state)) as? CardTableBlockEntity ?: return InteractionResult.TRY_WITH_EMPTY_HAND
         if (table.felt == color) return InteractionResult.TRY_WITH_EMPTY_HAND
         if (!level.isClientSide()) {
@@ -163,14 +162,6 @@ class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(pr
     }
 
     companion object {
-        /** The colour of a vanilla dye item. */
-        private fun dyeColorOf(stack: ItemStack): DyeColor? {
-            if (stack.isEmpty) return null
-            val id = BuiltInRegistries.ITEM.getKey(stack.item)
-            if (id.namespace != "minecraft") return null
-            return DyeColor.entries.firstOrNull { id.path == "${it.serializedName}_dye" }
-        }
-
         val FACING = HorizontalDirectionalBlock.FACING
 
         /** Which of the nine blocks this is: `(dz + 1) * 3 + (dx + 1)` for its offset from the middle. */

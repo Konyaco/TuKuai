@@ -19,6 +19,8 @@ import net.minecraft.client.renderer.texture.OverlayTexture
 import net.minecraft.core.Direction
 import net.minecraft.world.item.DyeColor
 import net.minecraft.world.phys.Vec3
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Draws the dyed cloth and the cards lying on a card table. It is attached to the
@@ -30,6 +32,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
     class State : BlockEntityRenderState() {
         var feltColor: Int = DyeColor.GREEN.textureDiffuseColor
         var cards: List<TableCard> = emptyList()
+        var back: Int = 0
     }
 
     override fun createRenderState(): State = State()
@@ -43,6 +46,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
     ) {
         BlockEntityRenderState.extractBase(table, state, crumbling)
         val client = ClientTables[table.blockPos]
+        state.back = CardArt.back()
         state.feltColor = DyeColor.byId(client?.snapshot?.felt ?: DyeColor.GREEN.id).textureDiffuseColor
         state.cards = if (client == null) {
             emptyList()
@@ -77,34 +81,86 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         }
         if (state.cards.isEmpty()) return
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(CardArt.ATLAS)) { pose, buffer ->
-            for (card in state.cards) drawCard(buffer, pose, light, card)
+            for (card in state.cards) drawCard(buffer, pose, light, card, state.back)
         }
     }
 
-    private fun drawCard(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, card: TableCard) {
+    /**
+     * A card is a thin box: its face on the front, the chosen back behind, paper on the
+     * four edges. (r, u, n) are the card's right, up and outward directions.
+     */
+    private fun drawCard(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, card: TableCard, back: Int) {
         val halfW = CARD_WIDTH * card.scale / 2
         val halfH = CARD_WIDTH * card.scale * CardArt.HEIGHT / CardArt.WIDTH / 2
+        val halfT = CARD_THICKNESS * card.scale / 2
+        val tilt = Math.toRadians(card.tilt.toDouble())
+        val sin = sin(tilt).toFloat()
+        val cos = cos(tilt).toFloat()
         // Right of the card as seen by someone reading it: the "up" direction turned clockwise.
-        val rx = -card.upZ
-        val rz = card.upX
-        // Card positions are measured from the middle of the table.
-        val cx = card.x + 0.5f
-        val cz = card.z + 0.5f
-        val y = 1.002f + card.layer * 0.0004f
-        val u0 = CardArt.u(card.sprite).toFloat() / CardArt.TEXTURE_WIDTH
-        val v0 = CardArt.v(card.sprite).toFloat() / CardArt.TEXTURE_HEIGHT
-        val u1 = u0 + CardArt.WIDTH.toFloat() / CardArt.TEXTURE_WIDTH
-        val v1 = v0 + CardArt.HEIGHT.toFloat() / CardArt.TEXTURE_HEIGHT
-        // Corners: bottom-left, bottom-right, top-right, top-left.
-        val blX = cx - rx * halfW - card.upX * halfH
-        val blZ = cz - rz * halfW - card.upZ * halfH
-        val brX = cx + rx * halfW - card.upX * halfH
-        val brZ = cz + rz * halfW - card.upZ * halfH
-        val trX = cx + rx * halfW + card.upX * halfH
-        val trZ = cz + rz * halfW + card.upZ * halfH
-        val tlX = cx - rx * halfW + card.upX * halfH
-        val tlZ = cz - rz * halfW + card.upZ * halfH
-        quad(buffer, pose, light, -1, blX, y, blZ, brX, y, brZ, trX, y, trZ, tlX, y, tlZ, u0, v1, u1, v0)
+        val r = floatArrayOf(-card.upZ, 0f, card.upX)
+        val u = floatArrayOf(card.upX * cos, sin, card.upZ * cos)
+        val n = floatArrayOf(-card.upX * sin, cos, -card.upZ * sin)
+        // Card positions are measured from the middle of the table. A standing card rests on
+        // its bottom edge; flat ones lift a little over the cards before them in their row.
+        val c = floatArrayOf(
+            card.x + 0.5f,
+            1f + sin * halfH + cos * halfT + if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f,
+            card.z + 0.5f,
+        )
+        val neg = { v: FloatArray -> floatArrayOf(-v[0], -v[1], -v[2]) }
+        val face = sprite(card.sprite)
+        val backUv = sprite(back)
+        val edge = floatArrayOf(EDGE_U, EDGE_V, EDGE_U, EDGE_V)
+        side(buffer, pose, light, c, n, halfT, r, halfW, u, halfH, face)
+        side(buffer, pose, light, c, neg(n), halfT, neg(r), halfW, u, halfH, backUv)
+        side(buffer, pose, light, c, r, halfW, neg(n), halfT, u, halfH, edge)
+        side(buffer, pose, light, c, neg(r), halfW, n, halfT, u, halfH, edge)
+        side(buffer, pose, light, c, u, halfH, r, halfW, neg(n), halfT, edge)
+        side(buffer, pose, light, c, neg(u), halfH, r, halfW, n, halfT, edge)
+    }
+
+    /** u0, v0, u1, v1 of a card in the atlas. */
+    private fun sprite(sprite: Int): FloatArray {
+        val u0 = CardArt.u(sprite).toFloat() / CardArt.TEXTURE_WIDTH
+        val v0 = CardArt.v(sprite).toFloat() / CardArt.TEXTURE_HEIGHT
+        return floatArrayOf(u0, v0, u0 + CardArt.WIDTH.toFloat() / CardArt.TEXTURE_WIDTH, v0 + CardArt.HEIGHT.toFloat() / CardArt.TEXTURE_HEIGHT)
+    }
+
+    /**
+     * One face of a box centred on [c]: it lies [d] out along [normal] and spans [ha] along
+     * [a] and [hb] along [b], where a × b = normal so it faces outwards. The texture's top
+     * is towards +b.
+     */
+    private fun side(
+        buffer: VertexConsumer,
+        pose: PoseStack.Pose,
+        light: Int,
+        c: FloatArray,
+        normal: FloatArray,
+        d: Float,
+        a: FloatArray,
+        ha: Float,
+        b: FloatArray,
+        hb: Float,
+        uv: FloatArray,
+    ) {
+        fun corner(sa: Float, sb: Float, tu: Float, tv: Float) {
+            buffer.addVertex(
+                pose,
+                c[0] + normal[0] * d + a[0] * ha * sa + b[0] * hb * sb,
+                c[1] + normal[1] * d + a[1] * ha * sa + b[1] * hb * sb,
+                c[2] + normal[2] * d + a[2] * ha * sa + b[2] * hb * sb,
+            )
+                .setColor(-1)
+                .setUv(tu, tv)
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(light)
+                .setNormal(pose, normal[0], normal[1], normal[2])
+        }
+        corner(-1f, -1f, uv[0], uv[3])
+        corner(1f, -1f, uv[2], uv[3])
+        corner(1f, 1f, uv[2], uv[1])
+        corner(-1f, 1f, uv[0], uv[1])
     }
 
     /** One upward-facing quad; (u0, v0) maps to the first corner and (u1, v1) to the third. */
@@ -145,6 +201,15 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
 
         /** Width of a card on the table at scale 1, in blocks. */
         private const val CARD_WIDTH = 0.3f
+
+        /** Thickness of a card at scale 1, in blocks. */
+        private const val CARD_THICKNESS = 0.008f
+
+        /** How much higher each flat card in a row sits than the one before it. */
+        private const val LAYER_LIFT = 0.002f
+
+        private val EDGE_U = CardArt.EDGE_U.toFloat() / CardArt.TEXTURE_WIDTH
+        private val EDGE_V = CardArt.EDGE_V.toFloat() / CardArt.TEXTURE_HEIGHT
 
         /** Width of the bare wooden rim around the cloth, in blocks. */
         private const val RIM = 2f / 16f

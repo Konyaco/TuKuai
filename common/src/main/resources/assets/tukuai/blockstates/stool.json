@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "color=white": {
+      "model": "tukuai:block/stool_white"
+    },
+    "color=orange": {
+      "model": "tukuai:block/stool_orange"
+    },
+    "color=magenta": {
+      "model": "tukuai:block/stool_magenta"
+    },
+    "color=light_blue": {
+      "model": "tukuai:block/stool_light_blue"
+    },
+    "color=yellow": {
+      "model": "tukuai:block/stool_yellow"
+    },
+    "color=lime": {
+      "model": "tukuai:block/stool_lime"
+    },
+    "color=pink": {
+      "model": "tukuai:block/stool_pink"
+    },
+    "color=gray": {
+      "model": "tukuai:block/stool_gray"
+    },
+    "color=light_gray": {
+      "model": "tukuai:block/stool_light_gray"
+    },
+    "color=cyan": {
+      "model": "tukuai:block/stool_cyan"
+    },
+    "color=purple": {
+      "model": "tukuai:block/stool_purple"
+    },
+    "color=blue": {
+      "model": "tukuai:block/stool_blue"
+    },
+    "color=brown": {
+      "model": "tukuai:block/stool_brown"
+    },
+    "color=green": {
+      "model": "tukuai:block/stool_green"
+    },
+    "color=red": {
+      "model": "tukuai:block/stool_red"
+    },
+    "color=black": {
+      "model": "tukuai:block/stool_black"
+    }
+  }
+}
