@@ -92,7 +92,8 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     private val lobbyWidth = 300
 
-    private fun lobbyLeft() = (width - lobbyWidth) / 2
+    /** Centred, but pushed left on narrow screens so the panel stays clear of the top-right buttons. */
+    private fun lobbyLeft() = maxOf(8, minOf((width - lobbyWidth) / 2, width - 74 - 12 - lobbyWidth))
 
     private fun lobbyTop(t: ClientTable) = (height - (SEATS_Y + 46 + t.snapshot.seats.size * 24)) / 2
 

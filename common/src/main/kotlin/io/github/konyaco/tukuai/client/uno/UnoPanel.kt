@@ -257,7 +257,8 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         val acting = view.turn == seat && table.snapshot.status == TableStatus.PLAYING
         g.fill(x - 2, y - 2, x + boxW + 2, y + 40, if (acting) 0x90806020.toInt() else 0x70000000)
         g.text(font, font.plainSubstrByWidth(seatLabel(table, seat).string, boxW), x, y + 2, TableScreen.WHITE, true)
-        if (!view.finished && table.snapshot.you != null && seat == view.next(table.snapshot.you!!)) {
+        // Who plays after the current player, so the tag never lands on the one already playing.
+        if (!view.finished && seat == view.next(view.turn)) {
             val next = Component.translatable("tukuai.uno.next")
             g.text(font, next, x + boxW - font.width(next), y + 2, TableScreen.GRAY, true)
         }
@@ -319,7 +320,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         }
         // On the far side of the buttons, clear of the piles. Your own plays already show on the discard pile.
         if (recent != null && recent.kind != UnoEventKind.PLAY && !view.finished) {
-            renderEvent(g, view, recent, width - 8, y, Align.RIGHT)
+            renderEvent(g, view, recent, width - 8, y - 10, Align.RIGHT)
         }
         if (view.turn == me && table.snapshot.status == TableStatus.PLAYING && table.snapshot.you != null) {
             renderTimer(g, table, x, y + 12, alignRight = false)
