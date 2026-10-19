@@ -26,12 +26,15 @@ import kotlin.random.Random
  * - NORMAL plans its hand with [HandAnalysis], keeps strong cards for later and
  *   stops an opponent who is about to run out.
  * - HARD also counts the cards that have been played, so it knows which of its
- *   plays nobody can beat, and helps its teammate finish.
+ *   plays nobody can beat, and helps its teammate finish. Then it tries its best few
+ *   plays against many guesses of the other hands and keeps the one that does best,
+ *   see [PlayoutSearch].
  *
  * It only reads the [DdzView] for its own seat, so it never sees hidden cards.
  */
-class DdzBot(private val level: BotLevel, seed: Long) : Bot<DdzView, DdzAction> {
+class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int = PlayoutSearch.PLAYOUTS) : Bot<DdzView, DdzAction> {
     private val random = Random(seed)
+    private val search by lazy { PlayoutSearch(random, playouts) }
 
     override fun act(view: DdzView): DdzAction {
         val seat = requireNotNull(view.seat) { "A bot needs a seat" }
@@ -93,7 +96,36 @@ class DdzBot(private val level: BotLevel, seed: Long) : Bot<DdzView, DdzAction> 
             toBeat == null -> lead(view, seat)
             else -> follow(view, seat, toBeat)
         }
-        return if (choice == null) DdzAction.Pass else DdzAction.PlayCards(choice.cards)
+        val action = if (choice == null) DdzAction.Pass else DdzAction.PlayCards(choice.cards)
+        if (level != BotLevel.HARD || playouts <= 0) return action
+        return search.choose(view, seat, candidates(view, action))
+    }
+
+    /** The plays worth searching: [favourite] first, then passing, then the cheapest other plays. */
+    private fun candidates(view: DdzView, favourite: DdzAction): List<DdzAction> {
+        val toBeat = view.toBeat
+        val options = Patterns.options(view.hand, toBeat, view.rules)
+        // Going out ends the game at once; nothing can beat that.
+        options.firstOrNull { it.cards.size == view.hand.size }?.let { return listOf(DdzAction.PlayCards(it.cards)) }
+        val plain = compareBy<Play>({ it.pattern.isBomb }, { HandAnalysis.value(it.pattern) }, { -it.cards.size })
+        val plays = if (toBeat == null) {
+            HandAnalysis.split(view.hand).plays.sortedWith(plain) + options.sortedWith(plain)
+        } else {
+            options.sortedWith(plain)
+        }
+        val out = mutableListOf(favourite)
+        if (toBeat != null && favourite != DdzAction.Pass) out += DdzAction.Pass
+        val seen = HashSet<Pattern>()
+        (out[0] as? DdzAction.PlayCards)?.let { f -> Patterns.readingFor(f.cards, toBeat, view.rules)?.let { seen += it } }
+        for (play in plays) {
+            if (out.size >= MAX_CANDIDATES) break
+            if (seen.add(play.pattern)) out += DdzAction.PlayCards(play.cards)
+        }
+        return out
+    }
+
+    private companion object {
+        const val MAX_CANDIDATES = 8
     }
 
     private fun easyPlay(view: DdzView, toBeat: Pattern?): Play? {

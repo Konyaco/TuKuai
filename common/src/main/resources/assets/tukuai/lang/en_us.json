@@ -15,7 +15,7 @@
   "tukuai.table.timer.off": "Turn time: off",
   "tukuai.table.seat": "Seat %s",
   "tukuai.table.empty": "Empty",
-  "tukuai.table.bot": "Computer (%s)",
+  "tukuai.table.bot": "%s CPU",
   "tukuai.table.bot_level": "Computer: %s",
   "tukuai.table.sit": "Sit here",
   "tukuai.table.stand": "Stand up",
