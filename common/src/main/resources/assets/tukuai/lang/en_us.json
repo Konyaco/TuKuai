@@ -73,5 +73,7 @@
   "tukuai.command.replays.none": "No games have been saved yet.",
   "tukuai.command.replays.header": "%s saved games, newest first (click one to watch):",
   "tukuai.command.replays.hover": "Click to watch",
-  "tukuai.command.replay.missing": "There is no replay called %s."
+  "tukuai.command.replay.missing": "There is no replay called %s.",
+  "modmenu.descriptionTranslation.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money.",
+  "fml.menu.mods.info.description.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money."
 }

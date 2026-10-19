@@ -73,5 +73,7 @@
   "tukuai.command.replays.none": "还没有保存过对局。",
   "tukuai.command.replays.header": "共 %s 局，最新的在前（点一下就能看）：",
   "tukuai.command.replays.hover": "点击观看",
-  "tukuai.command.replay.missing": "找不到叫 %s 的回放。"
+  "tukuai.command.replay.missing": "找不到叫 %s 的回放。",
+  "modmenu.descriptionTranslation.tukuai": "土块棋牌室：在 Minecraft 里摆一张牌桌，和朋友或电脑一起打斗地主等棋牌游戏。只用游戏内积分，不涉及真实金钱。",
+  "fml.menu.mods.info.description.tukuai": "土块棋牌室：在 Minecraft 里摆一张牌桌，和朋友或电脑一起打斗地主等棋牌游戏。只用游戏内积分，不涉及真实金钱。"
 }
