@@ -66,8 +66,12 @@ jobs:
 
   client:
     # Starts a real Fabric client under a virtual display, plays a round at a card table
-    # and prints the screenshots into the log as base64 so they can be read back.
+    # and prints the screenshots into the log as base64 so they can be read back. On pull
+    # requests it also force-pushes them to the ci-screenshots branch, which is easier to
+    # fetch than the log.
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -99,6 +103,23 @@ jobs:
             echo
             echo "END_SCREENSHOT"
           done
+
+      - name: Publish screenshots
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          shots="${RUNNER_TEMP}/screenshots"
+          mkdir -p "${shots}"
+          find fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${shots}/" \;
+          [ -n "$(ls -A "${shots}")" ] || exit 0
+          cd "${shots}"
+          git init -q -b ci-screenshots
+          git add .
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Screenshots of ${HEAD_SHA}"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/ci-screenshots
 
       - name: Upload diagnostics
         if: failure()

@@ -1,8 +1,82 @@
 {
-  "variants": {
-    "facing=north": { "model": "tukuai:block/card_table" },
-    "facing=east": { "model": "tukuai:block/card_table" },
-    "facing=south": { "model": "tukuai:block/card_table" },
-    "facing=west": { "model": "tukuai:block/card_table" }
-  }
+  "multipart": [
+    {
+      "when": {
+        "part": "0"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner"
+      }
+    },
+    {
+      "when": {
+        "part": "1"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge"
+      }
+    },
+    {
+      "when": {
+        "part": "2"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center"
+      }
+    },
+    {
+      "when": {
+        "part": "5"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner",
+        "y": 180
+      }
+    }
+  ]
 }

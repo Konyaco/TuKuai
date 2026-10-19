@@ -22,6 +22,15 @@ import net.minecraft.core.Direction
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.context.UseOnContext
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.phys.AABB
+import net.minecraft.world.phys.BlockHitResult
+import net.minecraft.world.phys.Vec3
 
 /**
  * Plays one round at a card table in a real client: sits down, fills the table with
@@ -29,6 +38,12 @@ import net.minecraft.server.MinecraftServer
  * CI prints the screenshots so they can be looked at without downloading anything.
  */
 class TuKuaiClientGameTest : FabricClientGameTest {
+    private companion object {
+        /** Where the two old one-block tables go, as (x, z) from the player. */
+        val OLD_ROOMY = 0 to 3
+        val OLD_CRAMPED = 3 to 0
+    }
+
     override fun runTest(context: ClientGameTestContext) {
         context.worldBuilder().create().use { world ->
             world.clientLevel.waitForChunksRender()
@@ -39,6 +54,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             }) { "The card table recipe did not load" }
             context.waitTicks(40)
             world.clientLevel.waitForChunksRender()
+            server.runOnServer<RuntimeException> { s -> checkOldTables(s) }
 
             act(server, table, TableOp.SIT, 0)
             check(server.computeOnServer<Boolean, RuntimeException> { s -> s.playerList.players.first().vehicle is SeatEntity }) {
@@ -132,21 +148,78 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         }
     }
 
-    /** Clears a flat floor around the player, puts a table north of them and seats them facing it. */
+    /**
+     * Clears a flat floor around the player and puts a 3x3 table north of them. Also checks
+     * that placing a table from the item builds all nine parts and breaking one part takes
+     * the whole table down with a single drop, and leaves two one-block tables as older
+     * versions saved them for [checkOldTables].
+     */
     private fun buildScene(server: MinecraftServer): BlockPos {
         val player = server.playerList.players.first()
         val level = server.overworld()
         val base = player.blockPosition()
-        for (x in -4..4) for (z in -4..4) {
-            for (y in 0..4) level.setBlockAndUpdate(base.offset(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState())
-            level.setBlockAndUpdate(base.offset(x, -1, z), net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState())
+        for (x in -5..5) for (z in -5..5) {
+            for (y in 0..4) level.setBlockAndUpdate(base.offset(x, y, z), Blocks.AIR.defaultBlockState())
+            level.setBlockAndUpdate(base.offset(x, -1, z), Blocks.OAK_PLANKS.defaultBlockState())
         }
-        val table = base.relative(Direction.NORTH, 2)
-        level.setBlockAndUpdate(table, TuKuaiContent.CARD_TABLE.defaultBlockState().setValue(CardTableBlock.FACING, Direction.SOUTH))
         player.teleportTo(base.x + 0.5, base.y.toDouble(), base.z + 0.5)
+
+        // Placed by a player looking west: the table reaches west from the clicked block and seat 0 faces them.
+        player.setYRot(90f)
+        val clicked = base.west(2)
+        val stack = ItemStack(TuKuaiContent.CARD_TABLE_ITEM)
+        player.setItemInHand(InteractionHand.MAIN_HAND, stack)
+        val hit = BlockHitResult(Vec3.atCenterOf(clicked.below()).add(0.0, 0.5, 0.0), Direction.UP, clicked.below(), false)
+        stack.useOn(UseOnContext(player, InteractionHand.MAIN_HAND, hit))
+        val placed = clicked.west()
+        for (part in 0 until CardTableBlock.PARTS) {
+            val state = level.getBlockState(CardTableBlock.posOf(placed, part))
+            check(state.block is CardTableBlock && state.getValue(CardTableBlock.PART) == part && state.getValue(CardTableBlock.FACING) == Direction.EAST) {
+                "Placing a table left part $part as $state"
+            }
+        }
+        check(level.getBlockEntity(placed) is CardTableBlockEntity) { "The placed table has no block entity in the middle" }
+        level.destroyBlock(CardTableBlock.posOf(placed, CardTableBlock.partAt(-1, 0)), true)
+        for (part in 0 until CardTableBlock.PARTS) {
+            check(level.getBlockState(CardTableBlock.posOf(placed, part)).isAir) { "Breaking one part left part $part behind" }
+        }
+        val drops = tableItems(level, placed)
+        check(drops == 1) { "Breaking a table dropped $drops tables" }
+
+        val table = base.relative(Direction.NORTH, 3)
+        for (part in 0 until CardTableBlock.PARTS) {
+            level.setBlockAndUpdate(
+                CardTableBlock.posOf(table, part),
+                TuKuaiContent.CARD_TABLE.defaultBlockState().setValue(CardTableBlock.FACING, Direction.SOUTH).setValue(CardTableBlock.PART, part),
+            )
+        }
+        // A lone middle block is how a table from before 3x3 tables loads. One has room to grow, one does not.
+        level.setBlockAndUpdate(OLD_ROOMY.offsetFrom(base), TuKuaiContent.CARD_TABLE.defaultBlockState())
+        level.setBlockAndUpdate(OLD_CRAMPED.offsetFrom(base), TuKuaiContent.CARD_TABLE.defaultBlockState())
+        level.setBlockAndUpdate(OLD_CRAMPED.offsetFrom(base).east(), Blocks.STONE.defaultBlockState())
+        oldBase = base
         TuKuai.LOGGER.info("Test table placed at {}", table)
         return table
     }
+
+    private var oldBase: BlockPos = BlockPos.ZERO
+
+    /** The roomy old table grew into a 3x3 one; the cramped one dropped as an item. */
+    private fun checkOldTables(server: MinecraftServer) {
+        val level = server.overworld()
+        val roomy = OLD_ROOMY.offsetFrom(oldBase)
+        for (part in 0 until CardTableBlock.PARTS) {
+            val state = level.getBlockState(CardTableBlock.posOf(roomy, part))
+            check(state.block is CardTableBlock && state.getValue(CardTableBlock.PART) == part) { "The old table did not grow part $part: $state" }
+        }
+        val cramped = OLD_CRAMPED.offsetFrom(oldBase)
+        check(level.getBlockState(cramped).isAir) { "The old table with no room is still there" }
+        check(tableItems(level, cramped) == 1) { "The old table with no room did not drop as an item" }
+    }
+
+    private fun tableItems(level: ServerLevel, around: BlockPos): Int =
+        level.getEntitiesOfClass(ItemEntity::class.java, AABB(around).inflate(2.5)) { it.item.`is`(TuKuaiContent.CARD_TABLE_ITEM) }
+            .sumOf { it.item.count }
 
     private fun act(server: TestServerContext, pos: BlockPos, op: TableOp, a: Int = 0, b: Int = 0) {
         server.runOnServer<RuntimeException> { s ->
@@ -158,6 +231,8 @@ class TuKuaiClientGameTest : FabricClientGameTest {
 
     private fun status(server: TestServerContext, pos: BlockPos): TableStatus =
         server.computeOnServer<TableStatus, RuntimeException> { s -> (s.overworld().getBlockEntity(pos) as CardTableBlockEntity).status }
+
+    private fun Pair<Int, Int>.offsetFrom(base: BlockPos): BlockPos = base.offset(first, 0, second)
 
     private fun shot(context: ClientGameTestContext, name: String) {
         val path = context.takeScreenshot("tukuai-$name")

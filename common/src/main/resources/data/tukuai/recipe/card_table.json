@@ -2,14 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "C": "#minecraft:wool_carpets",
+    "W": "#minecraft:wool",
     "P": "#minecraft:planks",
-    "S": "minecraft:stick"
+    "L": "#minecraft:logs"
   },
   "pattern": [
-    "CCC",
+    "WWW",
     "PPP",
-    "S S"
+    "L L"
   ],
   "result": {
     "count": 1,

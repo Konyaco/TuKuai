@@ -7,6 +7,11 @@
         { "type": "minecraft:item", "name": "tukuai:card_table" }
       ],
       "conditions": [
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "tukuai:card_table",
+          "properties": { "part": "4" }
+        },
         { "condition": "minecraft:survives_explosion" }
       ]
     }

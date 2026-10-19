@@ -2,7 +2,6 @@ package io.github.konyaco.tukuai.neoforge
 
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.TuKuaiClient
-import io.github.konyaco.tukuai.client.render.CardTableRenderer
 import io.github.konyaco.tukuai.client.render.SeatRenderer
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.platform.ClientPlatform
@@ -24,7 +23,7 @@ class TuKuaiNeoForgeClient(bus: IEventBus) {
             }
         })
         bus.addListener(EntityRenderersEvent.RegisterRenderers::class.java) { event ->
-            event.registerBlockEntityRenderer(TuKuaiContent.CARD_TABLE_ENTITY, ::CardTableRenderer)
+            event.registerBlockEntityRenderer(TuKuaiContent.CARD_TABLE_ENTITY, ::NeoForgeCardTableRenderer)
             event.registerEntityRenderer(TuKuaiContent.SEAT, ::SeatRenderer)
         }
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post::class.java) { TuKuaiClient.tick() }
