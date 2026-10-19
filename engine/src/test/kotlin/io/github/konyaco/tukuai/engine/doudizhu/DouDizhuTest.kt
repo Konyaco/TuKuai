@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.engine.doudizhu
 
 import io.github.konyaco.tukuai.engine.card.Decks
 import io.github.konyaco.tukuai.engine.core.IllegalActionException
+import io.github.konyaco.tukuai.engine.core.presetIdOf
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -162,5 +163,21 @@ class DouDizhuTest {
         assertEquals(state.hands[0], view.hand)
         assertTrue(view.revealedHands.isEmpty())
         assertTrue(view.kitty.isEmpty())
+    }
+
+    @Test
+    fun `open views show every hand for replays`() {
+        val state = DouDizhu.start(DdzRules.CLASSIC, 12)
+        val view = DouDizhu.openView(state, 1)
+        assertEquals(state.hands[1], view.hand)
+        assertEquals(state.hands, view.revealedHands)
+        assertEquals(state.kitty, view.kitty)
+    }
+
+    @Test
+    fun `presets are found from their encoded rules`() {
+        for (preset in DouDizhu.presets) {
+            assertEquals(preset.id, DouDizhu.presetIdOf(DdzRules.CODEC.encode(preset.rules)))
+        }
     }
 }

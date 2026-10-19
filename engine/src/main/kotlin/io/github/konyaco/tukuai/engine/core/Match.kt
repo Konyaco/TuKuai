@@ -21,6 +21,9 @@ interface MatchHandle {
 
     fun encodedView(seat: Seat?): ByteArray
 
+    /** Like [encodedView] but with every hidden card shown, for replays. */
+    fun encodedOpenView(seat: Seat?): ByteArray
+
     fun replay(players: List<String>): Replay
 }
 
@@ -77,6 +80,8 @@ class Match<R : Any, S : Any, A : Any, V : Any>(
     fun view(seat: Seat?): V = game.view(state, seat)
 
     override fun encodedView(seat: Seat?): ByteArray = game.viewCodec.encode(view(seat))
+
+    override fun encodedOpenView(seat: Seat?): ByteArray = game.viewCodec.encode(game.openView(state, seat))
 
     override fun replay(players: List<String>): Replay =
         Replay(

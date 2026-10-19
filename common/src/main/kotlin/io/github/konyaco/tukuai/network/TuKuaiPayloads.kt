@@ -25,6 +25,22 @@ class TableSyncPayload(val pos: BlockPos, val data: ByteArray) : CustomPacketPay
     }
 }
 
+/** Server to client: a saved game to watch, its file [name] and the encoded replay. */
+class ReplayPayload(val name: String, val data: ByteArray) : CustomPacketPayload {
+    override fun type(): CustomPacketPayload.Type<ReplayPayload> = TYPE
+
+    companion object {
+        val TYPE = CustomPacketPayload.Type<ReplayPayload>(TuKuai.id("replay"))
+        val CODEC: StreamCodec<FriendlyByteBuf, ReplayPayload> = CustomPacketPayload.codec(
+            StreamMemberEncoder { p, buf ->
+                buf.writeUtf(p.name, 64)
+                buf.writeByteArray(p.data)
+            },
+            StreamDecoder { buf -> ReplayPayload(buf.readUtf(64), buf.readByteArray()) },
+        )
+    }
+}
+
 /** Client to server: one request to the table at [pos]; see [TableOp] for what the fields mean. */
 class TableActionPayload(
     val pos: BlockPos,

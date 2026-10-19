@@ -23,7 +23,7 @@ import org.lwjgl.glfw.GLFW
  *
  * In immersive mode nothing covers the world, so the table and the cards on it stay in view.
  */
-class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.table.title")) {
+class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.table.title")), PanelHost {
     private var table: ClientTable? = ClientTables[pos]
     private var panel: GamePanel? = null
     private var panelGame: String? = null
@@ -31,7 +31,11 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     /** After a game ends, players may look at the lobby instead of the result. */
     private var showLobby = false
 
-    fun send(op: TableOp, a: Int = 0, b: Int = 0, text: String = "", data: ByteArray = ByteArray(0)) {
+    override val panelWidth: Int get() = width
+    override val panelHeight: Int get() = height
+    override val interactive: Boolean get() = true
+
+    override fun send(op: TableOp, a: Int, b: Int, text: String, data: ByteArray) {
         Services.client.sendToServer(TableActionPayload(pos, op, a, b, text, data))
     }
 
@@ -42,11 +46,9 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         rebuildWidgets()
     }
 
-    /** Lays the buttons out again, for example after the selection changed. */
-    fun refresh() = rebuildWidgets()
+    override fun refresh() = rebuildWidgets()
 
-    /** Adds a button for this frame's layout; panels call it from [GamePanel.rebuild]. */
-    fun button(text: Component, x: Int, y: Int, w: Int, active: Boolean = true, h: Int = 20, onPress: () -> Unit): Button {
+    override fun button(text: Component, x: Int, y: Int, w: Int, active: Boolean, h: Int, onPress: () -> Unit): Button {
         val b = Button.builder(text) { onPress() }.bounds(x, y, w, h).build()
         b.active = active
         return addRenderableWidget(b)
@@ -82,6 +84,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
                     showLobby = true
                     rebuildWidgets()
                 }
+                button(Component.translatable("tukuai.table.replay"), width - 74, 70, 70) { send(TableOp.REPLAY) }
             }
         }
     }
@@ -253,7 +256,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             if (seconds == 0) Component.translatable("tukuai.table.timer.off") else Component.translatable("tukuai.table.timer", seconds)
 
         /** A dark version of a dye colour for the screen background, so white text stays readable. */
-        private fun darken(rgb: Int): Int {
+        fun darken(rgb: Int): Int {
             val r = (rgb shr 16 and 0xFF) * 35 / 100
             val gr = (rgb shr 8 and 0xFF) * 35 / 100
             val b = (rgb and 0xFF) * 35 / 100

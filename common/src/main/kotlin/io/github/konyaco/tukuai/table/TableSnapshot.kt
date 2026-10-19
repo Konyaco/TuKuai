@@ -145,4 +145,7 @@ enum class TableOp {
 
     /** `a` = 1 lets the computer play for you, 0 takes back control. */
     AUTO,
+
+    /** Send me the replay of the game that just ended. */
+    REPLAY,
 }

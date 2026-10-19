@@ -55,5 +55,21 @@
   "tukuai.ddz.farmers_won": "农民赢了",
   "tukuai.ddz.result_detail": "叫分 ×%s，炸弹 %s 个，总倍数 ×%s",
   "tukuai.ddz.result_spring": "春天！叫分 ×%s，炸弹 %s 个，总倍数 ×%s",
-  "tukuai.table.played": "已打 %s 局"
+  "tukuai.table.played": "已打 %s 局",
+  "tukuai.table.replay": "看回放",
+  "tukuai.replay.title": "回放",
+  "tukuai.replay.named": "回放 %s",
+  "tukuai.replay.seat": "视角：%s",
+  "tukuai.replay.step": "%s / %s",
+  "tukuai.replay.first": "|<",
+  "tukuai.replay.back": "<",
+  "tukuai.replay.play": "播放",
+  "tukuai.replay.pause": "暂停",
+  "tukuai.replay.forward": ">",
+  "tukuai.replay.last": ">|",
+  "tukuai.replay.broken": "这份回放读不出来。",
+  "tukuai.command.replays.none": "还没有保存过对局。",
+  "tukuai.command.replays.header": "共 %s 局，最新的在前（点一下就能看）：",
+  "tukuai.command.replays.hover": "点击观看",
+  "tukuai.command.replay.missing": "找不到叫 %s 的回放。"
 }

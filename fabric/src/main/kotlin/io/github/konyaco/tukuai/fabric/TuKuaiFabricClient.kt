@@ -4,6 +4,7 @@ import io.github.konyaco.tukuai.client.TuKuaiClient
 import io.github.konyaco.tukuai.client.render.CardTableRenderer
 import io.github.konyaco.tukuai.client.render.SeatRenderer
 import io.github.konyaco.tukuai.content.TuKuaiContent
+import io.github.konyaco.tukuai.network.ReplayPayload
 import io.github.konyaco.tukuai.network.TableSyncPayload
 import io.github.konyaco.tukuai.platform.ClientPlatform
 import io.github.konyaco.tukuai.platform.Services
@@ -23,6 +24,9 @@ class TuKuaiFabricClient : ClientModInitializer {
         })
         ClientPlayNetworking.registerGlobalReceiver(TableSyncPayload.TYPE) { payload, _ ->
             Services.receiveTable(payload.pos, payload.data)
+        }
+        ClientPlayNetworking.registerGlobalReceiver(ReplayPayload.TYPE) { payload, _ ->
+            Services.openReplay(payload.name, payload.data)
         }
         BlockEntityRendererRegistry.register(TuKuaiContent.CARD_TABLE_ENTITY, ::CardTableRenderer)
         EntityRendererRegistry.register(TuKuaiContent.SEAT, ::SeatRenderer)

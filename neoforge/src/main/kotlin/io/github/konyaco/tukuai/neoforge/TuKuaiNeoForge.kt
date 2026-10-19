@@ -1,7 +1,9 @@
 package io.github.konyaco.tukuai.neoforge
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.command.TuKuaiCommands
 import io.github.konyaco.tukuai.content.TuKuaiContent
+import io.github.konyaco.tukuai.network.ReplayPayload
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.network.TableNetwork
 import io.github.konyaco.tukuai.network.TableSyncPayload
@@ -19,7 +21,9 @@ import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockState
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.fml.common.Mod
+import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent
+import net.neoforged.neoforge.event.RegisterCommandsEvent
 import net.neoforged.neoforge.network.PacketDistributor
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
 import net.neoforged.neoforge.network.handling.IPayloadHandler
@@ -52,6 +56,7 @@ class TuKuaiNeoForge(bus: IEventBus) {
             if (event.tabKey == CreativeModeTabs.FUNCTIONAL_BLOCKS) event.accept(TuKuaiContent.CARD_TABLE_ITEM)
         }
         bus.addListener(RegisterPayloadHandlersEvent::class.java, ::registerPayloads)
+        NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent::class.java) { event -> TuKuaiCommands.register(event.dispatcher) }
         TuKuai.LOGGER.info("TuKuai loaded on NeoForge")
     }
 
@@ -59,6 +64,9 @@ class TuKuaiNeoForge(bus: IEventBus) {
         event.registrar("1")
             .playToClient(TableSyncPayload.TYPE, TableSyncPayload.CODEC, IPayloadHandler { payload, _ ->
                 Services.receiveTable(payload.pos, payload.data)
+            })
+            .playToClient(ReplayPayload.TYPE, ReplayPayload.CODEC, IPayloadHandler { payload, _ ->
+                Services.openReplay(payload.name, payload.data)
             })
             .playToServer(TableActionPayload.TYPE, TableActionPayload.CODEC, IPayloadHandler { payload, context ->
                 (context.player() as? ServerPlayer)?.let { TableNetwork.onAction(it, payload) }
