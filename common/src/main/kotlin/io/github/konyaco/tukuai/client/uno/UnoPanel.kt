@@ -207,8 +207,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
             renderOpponent(g, table, view, seat, recent[seat], placeOf(view, me, seat))
         }
         if (!view.finished) renderPiles(g, view)
-        recent[me]?.let { if (!view.finished) renderEvent(g, view, it, width / 2, buttonY() - 40, Align.CENTER) }
-        renderSelf(g, table, view, me)
+        renderSelf(g, table, view, me, recent[me])
         renderHand(g, view, mouseX, mouseY)
         if (view.finished) renderResult(g, table, view)
     }
@@ -310,13 +309,17 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         g.text(font, UnoUi.stateLine(view), discardX - 3, cy + h + 5, TableScreen.WHITE, true)
     }
 
-    private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: UnoView, me: Seat) {
+    private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: UnoView, me: Seat, recent: UnoEvent?) {
         val y = buttonY() + 4
         val x = 8
         val label = if (table.snapshot.you == null) Component.translatable("tukuai.table.watching") else seatLabel(table, me)
         g.text(font, label, x, y, TableScreen.WHITE, true)
         if (me in view.unoCalled && table.snapshot.you != null) {
             g.text(font, Component.translatable("tukuai.uno.call"), x + font.width(label) + 6, y, TableScreen.RED, true)
+        }
+        // On the far side of the buttons, clear of the piles. Your own plays already show on the discard pile.
+        if (recent != null && recent.kind != UnoEventKind.PLAY && !view.finished) {
+            renderEvent(g, view, recent, width - 8, y, Align.RIGHT)
         }
         if (view.turn == me && table.snapshot.status == TableStatus.PLAYING && table.snapshot.you != null) {
             renderTimer(g, table, x, y + 12, alignRight = false)

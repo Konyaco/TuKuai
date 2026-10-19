@@ -100,7 +100,7 @@
   "tukuai.uno.skipped": "Skipped",
   "tukuai.uno.penalty": "Forgot UNO, drew %s",
   "tukuai.uno.won": "%s wins",
-  "tukuai.uno.result_detail": "Everyone else pays what their cards are worth",
+  "tukuai.uno.result_detail": "Others pay what their cards are worth",
   "tukuai.uno.cards_left": "%s left, %s pts",
   "tukuai.uno.ccw": "counterclockwise",
   "tukuai.uno.cw": "clockwise",
