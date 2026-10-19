@@ -268,5 +268,9 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
 
     override fun view(state: DdzState, seat: Seat?): DdzView = DdzView.of(state, seat)
 
+    /** Every hand is shown, and the landlord's three cards before anyone takes them. */
+    override fun openView(state: DdzState, seat: Seat?): DdzView =
+        DdzView.of(state, seat).copy(revealedHands = state.hands, kitty = state.kitty)
+
     override fun createBot(level: BotLevel, seed: Long): Bot<DdzView, DdzAction> = DdzBot(level, seed)
 }

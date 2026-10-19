@@ -40,6 +40,12 @@ interface GameDefinition<R : Any, S : Any, A : Any, V : Any> {
     /** What [seat] can see; a null seat is a spectator, who sees no hidden cards. */
     fun view(state: S, seat: Seat?): V
 
+    /**
+     * What [seat] sees with nothing hidden, used when watching a replay. Games that hide
+     * cards should show them here; by default it is the same as [view].
+     */
+    fun openView(state: S, seat: Seat?): V = view(state, seat)
+
     fun result(state: S): GameResult?
 
     fun createBot(level: BotLevel, seed: Long): Bot<V, A>
@@ -92,4 +98,11 @@ fun Replay.rebuildAny(stepCount: Int = steps.size): MatchHandle {
 fun GameDefinition<*, *, *, *>.seatCount(presetId: String): Int {
     val game = this as GameDefinition<Any, Any, Any, Any>
     return game.seatCount((game.presets.firstOrNull { it.id == presetId } ?: game.presets.first()).rules)
+}
+
+/** The id of the preset whose rules encode to [rules], or null if the rules were customised. */
+@Suppress("UNCHECKED_CAST")
+fun GameDefinition<*, *, *, *>.presetIdOf(rules: ByteArray): String? {
+    val game = this as GameDefinition<Any, Any, Any, Any>
+    return game.presets.firstOrNull { game.rulesCodec.encode(it.rules).contentEquals(rules) }?.id
 }

@@ -10,6 +10,7 @@ object TuKuaiClient {
         Services.client = platform
         Services.openTable = TableScreen::open
         Services.receiveTable = ClientTables::receive
+        Services.openReplay = ReplayScreen::open
         GameUis.register(DdzUi)
     }
 

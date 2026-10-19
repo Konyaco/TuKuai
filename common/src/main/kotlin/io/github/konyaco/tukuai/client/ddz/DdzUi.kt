@@ -5,7 +5,7 @@ import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
 import io.github.konyaco.tukuai.client.TableCard
-import io.github.konyaco.tukuai.client.TableScreen
+import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.doudizhu.DDZ_ORDER
 import io.github.konyaco.tukuai.engine.doudizhu.DdzCodecs
@@ -21,7 +21,7 @@ object DdzUi : GameUi {
 
     override fun decodeView(data: ByteArray): Any = DdzCodecs.VIEW.decode(data)
 
-    override fun createPanel(screen: TableScreen): GamePanel = DdzPanel(screen)
+    override fun createPanel(host: PanelHost): GamePanel = DdzPanel(host)
 
     /**
      * Each seat's hand lies along its edge of the table (face down, except your own and

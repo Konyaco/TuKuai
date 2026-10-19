@@ -55,5 +55,21 @@
   "tukuai.ddz.farmers_won": "The farmers win",
   "tukuai.ddz.result_detail": "Bid x%s, %s bombs, total x%s",
   "tukuai.ddz.result_spring": "Spring! Bid x%s, %s bombs, total x%s",
-  "tukuai.table.played": "Rounds played: %s"
+  "tukuai.table.played": "Rounds played: %s",
+  "tukuai.table.replay": "Replay",
+  "tukuai.replay.title": "Replay",
+  "tukuai.replay.named": "Replay %s",
+  "tukuai.replay.seat": "Seat: %s",
+  "tukuai.replay.step": "%s / %s",
+  "tukuai.replay.first": "|<",
+  "tukuai.replay.back": "<",
+  "tukuai.replay.play": "Play",
+  "tukuai.replay.pause": "Pause",
+  "tukuai.replay.forward": ">",
+  "tukuai.replay.last": ">|",
+  "tukuai.replay.broken": "This replay could not be read.",
+  "tukuai.command.replays.none": "No games have been saved yet.",
+  "tukuai.command.replays.header": "%s saved games, newest first (click one to watch):",
+  "tukuai.command.replays.hover": "Click to watch",
+  "tukuai.command.replay.missing": "There is no replay called %s."
 }

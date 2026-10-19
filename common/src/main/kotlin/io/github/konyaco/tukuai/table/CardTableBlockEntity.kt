@@ -14,6 +14,7 @@ import io.github.konyaco.tukuai.engine.core.newMatch
 import io.github.konyaco.tukuai.engine.core.rebuildAny
 import io.github.konyaco.tukuai.engine.core.seatCount
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
+import io.github.konyaco.tukuai.network.ReplayPayload
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.network.TableSyncPayload
 import io.github.konyaco.tukuai.platform.Services
@@ -66,6 +67,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private var ticks = 0L
     private var lastStep = -1
+
+    /** File name of the last finished game's replay, if it was saved since the world loaded. */
+    private var lastReplay: String? = null
     private var turnTicks = 0
     private var actDelay = 0
 
@@ -244,6 +248,10 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 timeouts[mine] = 0
                 changed()
             }
+            TableOp.REPLAY -> {
+                val m = match?.takeIf { it.result != null } ?: return
+                Services.platform.sendToPlayer(player, ReplayPayload(lastReplay ?: "", m.replay(playerNames()).encode()))
+            }
         }
     }
 
@@ -343,7 +351,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         result.scores.forEachIndexed { seat, points -> if (seat < tally.size) tally[seat] += points }
         rounds++
         level.playSound(null, worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7f, 1f)
-        ReplayStore.save(level.server, m.replay(playerNames()))
+        lastReplay = ReplayStore.save(level.server, m.replay(playerNames()))
     }
 
     private fun playerNames(): List<String> = seats.map {

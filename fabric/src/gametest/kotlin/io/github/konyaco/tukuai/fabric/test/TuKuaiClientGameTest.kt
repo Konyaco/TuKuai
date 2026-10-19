@@ -3,6 +3,7 @@ package io.github.konyaco.tukuai.fabric.test
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
+import io.github.konyaco.tukuai.client.ReplayScreen
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
@@ -10,6 +11,7 @@ import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
+import io.github.konyaco.tukuai.table.ReplayStore
 import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableStatus
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
@@ -84,6 +86,44 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             context.setScreen { null }
             context.waitTicks(5)
             shot(context, "8-world-result")
+
+            // The finished game, watched again from the table.
+            act(server, table, TableOp.REPLAY)
+            context.waitFor({ it.screen is ReplayScreen }, 100)
+            context.runOnClient<RuntimeException> {
+                val replay = it.screen as ReplayScreen
+                replay.pause()
+                replay.seek(replay.total / 2)
+            }
+            context.waitTicks(5)
+            shot(context, "9-replay-middle")
+            context.runOnClient<RuntimeException> {
+                val replay = it.screen as ReplayScreen
+                replay.setSeat(replay.seat + 1)
+            }
+            context.waitTicks(5)
+            shot(context, "10-replay-other-seat")
+
+            // The same game, found through the commands.
+            context.setScreen { null }
+            context.waitTicks(5)
+            val name = server.computeOnServer<String, RuntimeException> { s ->
+                val names = ReplayStore.list(s)
+                check(names.isNotEmpty()) { "The finished game was not saved" }
+                val player = s.playerList.players.first()
+                s.commands.performPrefixedCommand(player.createCommandSourceStack(), "tukuai replays")
+                s.commands.performPrefixedCommand(player.createCommandSourceStack(), "tukuai replay ${names.first()}")
+                names.first()
+            }
+            TuKuai.LOGGER.info("Opened replay {}", name)
+            context.waitFor({ it.screen is ReplayScreen }, 100)
+            context.runOnClient<RuntimeException> {
+                val replay = it.screen as ReplayScreen
+                replay.pause()
+                replay.seek(replay.total)
+            }
+            context.waitTicks(5)
+            shot(context, "11-replay-end")
         }
     }
 

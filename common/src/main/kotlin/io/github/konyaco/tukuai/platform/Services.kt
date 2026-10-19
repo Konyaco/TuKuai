@@ -32,4 +32,7 @@ object Services {
 
     /** Hands a table update from the server to the client side. */
     var receiveTable: (BlockPos, ByteArray) -> Unit = { _, _ -> }
+
+    /** Opens a replay (its name and encoded bytes) the server sent. */
+    var openReplay: (String, ByteArray) -> Unit = { _, _ -> }
 }
