@@ -84,7 +84,6 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
                     showLobby = true
                     rebuildWidgets()
                 }
-                button(Component.translatable("tukuai.table.replay"), width - 74, 70, 70) { send(TableOp.REPLAY) }
             }
         }
     }

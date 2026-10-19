@@ -88,8 +88,11 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         }
         if (s.status == TableStatus.FINISHED) {
             val ready = me != null && s.seats.all { it.occupant != null }
-            screen.button(Component.translatable("tukuai.table.again"), width / 2 - 50, RESULT_TOP + 74, 100, ready) {
+            screen.button(Component.translatable("tukuai.table.again"), width / 2 - 100, RESULT_TOP + 74, 98, ready) {
                 screen.send(TableOp.START)
+            }
+            screen.button(Component.translatable("tukuai.table.replay"), width / 2 + 2, RESULT_TOP + 74, 98) {
+                screen.send(TableOp.REPLAY)
             }
         }
         if (myTurn) addTurnButtons(view)
