@@ -147,7 +147,7 @@ class ReplayScreen(private val name: String, private val replay: Replay, startSe
         val p = panel ?: return
         p.rebuild(t)
 
-        button(Component.translatable("tukuai.replay.seat", TableScreen.seatName(occupantOf(replay.players[seat]))), width - 104, 4, 100) {
+        button(Component.translatable("tukuai.replay.seat", TableScreen.seatName(occupantOf(replay.players[seat]))), width - 134, 4, 130) {
             setSeat(seat + 1)
         }
 
@@ -196,7 +196,8 @@ class ReplayScreen(private val name: String, private val replay: Replay, startSe
             g.centeredText(font, Component.translatable(key), width / 2, height / 2, TableScreen.WHITE)
         } else {
             panel?.render(g, t, mouseX, mouseY)
-            val label = if (name.isEmpty()) Component.translatable("tukuai.replay.title") else Component.translatable("tukuai.replay.named", name)
+            val time = SAVED_AT.find(name)?.destructured?.let { (_, mo, d, h, mi) -> "$mo-$d $h:$mi" }
+            val label = if (time == null) Component.translatable("tukuai.replay.title") else Component.translatable("tukuai.replay.named", time)
             g.text(font, label, 6, 17, TableScreen.YELLOW, true)
             g.text(font, Component.translatable("tukuai.replay.step", step, total), stepTextX, stepTextY, TableScreen.WHITE, true)
         }
@@ -219,6 +220,9 @@ class ReplayScreen(private val name: String, private val replay: Replay, startSe
     override fun isPauseScreen(): Boolean = false
 
     companion object {
+        /** Replay files are named after when the game ended, `yyyyMMdd-HHmmss-<game>`. */
+        private val SAVED_AT = Regex("^(\\d{4})(\\d{2})(\\d{2})-(\\d{2})(\\d{2})")
+
         /** One move a second while playing. */
         private const val STEP_TICKS = 20
 
