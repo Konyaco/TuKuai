@@ -63,3 +63,46 @@ jobs:
             **/build/reports/tests/**
             */runs/server/logs/**
           if-no-files-found: ignore
+
+  client:
+    # Starts a real Fabric client under a virtual display, plays a round at a card table
+    # and prints the screenshots into the log as base64 so they can be read back.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Install a virtual display
+        run: sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri mesa-utils
+
+      - name: Run client game tests
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric:runClientGameTest --no-daemon --stacktrace
+
+      - name: Print screenshots
+        if: always()
+        run: |
+          find fabric -path '*screenshots*' -name 'tukuai-*.png' | sort | while read -r f; do
+            echo "BEGIN_SCREENSHOT $(basename "$f")"
+            base64 -w 0 "$f"
+            echo
+            echo "END_SCREENSHOT"
+          done
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-diagnostics
+          path: |
+            fabric/build/run/**/logs/**
+            fabric/run/**/logs/**
+          if-no-files-found: ignore

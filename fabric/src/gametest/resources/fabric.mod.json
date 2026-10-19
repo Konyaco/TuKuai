@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "tukuai-test",
+  "version": "1.0.0",
+  "name": "TuKuai client tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["io.github.konyaco.tukuai.fabric.test.TuKuaiClientGameTest"]
+  },
+  "depends": {
+    "tukuai": "*"
+  }
+}
