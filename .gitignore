@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.vscode/
+bin/
+
+# Game runs
+runs/
+run/
