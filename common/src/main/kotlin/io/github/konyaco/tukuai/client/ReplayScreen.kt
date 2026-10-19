@@ -229,7 +229,6 @@ class ReplayScreen(private val name: String, private val replay: Replay, startSe
                 Replay.decode(data)
             } catch (e: Exception) {
                 TuKuai.LOGGER.warn("Could not read the replay {}", name, e)
-                mc.player?.displayClientMessage(Component.translatable("tukuai.replay.broken"), false)
                 return
             }
             val own = mc.player?.let { replay.players.indexOf(it.name.string) } ?: -1
