@@ -30,6 +30,7 @@
   "tukuai.table.rounds": "Round %s",
   "tukuai.table.turn": "%s to play",
   "tukuai.table.away": "(away)",
+  "tukuai.table.record": "%s games, %s won",
   "tukuai.table.name_away": "%s (away)",
   "tukuai.table.name_auto": "%s (auto)",
   "tukuai.table.auto.on": "Auto play",

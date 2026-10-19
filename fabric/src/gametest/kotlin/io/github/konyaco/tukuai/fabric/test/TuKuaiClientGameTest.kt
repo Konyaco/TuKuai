@@ -125,6 +125,11 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             context.setScreen { TableScreen(table) }
             context.waitTicks(10)
             shot(context, "7-screen-result")
+            // Back in the lobby, the player's seat shows the game just played.
+            context.waitFor({ ClientTables[table]?.snapshot?.seats?.firstOrNull()?.games == 1 }, 100)
+            context.runOnClient<RuntimeException> { (it.screen as TableScreen).openLobby() }
+            context.waitTicks(5)
+            shot(context, "7-screen-lobby-record")
             context.setScreen { null }
             context.waitTicks(5)
             shot(context, "8-world-result")

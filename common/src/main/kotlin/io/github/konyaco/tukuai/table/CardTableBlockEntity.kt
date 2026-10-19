@@ -501,11 +501,11 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 }
                 spectatorView
             }
-            Services.platform.sendToPlayer(player, TableSyncPayload(worldPosition, snapshot(seat, view).encode()))
+            Services.platform.sendToPlayer(player, TableSyncPayload(worldPosition, snapshot(level, seat, view).encode()))
         }
     }
 
-    private fun snapshot(you: Seat?, view: ByteArray?): TableSnapshot {
+    private fun snapshot(level: ServerLevel, you: Seat?, view: ByteArray?): TableSnapshot {
         val m = match
         val actor = m?.toAct
         val timed = actor != null && m.result == null && seats.getOrNull(actor) is Occupant.Human &&
@@ -515,7 +515,11 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             presetId = presetId,
             felt = felt.id,
             turnSeconds = turnSeconds,
-            seats = seats.indices.map { SeatInfo(seats[it], present[it], auto[it]) },
+            seats = seats.indices.map { seat ->
+                val occupant = seats[seat]
+                val record = (occupant as? Occupant.Human)?.let { StatsStore.of(level.server, it.uuid)?.games?.get(gameId) }
+                SeatInfo(occupant, present[seat], auto[seat], record?.games ?: 0, record?.wins ?: 0)
+            },
             you = you,
             tally = tally.toList(),
             rounds = rounds,

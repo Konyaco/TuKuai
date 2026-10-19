@@ -45,6 +45,9 @@ data class SeatInfo(
     val present: Boolean,
     /** For a human: the computer is playing for them. */
     val auto: Boolean,
+    /** For a human: how many games of this table's game they have played and won, anywhere in this world. */
+    val games: Int = 0,
+    val wins: Int = 0,
 )
 
 /**
@@ -73,7 +76,7 @@ data class TableSnapshot(
     override fun hashCode(): Int = encode().contentHashCode()
 
     companion object {
-        private const val VERSION = 1
+        private const val VERSION = 2
 
         fun decode(data: ByteArray): TableSnapshot = CODEC.decode(data)
 
@@ -86,7 +89,7 @@ data class TableSnapshot(
                         is Occupant.Human -> int(1).long(o.uuid.mostSignificantBits).long(o.uuid.leastSignificantBits).string(o.name)
                         is Occupant.Computer -> int(2).int(o.level.ordinal)
                     }
-                    bool(seat.present).bool(seat.auto)
+                    bool(seat.present).bool(seat.auto).int(seat.games).int(seat.wins)
                 }
                 writer.int(value.you ?: -1).ints(value.tally).int(value.rounds).int(value.status.ordinal)
                     .int(value.step).int(value.timerTicks).nullable(value.view) { bytes(it) }
@@ -106,7 +109,7 @@ data class TableSnapshot(
                             2 -> Occupant.Computer(BotLevel.entries[int()])
                             else -> null
                         }
-                        SeatInfo(occupant, bool(), bool())
+                        SeatInfo(occupant, bool(), bool(), int(), int())
                     },
                     you = reader.int().takeIf { it >= 0 },
                     tally = reader.ints(),
