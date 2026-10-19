@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client
 
+import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.ddz.DdzUi
 import io.github.konyaco.tukuai.platform.ClientPlatform
 import io.github.konyaco.tukuai.platform.Services
@@ -14,5 +15,17 @@ object TuKuaiClient {
         GameUis.register(DdzUi)
     }
 
-    fun tick() = ClientTables.tick()
+    private var ready = false
+
+    fun tick() {
+        if (!ready) {
+            val mc = net.minecraft.client.Minecraft.getInstance()
+            if (mc.overlay == null && mc.screen != null) {
+                ready = true
+                // CI waits for this line to know the client finished loading with TuKuai in it.
+                TuKuai.LOGGER.info("TuKuai client ready")
+            }
+        }
+        ClientTables.tick()
+    }
 }
