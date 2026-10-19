@@ -1,0 +1,6 @@
+{
+  "parent": "tukuai:block/stool",
+  "textures": {
+    "cushion": "minecraft:block/light_gray_wool"
+  }
+}

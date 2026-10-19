@@ -3,6 +3,7 @@ package io.github.konyaco.tukuai.table
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
+import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameDefinition
@@ -146,6 +147,25 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         takeSeat(level, player, nearest)
     }
 
+    /**
+     * Sitting on the stool on [side] of the table: takes the seat on that side if it is
+     * free, or goes back to it. False if that side has no seat, so the stool is just a stool.
+     */
+    fun sitAt(player: ServerPlayer, side: Direction): Boolean {
+        val level = level as? ServerLevel ?: return false
+        val seat = seats.indices.firstOrNull { sideOf(it) == side } ?: return false
+        sentRevision.remove(player.uuid)
+        val occupant = seats[seat]
+        if (occupant is Occupant.Human && occupant.uuid == player.uuid) {
+            auto[seat] = false
+            changed()
+            mount(level, player, seat)
+        } else if (occupant == null && idle) {
+            takeSeat(level, player, seat)
+        }
+        return true
+    }
+
     private fun takeSeat(level: ServerLevel, player: ServerPlayer, seat: Seat) {
         seatOf(player.uuid)?.let { seats[it] = null }
         seats[seat] = Occupant.Human(player.uuid, player.plainTextName)
@@ -155,9 +175,16 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         mount(level, player, seat)
     }
 
-    /** Just outside the middle of the table's edge on that seat's side. */
+    /**
+     * On the stool by the middle of the table's edge on that seat's side, or on the floor
+     * just outside the edge when there is no stool.
+     */
     private fun seatPosition(seat: Seat): Vec3 {
         val side = sideOf(seat)
+        val stool = worldPosition.relative(side, StoolBlock.TABLE_DISTANCE)
+        if (level?.getBlockState(stool)?.block is StoolBlock) {
+            return Vec3(stool.x + 0.5, stool.y + StoolBlock.SEAT_HEIGHT - SeatEntity.HEIGHT, stool.z + 0.5)
+        }
         val distance = CardTableBlock.HALF_WIDTH + SEAT_GAP
         return Vec3(
             worldPosition.x + 0.5 + side.stepX * distance,

@@ -12,7 +12,8 @@ import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 
 /**
- * An invisible seat next to a card table. It exists only while someone sits on it.
+ * An invisible seat at a card table, or on a stool that is no table's seat ([table] is
+ * null then). It exists only while someone sits on it.
  * It is saved with the world (the game refuses to let players ride entities that
  * cannot be saved), so a seated player is still seated after a restart.
  */
@@ -45,9 +46,19 @@ class SeatEntity(type: EntityType<*>, level: Level) : Entity(type, level) {
         super.tick()
         if (level().isClientSide()) return
         val pos = table
-        if (passengers.isEmpty() || pos == null || level().getBlockEntity(pos) !is CardTableBlockEntity) {
+        val holds = if (pos == null) {
+            level().getBlockState(blockPosition()).block is StoolBlock
+        } else {
+            level().getBlockEntity(pos) is CardTableBlockEntity
+        }
+        if (passengers.isEmpty() || !holds) {
             ejectPassengers()
             discard()
         }
+    }
+
+    companion object {
+        /** The seat's height; whoever sits on it rides this far above its position. */
+        const val HEIGHT = 0.25
     }
 }

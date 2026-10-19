@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "tukuai:stool",
+          "functions": [
+            {
+              "function": "minecraft:copy_state",
+              "block": "tukuai:stool",
+              "properties": [
+                "color"
+              ]
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "tukuai:blocks/stool"
+}

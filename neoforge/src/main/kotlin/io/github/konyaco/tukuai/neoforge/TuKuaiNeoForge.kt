@@ -38,10 +38,12 @@ class TuKuaiNeoForge(bus: IEventBus) {
         // The suppliers run inside the registry events, which is when TuKuaiContent may first be read.
         val blocks = DeferredRegister.create(Registries.BLOCK, TuKuai.MOD_ID)
         blocks.register("card_table", Supplier { TuKuaiContent.CARD_TABLE })
+        blocks.register("stool", Supplier { TuKuaiContent.STOOL })
         blocks.register(bus)
 
         val items = DeferredRegister.create(Registries.ITEM, TuKuai.MOD_ID)
         items.register("card_table", Supplier { TuKuaiContent.CARD_TABLE_ITEM })
+        items.register("stool", Supplier { TuKuaiContent.STOOL_ITEM })
         items.register(bus)
 
         val blockEntities = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, TuKuai.MOD_ID)
@@ -53,7 +55,7 @@ class TuKuaiNeoForge(bus: IEventBus) {
         entities.register(bus)
 
         bus.addListener(BuildCreativeModeTabContentsEvent::class.java) { event ->
-            if (event.tabKey == CreativeModeTabs.FUNCTIONAL_BLOCKS) event.accept(TuKuaiContent.CARD_TABLE_ITEM)
+            if (event.tabKey == CreativeModeTabs.FUNCTIONAL_BLOCKS) TuKuaiContent.creativeStacks().forEach { event.accept(it) }
         }
         bus.addListener(RegisterPayloadHandlersEvent::class.java, ::registerPayloads)
         NeoForge.EVENT_BUS.addListener(RegisterCommandsEvent::class.java) { event -> TuKuaiCommands.register(event.dispatcher) }
