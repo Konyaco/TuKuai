@@ -87,6 +87,9 @@ jobs:
       - name: Run client game tests
         run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric:runClientGameTest --no-daemon --stacktrace
 
+      - name: Start NeoForge client
+        run: xvfb-run -a -s "-screen 0 1280x720x24" .github/scripts/client-smoke.sh
+
       - name: Print screenshots
         if: always()
         run: |
@@ -105,4 +108,5 @@ jobs:
           path: |
             fabric/build/run/**/logs/**
             fabric/run/**/logs/**
+            neoforge/runs/client/logs/**
           if-no-files-found: ignore
