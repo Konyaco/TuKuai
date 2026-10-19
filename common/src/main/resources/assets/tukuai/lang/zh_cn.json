@@ -28,6 +28,7 @@
   "tukuai.table.again": "再来一局",
   "tukuai.table.lobby": "座位和规则",
   "tukuai.table.rounds": "第 %s 局",
+  "tukuai.table.turn": "轮到 %s",
   "tukuai.table.away": "（离开）",
   "tukuai.table.name_away": "%s（离开）",
   "tukuai.table.name_auto": "%s（托管）",

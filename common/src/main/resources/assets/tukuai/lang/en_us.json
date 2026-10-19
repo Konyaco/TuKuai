@@ -28,6 +28,7 @@
   "tukuai.table.again": "Play again",
   "tukuai.table.lobby": "Seats & rules",
   "tukuai.table.rounds": "Round %s",
+  "tukuai.table.turn": "%s to play",
   "tukuai.table.away": "(away)",
   "tukuai.table.name_away": "%s (away)",
   "tukuai.table.name_auto": "%s (auto)",

@@ -58,6 +58,11 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             world.clientLevel.waitForChunksRender()
             server.runOnServer<RuntimeException> { s -> checkOldTables(s) }
 
+            // The whole table with its stools, before anyone sits down.
+            context.input.lookAt(table)
+            context.waitTicks(5)
+            shot(context, "0-world-overview")
+
             act(server, table, TableOp.SIT, 0)
             check(server.computeOnServer<Boolean, RuntimeException> { s ->
                 val seat = s.playerList.players.first().vehicle

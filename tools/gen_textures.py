@@ -14,6 +14,7 @@ CARD_W, CARD_H = 32, 44
 COLS = 14
 ATLAS_W, ATLAS_H = 512, 256
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
+FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
 RED = (200, 48, 46, 255)
 BLACK = (32, 32, 36, 255)
@@ -275,7 +276,19 @@ def atlas():
     for y in range(8):
         for x in range(8):
             sheet.putpixel((EDGE_X + x, EDGE_Y + y), (226, 222, 208, 255))
+    sheet.paste(felt(), (FELT_X, FELT_Y))
     return sheet
+
+
+def felt():
+    """Pale cloth with a little noise; the renderer tints it with the dyed colour."""
+    tile = Image.new("RGBA", (16, 16))
+    rnd = random.Random(3)
+    for y in range(16):
+        for x in range(16):
+            g = 236 + rnd.randint(-14, 8)
+            tile.putpixel((x, y), (g, g, g, 255))
+    return tile
 
 
 def table_textures():
@@ -308,13 +321,6 @@ def main():
     top, side = table_textures()
     top.save(f"{OUT}/block/card_table_top.png")
     side.save(f"{OUT}/block/card_table_side.png")
-    felt = Image.new("RGBA", (16, 16))
-    rnd = random.Random(3)
-    for y in range(16):
-        for x in range(16):
-            g = 236 + rnd.randint(-14, 8)
-            felt.putpixel((x, y), (g, g, g, 255))
-    felt.save(f"{OUT}/block/card_table_felt.png")
 
 
 if __name__ == "__main__":
