@@ -74,6 +74,13 @@
   "tukuai.command.replays.header": "共 %s 局，最新的在前（點一下就能看）：",
   "tukuai.command.replays.hover": "點擊觀看",
   "tukuai.command.replay.missing": "找不到叫 %s 的回放。",
+  "tukuai.table.no_bots": "這台伺服器關掉了電腦玩家。",
+  "tukuai.command.stats.none": "%s 還沒在牌桌上打過牌。",
+  "tukuai.command.stats.header": "%s 的戰績：",
+  "tukuai.command.stats.line": " %s：%s 局，贏 %s 局（%s%%），積分 %s",
+  "tukuai.command.top.none": "還沒有人在牌桌上打過牌。",
+  "tukuai.command.top.header": "積分排行：",
+  "tukuai.command.top.line": " %s. %s  %s（%s 局，贏 %s 局）",
   "modmenu.descriptionTranslation.tukuai": "土塊棋牌室：在 Minecraft 裡擺一張牌桌，和朋友或電腦一起玩鬥地主等棋牌遊戲。只用遊戲內積分，不涉及真實金錢。",
   "fml.menu.mods.info.description.tukuai": "土塊棋牌室：在 Minecraft 裡擺一張牌桌，和朋友或電腦一起玩鬥地主等棋牌遊戲。只用遊戲內積分，不涉及真實金錢。"
 }

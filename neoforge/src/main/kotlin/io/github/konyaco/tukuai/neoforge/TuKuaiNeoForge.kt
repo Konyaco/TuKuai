@@ -9,6 +9,7 @@ import io.github.konyaco.tukuai.network.TableNetwork
 import io.github.konyaco.tukuai.network.TableSyncPayload
 import io.github.konyaco.tukuai.platform.Platform
 import io.github.konyaco.tukuai.platform.Services
+import java.nio.file.Path
 import java.util.function.Supplier
 import net.minecraft.core.BlockPos
 import net.minecraft.core.registries.Registries
@@ -21,6 +22,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockState
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.fml.common.Mod
+import net.neoforged.fml.loading.FMLPaths
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent
 import net.neoforged.neoforge.event.RegisterCommandsEvent
@@ -83,4 +85,6 @@ object NeoForgePlatform : Platform {
     override fun sendToPlayer(player: ServerPlayer, payload: CustomPacketPayload) {
         PacketDistributor.sendToPlayer(player, payload)
     }
+
+    override fun configDir(): Path = FMLPaths.CONFIGDIR.get()
 }

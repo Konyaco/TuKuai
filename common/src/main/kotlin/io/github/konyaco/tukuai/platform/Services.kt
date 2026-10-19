@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.platform
 
+import java.nio.file.Path
 import net.minecraft.core.BlockPos
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.server.level.ServerPlayer
@@ -13,6 +14,9 @@ interface Platform {
     fun <T : BlockEntity> blockEntityType(factory: (BlockPos, BlockState) -> T, block: Block): BlockEntityType<T>
 
     fun sendToPlayer(player: ServerPlayer, payload: CustomPacketPayload)
+
+    /** The loader's `config` folder. */
+    fun configDir(): Path
 }
 
 /** Client-only counterpart of [Platform], set by each loader's client setup. */

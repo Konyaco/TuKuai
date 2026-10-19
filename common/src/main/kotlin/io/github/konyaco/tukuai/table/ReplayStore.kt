@@ -12,7 +12,10 @@ import kotlin.io.path.nameWithoutExtension
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.level.storage.LevelResource
 
-/** Finished games, kept as small files in the world folder under `tukuai/replays`. */
+/**
+ * Finished games, kept as small files in the world folder under `tukuai/replays`. Only the
+ * newest [ServerSettings.maxReplays] are kept.
+ */
 object ReplayStore {
     private const val EXTENSION = "tkr"
     private val NAME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
@@ -30,10 +33,24 @@ object ReplayStore {
         var n = 1
         while (Files.exists(dir.resolve("$name.$EXTENSION"))) name = "$base-${++n}"
         Files.write(dir.resolve("$name.$EXTENSION"), replay.encode())
+        prune(server)
         name
     } catch (e: Exception) {
         TuKuai.LOGGER.warn("Could not save a replay", e)
         null
+    }
+
+    /** Removes the oldest replays beyond the configured number. */
+    private fun prune(server: MinecraftServer) {
+        val keep = ServerSettings.maxReplays
+        if (keep <= 0) return
+        for (name in list(server).drop(keep)) {
+            try {
+                Files.deleteIfExists(folder(server).resolve("$name.$EXTENSION"))
+            } catch (e: Exception) {
+                TuKuai.LOGGER.warn("Could not remove the old replay {}", name, e)
+            }
+        }
     }
 
     /** Replay names, newest first. */

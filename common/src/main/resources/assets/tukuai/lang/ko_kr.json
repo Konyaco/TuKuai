@@ -74,6 +74,13 @@
   "tukuai.command.replays.header": "총 %s판, 최신순 (클릭하면 볼 수 있습니다):",
   "tukuai.command.replays.hover": "클릭해서 보기",
   "tukuai.command.replay.missing": "%s(이)라는 기록을 찾을 수 없습니다.",
+  "tukuai.table.no_bots": "이 서버에서는 컴퓨터 플레이어를 쓸 수 없습니다.",
+  "tukuai.command.stats.none": "%s 님은 아직 카드 테이블에서 게임을 하지 않았습니다.",
+  "tukuai.command.stats.header": "%s 님의 전적:",
+  "tukuai.command.stats.line": " %s: %s판, %s승 (%s%%), 점수 %s",
+  "tukuai.command.top.none": "아직 카드 테이블에서 게임을 한 사람이 없습니다.",
+  "tukuai.command.top.header": "점수 순위:",
+  "tukuai.command.top.line": " %s. %s  %s (%s판, %s승)",
   "modmenu.descriptionTranslation.tukuai": "흙블록 기패실: Minecraft 안에 테이블을 놓고 친구나 컴퓨터와 더우디주 같은 카드·보드게임을 즐기세요. 게임 안의 점수만 쓰며, 실제 돈은 다루지 않습니다.",
   "fml.menu.mods.info.description.tukuai": "흙블록 기패실: Minecraft 안에 테이블을 놓고 친구나 컴퓨터와 더우디주 같은 카드·보드게임을 즐기세요. 게임 안의 점수만 쓰며, 실제 돈은 다루지 않습니다."
 }

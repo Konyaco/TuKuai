@@ -244,6 +244,10 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             }
             TableOp.ADD_BOT -> {
                 if (!idle) return
+                if (!ServerSettings.allowBots) {
+                    player.sendOverlayMessage(Component.translatable("tukuai.table.no_bots"))
+                    return
+                }
                 val botLevel = BotLevel.entries.getOrNull(request.b) ?: return
                 val targets = if (request.a == -1) seats.indices.filter { seats[it] == null } else listOf(request.a)
                 for (seat in targets) {
@@ -450,7 +454,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private fun resetTurnClock(level: ServerLevel, m: MatchHandle) {
         lastStep = m.step
         turnTicks = 0
-        actDelay = BOT_DELAY_MIN + level.random.nextInt(BOT_DELAY_SPREAD)
+        // Somewhere between a bit quicker and a bit slower than the configured average.
+        actDelay = (ServerSettings.botDelaySeconds * 20 * (0.65 + level.random.nextDouble() * 0.7)).toInt()
     }
 
     private fun afterStep(level: ServerLevel, m: MatchHandle) {
@@ -461,7 +466,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         result.scores.forEachIndexed { seat, points -> if (seat < tally.size) tally[seat] += points }
         rounds++
         level.playSound(null, worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7f, 1f)
-        lastReplay = ReplayStore.save(level.server, m.replay(playerNames()))
+        StatsStore.record(level.server, gameId, seats, result.scores, result.winners)
+        lastReplay = if (ServerSettings.saveReplays) ReplayStore.save(level.server, m.replay(playerNames())) else null
     }
 
     private fun playerNames(): List<String> = seats.map {
@@ -587,8 +593,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             Thread(task, "TuKuai computer player").apply { isDaemon = true }
         }
         const val TIMEOUTS_BEFORE_AUTO = 2
-        const val BOT_DELAY_MIN = 14
-        const val BOT_DELAY_SPREAD = 16
         val TIMER_CHOICES = listOf(0, 15, 30, 60)
 
         /** The computer that plays for a player who is away or out of time. */

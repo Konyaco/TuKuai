@@ -74,6 +74,13 @@
   "tukuai.command.replays.header": "全 %s 局、新しい順（クリックで再生）：",
   "tukuai.command.replays.hover": "クリックで再生",
   "tukuai.command.replay.missing": "%s という名前のリプレイは見つかりません。",
+  "tukuai.table.no_bots": "このサーバーではコンピューターのプレイヤーは使えません。",
+  "tukuai.command.stats.none": "%s はまだカードテーブルで遊んでいません。",
+  "tukuai.command.stats.header": "%s の戦績：",
+  "tukuai.command.stats.line": " %s：%s 回、%s 勝（%s%%）、ポイント %s",
+  "tukuai.command.top.none": "まだ誰もカードテーブルで遊んでいません。",
+  "tukuai.command.top.header": "ポイントランキング：",
+  "tukuai.command.top.line": " %s. %s  %s（%s 回、%s 勝）",
   "modmenu.descriptionTranslation.tukuai": "土塊棋牌室：Minecraft の中にテーブルを置いて、友だちや CPU と闘地主などのカード・ボードゲームを遊べます。ゲーム内のポイントだけを使い、現実のお金は一切扱いません。",
   "fml.menu.mods.info.description.tukuai": "土塊棋牌室：Minecraft の中にテーブルを置いて、友だちや CPU と闘地主などのカード・ボードゲームを遊べます。ゲーム内のポイントだけを使い、現実のお金は一切扱いません。"
 }
