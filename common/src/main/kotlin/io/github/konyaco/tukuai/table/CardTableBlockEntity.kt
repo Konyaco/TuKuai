@@ -157,7 +157,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         entity.table = worldPosition
         entity.setPos(p.x, p.y, p.z)
         entity.setYRot(sideOf(seat).opposite.toYRot())
-        if (level.addFreshEntity(entity) && !player.startRiding(entity)) entity.discard()
+        // Forced, because a fresh seat may not pass the usual boarding checks on its first tick.
+        if (level.addFreshEntity(entity) && !player.startRiding(entity, true, true)) entity.discard()
     }
 
     private fun dismount(player: ServerPlayer) {
