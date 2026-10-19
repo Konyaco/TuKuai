@@ -34,7 +34,6 @@ object TuKuaiContent {
     val SEAT: EntityType<SeatEntity> = EntityType.Builder.of<SeatEntity>(::SeatEntity, MobCategory.MISC)
         .sized(0.5f, 0.25f)
         .noSummon()
-        .noSave()
         .clientTrackingRange(8)
         .build(ResourceKey.create(Registries.ENTITY_TYPE, TuKuai.id("seat")))
 
