@@ -24,18 +24,18 @@ object DdzUi : GameUi {
     override fun createPanel(host: PanelHost): GamePanel = DdzPanel(host)
 
     /**
-     * Each seat's hand lies along its edge of the table (face down, except your own and
-     * everyone's once the game is over), its latest play lies nearer the middle, and the
-     * landlord's three cards sit on the empty fourth side.
+     * Each seat's hand stands along its edge of the table, faces towards its owner, so
+     * everyone else sees the backs; once the game is over the hands lie face up. Each
+     * seat's latest play lies nearer the middle, and the landlord's three cards sit on
+     * the empty fourth side.
      */
     override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
         val view = table.view as? DdzView ?: return emptyList()
         val cards = ArrayList<TableCard>()
         val finished = table.snapshot.status == TableStatus.FINISHED
         val recent = DdzPanel.recentActions(view)
-        var layer = 0
 
-        fun row(side: Direction, distance: Float, sprites: List<Int>, step: Float, scale: Float) {
+        fun row(side: Direction, distance: Float, sprites: List<Int>, step: Float, scale: Float, standing: Boolean = false) {
             if (sprites.isEmpty()) return
             // The player on this side faces the middle; cards run left to right as they see them.
             val upX = -side.stepX.toFloat()
@@ -47,7 +47,18 @@ object DdzUi : GameUi {
             val cz = side.stepZ * distance
             sprites.forEachIndexed { i, sprite ->
                 val offset = -total / 2 + i * step
-                cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, layer++)
+                if (standing) {
+                    // Like a fanned hand: each card stands a little nearer its owner than the one
+                    // on its left, covering all of it but the corner with the rank.
+                    val nearer = (i - (sprites.size - 1) / 2f) * HAND_DEPTH
+                    cards += TableCard(
+                        cx + rightX * offset + side.stepX * nearer,
+                        cz + rightZ * offset + side.stepZ * nearer,
+                        upX, upZ, sprite, scale, tilt = HAND_TILT,
+                    )
+                } else {
+                    cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, i)
+                }
             }
         }
 
@@ -61,7 +72,7 @@ object DdzUi : GameUi {
                 seat == view.seat -> faces(view.hand)
                 else -> List(view.handCounts[seat]) { CardArt.back() }
             }
-            row(side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE)
+            row(side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, standing = !finished)
             val play = recent[seat]
             if (play != null && play.kind == DdzEventKind.PLAY) row(side, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE)
         }
@@ -78,6 +89,12 @@ object DdzUi : GameUi {
     private const val HAND_DISTANCE = 1.05f
     private const val HAND_STEP = 0.085f
     private const val HAND_SCALE = 0.7f
+
+    /** How far each standing card is from the next, towards its owner. */
+    private const val HAND_DEPTH = 0.008f
+
+    /** Degrees up from flat: the face points at the eyes of someone sitting behind it. */
+    private const val HAND_TILT = 60f
     private const val PLAY_DISTANCE = 0.45f
     private const val PLAY_STEP = 0.1f
     private const val PLAY_SCALE = 0.75f

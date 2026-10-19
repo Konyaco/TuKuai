@@ -58,8 +58,10 @@ interface GamePanel {
 }
 
 /**
- * One card lying flat on the table top. Positions are in blocks from the middle of the
- * table; ([upX], [upZ]) is the unit direction the top of the card points to.
+ * One card on the table top. Positions are in blocks from the middle of the table and
+ * give the card's centre seen from above; ([upX], [upZ]) is the unit direction the top
+ * of the card points to. A card with a [tilt] stands on its bottom edge, leaning that
+ * many degrees up from flat, so its face turns towards whoever sits behind it.
  */
 data class TableCard(
     val x: Float,
@@ -69,8 +71,9 @@ data class TableCard(
     /** Index into the card atlas, see [CardArt]. */
     val sprite: Int,
     val scale: Float = 1f,
-    /** Small lift so later cards draw over earlier ones. */
+    /** Lifts a flat card over the earlier, overlapping cards of its row. */
     val layer: Int = 0,
+    val tilt: Float = 0f,
 )
 
 object GameUis {

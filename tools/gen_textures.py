@@ -13,6 +13,7 @@ OUT = "common/src/main/resources/assets/tukuai/textures"
 CARD_W, CARD_H = 32, 44
 COLS = 14
 ATLAS_W, ATLAS_H = 512, 256
+EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 
 RED = (200, 48, 46, 255)
 BLACK = (32, 32, 36, 255)
@@ -270,6 +271,10 @@ def atlas():
     icon_y = 5 * CARD_H
     sheet.paste(landlord_icon(), (0, icon_y))
     sheet.paste(farmer_icon(), (16, icon_y))
+    # The paper colour of a card's edges, for cards drawn with thickness on the table.
+    for y in range(8):
+        for x in range(8):
+            sheet.putpixel((EDGE_X + x, EDGE_Y + y), (226, 222, 208, 255))
     return sheet
 
 
