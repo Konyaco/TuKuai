@@ -58,8 +58,8 @@ interface GamePanel {
 }
 
 /**
- * One card lying flat on the table top. Positions are in blocks from the table's
- * north-west corner; ([upX], [upZ]) is the unit direction the top of the card points to.
+ * One card lying flat on the table top. Positions are in blocks from the middle of the
+ * table; ([upX], [upZ]) is the unit direction the top of the card points to.
  */
 data class TableCard(
     val x: Float,

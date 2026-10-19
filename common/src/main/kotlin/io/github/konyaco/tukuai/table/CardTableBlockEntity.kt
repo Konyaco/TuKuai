@@ -30,10 +30,12 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.item.DyeColor
+import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
+import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
 /**
@@ -69,6 +71,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private var ticks = 0L
     private var lastStep = -1
+
+    /** Set once all nine parts of the table are known to be in place, see [checkParts]. */
+    private var partsChecked = false
 
     /** A computer's move being worked out on [BOT_THREADS], for [thinkingFor] at [thinkingStep]. */
     private var thinking: CompletableFuture<ByteArray>? = null
@@ -150,25 +155,34 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         mount(level, player, seat)
     }
 
+    /** Just outside the middle of the table's edge on that seat's side. */
     private fun seatPosition(seat: Seat): Vec3 {
         val side = sideOf(seat)
+        val distance = CardTableBlock.HALF_WIDTH + SEAT_GAP
         return Vec3(
-            worldPosition.x + 0.5 + side.stepX * 0.95,
+            worldPosition.x + 0.5 + side.stepX * distance,
             worldPosition.y.toDouble(),
-            worldPosition.z + 0.5 + side.stepZ * 0.95,
+            worldPosition.z + 0.5 + side.stepZ * distance,
         )
     }
 
     private fun mount(level: ServerLevel, player: ServerPlayer, seat: Seat) {
         val current = player.vehicle
-        if (current is SeatEntity && current.table == worldPosition) return
+        if (current is SeatEntity && current.table == worldPosition) {
+            placeSeat(current, seat)
+            return
+        }
         if (player.isPassenger) player.stopRiding()
-        val p = seatPosition(seat)
         val entity = SeatEntity(TuKuaiContent.SEAT, level)
         entity.table = worldPosition
+        placeSeat(entity, seat)
+        if (level.addFreshEntity(entity) && !player.startRiding(entity)) entity.discard()
+    }
+
+    private fun placeSeat(entity: SeatEntity, seat: Seat) {
+        val p = seatPosition(seat)
         entity.setPos(p.x, p.y, p.z)
         entity.setYRot(sideOf(seat).opposite.toYRot())
-        if (level.addFreshEntity(entity) && !player.startRiding(entity)) entity.discard()
     }
 
     private fun dismount(player: ServerPlayer) {
@@ -277,10 +291,44 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     fun serverTick(level: ServerLevel) {
         ticks++
+        if (!partsChecked) checkParts(level)
+        if (isRemoved) return
         if (ticks % 20 == 0L) checkPresence(level)
         val m = match
         if (m != null && m.result == null) driveTurn(level, m)
         sync(level)
+    }
+
+    /**
+     * Tables saved before they were 3x3 load as just their middle block. Grow the other
+     * eight parts where there is room, and move anyone already seated out to the new edge.
+     * If something is in the way, the table drops as an item instead.
+     */
+    private fun checkParts(level: ServerLevel) {
+        val state = blockState
+        val missing = ArrayList<Int>()
+        for (part in 0 until CardTableBlock.PARTS) {
+            if (part == CardTableBlock.CENTER) continue
+            val pos = CardTableBlock.posOf(worldPosition, part)
+            if (!level.isLoaded(pos)) return
+            if (!CardTableBlock.sameTable(level.getBlockState(pos), state, part)) missing += part
+        }
+        partsChecked = true
+        if (missing.isEmpty()) return
+        val blocked = missing.any { !level.getBlockState(CardTableBlock.posOf(worldPosition, it)).canBeReplaced() }
+        if (blocked) {
+            TuKuai.LOGGER.info("No room to make the card table at {} 3x3, dropping it as an item", worldPosition)
+            level.destroyBlock(worldPosition, true)
+            return
+        }
+        for (part in missing) {
+            level.setBlock(CardTableBlock.posOf(worldPosition, part), state.setValue(CardTableBlock.PART, part), Block.UPDATE_ALL)
+        }
+        val area = AABB(worldPosition).inflate(CardTableBlock.HALF_WIDTH + 1.0)
+        for (entity in level.getEntitiesOfClass(SeatEntity::class.java, area) { it.table == worldPosition }) {
+            val seat = entity.passengers.firstNotNullOfOrNull { seatOf(it.uuid) } ?: continue
+            placeSeat(entity, seat)
+        }
     }
 
     private fun isPresent(level: ServerLevel, uuid: UUID): Boolean {
@@ -493,6 +541,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     companion object {
+        /** How far outside the table's edge a seat is, in blocks. */
+        const val SEAT_GAP = 0.35
+
         /** Players farther than this cannot change the table. */
         const val REACH = 8.0
 

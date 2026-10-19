@@ -43,8 +43,8 @@ object DdzUi : GameUi {
             val rightX = -upZ
             val rightZ = upX
             val total = step * (sprites.size - 1)
-            val cx = 0.5f + side.stepX * distance
-            val cz = 0.5f + side.stepZ * distance
+            val cx = side.stepX * distance
+            val cz = side.stepZ * distance
             sprites.forEachIndexed { i, sprite ->
                 val offset = -total / 2 + i * step
                 cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, layer++)
@@ -74,12 +74,13 @@ object DdzUi : GameUi {
         return cards
     }
 
-    private const val HAND_DISTANCE = 0.33f
-    private const val HAND_STEP = 0.024f
-    private const val HAND_SCALE = 0.8f
-    private const val PLAY_DISTANCE = 0.12f
-    private const val PLAY_STEP = 0.035f
+    // Distances are from the middle of the 3-block table; its cloth reaches 1.375 out.
+    private const val HAND_DISTANCE = 1.05f
+    private const val HAND_STEP = 0.085f
+    private const val HAND_SCALE = 0.7f
+    private const val PLAY_DISTANCE = 0.45f
+    private const val PLAY_STEP = 0.1f
     private const val PLAY_SCALE = 0.75f
-    private const val KITTY_DISTANCE = 0.3f
-    private const val KITTY_STEP = 0.1f
+    private const val KITTY_DISTANCE = 0.95f
+    private const val KITTY_STEP = 0.3f
 }

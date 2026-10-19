@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.SoundType
 import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockBehaviour
 import net.minecraft.world.level.material.MapColor
+import net.minecraft.world.level.material.PushReaction
 
 /**
  * Blocks, items and types shared by both loaders; each loader registers these exact instances.
@@ -21,7 +22,7 @@ import net.minecraft.world.level.material.MapColor
  */
 object TuKuaiContent {
     val CARD_TABLE: CardTableBlock = CardTableBlock(
-        blockProperties("card_table").noOcclusion(),
+        blockProperties("card_table").noOcclusion().pushReaction(PushReaction.BLOCK),
     )
 
     val CARD_TABLE_ITEM: Item = BlockItem(CARD_TABLE, itemProperties("card_table").useBlockDescriptionPrefix())
