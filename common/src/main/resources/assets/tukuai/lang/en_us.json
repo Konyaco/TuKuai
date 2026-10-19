@@ -102,6 +102,9 @@
   "tukuai.uno.won": "%s wins",
   "tukuai.uno.result_detail": "Everyone else pays what their cards are worth",
   "tukuai.uno.cards_left": "%s left, %s pts",
+  "tukuai.uno.ccw": "counterclockwise",
+  "tukuai.uno.cw": "clockwise",
+  "tukuai.uno.next": "Next",
   "modmenu.descriptionTranslation.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money.",
   "fml.menu.mods.info.description.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money."
 }

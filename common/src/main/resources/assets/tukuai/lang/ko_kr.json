@@ -102,6 +102,9 @@
   "tukuai.uno.won": "%s 승리",
   "tukuai.uno.result_detail": "다른 사람은 남은 카드 점수만큼 냅니다",
   "tukuai.uno.cards_left": "%s장 남음 %s점",
+  "tukuai.uno.ccw": "시계 반대 방향",
+  "tukuai.uno.cw": "시계 방향",
+  "tukuai.uno.next": "다음",
   "modmenu.descriptionTranslation.tukuai": "흙블록 기패실: Minecraft 안에 테이블을 놓고 친구나 컴퓨터와 더우디주 같은 카드·보드게임을 즐기세요. 게임 안의 점수만 쓰며, 실제 돈은 다루지 않습니다.",
   "fml.menu.mods.info.description.tukuai": "흙블록 기패실: Minecraft 안에 테이블을 놓고 친구나 컴퓨터와 더우디주 같은 카드·보드게임을 즐기세요. 게임 안의 점수만 쓰며, 실제 돈은 다루지 않습니다."
 }

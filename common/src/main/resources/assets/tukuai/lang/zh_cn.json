@@ -102,6 +102,9 @@
   "tukuai.uno.won": "%s 赢了",
   "tukuai.uno.result_detail": "其他人按手里剩下的牌给分",
   "tukuai.uno.cards_left": "剩 %s 张 %s 分",
+  "tukuai.uno.ccw": "逆时针",
+  "tukuai.uno.cw": "顺时针",
+  "tukuai.uno.next": "下家",
   "modmenu.descriptionTranslation.tukuai": "土块棋牌室：在 Minecraft 里摆一张牌桌，和朋友或电脑一起打斗地主等棋牌游戏。只用游戏内积分，不涉及真实金钱。",
   "fml.menu.mods.info.description.tukuai": "土块棋牌室：在 Minecraft 里摆一张牌桌，和朋友或电脑一起打斗地主等棋牌游戏。只用游戏内积分，不涉及真实金钱。"
 }

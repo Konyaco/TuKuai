@@ -62,8 +62,8 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
 
     private fun sortedHand(view: UnoView): List<UnoCard> = UnoUi.sorted(view.hand)
 
-    /** Where the discard pile is drawn; the draw pile sits to its left. */
-    private fun centerY() = height / 2 - 34
+    /** Top of the discard pile; the draw pile sits to its left. */
+    private fun centerY() = 74
 
     // ---- Buttons -------------------------------------------------------------------------------
 
@@ -258,16 +258,29 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         val acting = view.turn == seat && table.snapshot.status == TableStatus.PLAYING
         g.fill(x - 2, y - 2, x + boxW + 2, y + 40, if (acting) 0x90806020.toInt() else 0x70000000)
         g.text(font, font.plainSubstrByWidth(seatLabel(table, seat).string, boxW), x, y + 2, TableScreen.WHITE, true)
+        if (!view.finished && table.snapshot.you != null && seat == view.next(table.snapshot.you!!)) {
+            val next = Component.translatable("tukuai.uno.next")
+            g.text(font, next, x + boxW - font.width(next), y + 2, TableScreen.GRAY, true)
+        }
         CardArt.draw(g, CardArt.back(), x, y + 14, 0.5f)
         g.text(font, Component.literal("× ${view.handCounts[seat]}"), x + 20, y + 22, TableScreen.YELLOW, true)
         if (seat in view.unoCalled) g.text(font, Component.translatable("tukuai.uno.call"), x + 56, y + 22, TableScreen.RED, true)
-        if (acting) renderTimer(g, table, x + boxW - 4, y + 14, alignRight = true)
+        if (acting) renderTimer(g, table, x + boxW - 4, y + 30, alignRight = true)
 
+        // Their whole hand once it is shown: beside the box across the table, below the others.
         val revealed = view.revealedHands.getOrNull(seat)
         if (revealed != null) {
             val cards = UnoUi.sorted(revealed)
-            val step = minOf(7, if (cards.size > 1) (boxW + 40) / (cards.size - 1) else 0)
-            cards.forEachIndexed { i, card -> CardArt.draw(g, CardArt.uno(card), x + i * step, y + 44, 0.5f) }
+            val small = CardArt.WIDTH / 2
+            val step = if (cards.size > 1) minOf(7, (boxW - small) / (cards.size - 1)) else 0
+            val total = small + step * (cards.size - 1)
+            val left = when (place) {
+                Place.LEFT -> x
+                Place.TOP -> x + boxW + 8
+                Place.RIGHT -> x + boxW - total
+            }
+            val top = if (place == Place.TOP) y + 4 else y + 44
+            cards.forEachIndexed { i, card -> CardArt.draw(g, CardArt.uno(card), left + i * step, top, 0.5f) }
             return
         }
         if (recent == null) return
@@ -281,20 +294,20 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
     /** The draw pile with how many cards are left, and the discard pile with the colour to follow. */
     private fun renderPiles(g: GuiGraphicsExtractor, view: UnoView) {
         val cy = centerY()
-        val scale = 1.5f
+        val scale = PILE_SCALE
         val w = (CardArt.WIDTH * scale).toInt()
         val h = (CardArt.HEIGHT * scale).toInt()
         val discardX = width / 2 + 6
         val pileX = width / 2 - 6 - w
         if (view.drawCount > 0) CardArt.draw(g, CardArt.back(), pileX, cy, scale)
-        g.centeredText(font, Component.literal("${view.drawCount}"), pileX + w / 2, cy + h + 4, TableScreen.GRAY)
+        g.centeredText(font, Component.literal("${view.drawCount}"), pileX + w / 2, cy + h + 5, TableScreen.GRAY)
 
         // The colour to follow, as a frame around the top card.
         val color = 0xFF000000.toInt() or UnoUi.COLORS.getValue(view.color)
         g.fill(discardX - 3, cy - 3, discardX + w + 3, cy + h + 3, color)
         val named = view.log.lastOrNull { it.kind == UnoEventKind.PLAY }?.takeIf { it.card == view.top }?.color
         CardArt.draw(g, CardArt.uno(view.top, named), discardX, cy, scale)
-        g.centeredText(font, UnoUi.stateLine(view), discardX + w / 2, cy + h + 6, TableScreen.WHITE)
+        g.text(font, UnoUi.stateLine(view), discardX - 3, cy + h + 5, TableScreen.WHITE, true)
     }
 
     private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: UnoView, me: Seat) {
@@ -359,14 +372,14 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         g.text(font, text, tx, y + 10, TableScreen.YELLOW, true)
     }
 
-    /** Below the player across the table and their shown hand. */
-    private fun resultTop() = 102
+    /** Below the player across the table, between the players on the left and right. */
+    private fun resultTop() = 72
 
-    private fun resultHeight(view: UnoView) = 50 + view.players * 12 + 26
+    private fun resultHeight(view: UnoView) = 36 + view.players * 11 + 26
 
     private fun renderResult(g: GuiGraphicsExtractor, table: ClientTable, view: UnoView) {
         val settlement = view.settlement ?: return
-        val w = 220
+        val w = RESULT_WIDTH
         val x = width / 2 - w / 2
         val top = resultTop()
         g.fill(x, top, x + w, top + resultHeight(view), 0xE0101010.toInt())
@@ -377,13 +390,13 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
             me == settlement.winner -> TableScreen.GREEN
             else -> TableScreen.RED
         }
-        g.centeredText(font, Component.translatable("tukuai.uno.won", winner), width / 2, top + 8, color)
-        g.centeredText(font, Component.translatable("tukuai.uno.result_detail"), width / 2, top + 22, TableScreen.GRAY)
+        g.centeredText(font, Component.translatable("tukuai.uno.won", winner), width / 2, top + 6, color)
+        g.centeredText(font, Component.translatable("tukuai.uno.result_detail"), width / 2, top + 18, TableScreen.GRAY)
         for (seat in 0 until view.players) {
-            val y = top + 40 + seat * 12
+            val y = top + 32 + seat * 11
             g.text(font, seatLabel(table, seat), x + 8, y, if (seat == me) TableScreen.YELLOW else TableScreen.WHITE, false)
             val left = Component.translatable("tukuai.uno.cards_left", view.handCounts[seat], settlement.handPoints[seat])
-            if (seat != settlement.winner) g.text(font, left, x + 110, y, TableScreen.GRAY, false)
+            if (seat != settlement.winner) g.text(font, left, x + 100, y, TableScreen.GRAY, false)
             val points = settlement.scores[seat]
             val text = Component.literal(if (points > 0) "+$points" else points.toString())
             g.text(font, text, x + w - 8 - font.width(text), y, if (points >= 0) TableScreen.GREEN else TableScreen.RED, false)
@@ -392,6 +405,8 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
 
     companion object {
         private const val RAISE = 8
+        private const val PILE_SCALE = 1.25f
+        private const val RESULT_WIDTH = 204
 
         fun eventText(event: UnoEvent): Component? = when (event.kind) {
             UnoEventKind.DRAW -> Component.translatable("tukuai.uno.drew", event.count)

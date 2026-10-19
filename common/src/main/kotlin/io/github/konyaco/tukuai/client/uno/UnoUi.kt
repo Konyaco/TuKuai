@@ -131,9 +131,13 @@ object UnoUi : GameUi {
         return listOf(stateLine(view), Component.translatable("tukuai.table.turn", turn))
     }
 
-    /** For example "Red ↺ +4": the colour to follow, the direction of play, cards piled up to draw. */
+    /**
+     * For example "Red · counterclockwise +4": the colour to follow, which way play goes seen
+     * from above (seat numbers go counterclockwise), and cards piled up to draw.
+     */
     fun stateLine(view: UnoView): Component {
-        val line = colorName(view.color).copy().append(" ").append(if (view.direction > 0) "↺" else "↻")
+        val line = colorName(view.color).copy().append(" · ")
+            .append(Component.translatable(if (view.direction > 0) "tukuai.uno.ccw" else "tukuai.uno.cw"))
         if (view.pendingDraw > 0) line.append(" +${view.pendingDraw}")
         return line
     }

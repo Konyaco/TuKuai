@@ -102,6 +102,9 @@
   "tukuai.uno.won": "%s の勝ち",
   "tukuai.uno.result_detail": "ほかの人は残りの札の点数を払います",
   "tukuai.uno.cards_left": "残り %s 枚 %s 点",
+  "tukuai.uno.ccw": "反時計回り",
+  "tukuai.uno.cw": "時計回り",
+  "tukuai.uno.next": "次の人",
   "modmenu.descriptionTranslation.tukuai": "土塊棋牌室：Minecraft の中にテーブルを置いて、友だちや CPU と闘地主などのカード・ボードゲームを遊べます。ゲーム内のポイントだけを使い、現実のお金は一切扱いません。",
   "fml.menu.mods.info.description.tukuai": "土塊棋牌室：Minecraft の中にテーブルを置いて、友だちや CPU と闘地主などのカード・ボードゲームを遊べます。ゲーム内のポイントだけを使い、現実のお金は一切扱いません。"
 }
