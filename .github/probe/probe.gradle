@@ -8,6 +8,9 @@ allprojects {
             def classpath = p.sourceSets.main.compileClasspath
             def root = p.rootProject.file('.github/probe')
             def out = p.layout.buildDirectory.file('probe.txt').get().asFile
+            // Declaring the classpath as input makes Gradle build generated jars, such as NeoForge's Minecraft jar, first.
+            inputs.files(classpath)
+            outputs.upToDateWhen { false }
             doLast {
                 def jars = classpath.files.findAll { it.name.endsWith('.jar') }
                 def lines = { String name -> new File(root, name).readLines()*.trim().findAll { it && !it.startsWith('#') } }
