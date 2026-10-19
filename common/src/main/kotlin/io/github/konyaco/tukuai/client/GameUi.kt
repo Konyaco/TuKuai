@@ -28,6 +28,9 @@ interface GameUi {
 
     /** The seat whose turn it is, lit up on the display; null when nobody is to act. */
     fun turnSeat(table: ClientTable): Int? = null
+
+    /** Called when an update for a table arrives, to play sounds for what just happened at it. */
+    fun onUpdate(previous: ClientTable?, table: ClientTable) {}
 }
 
 /** The screen a [GamePanel] is drawn in: the table screen, or the replay viewer. */
@@ -68,6 +71,10 @@ interface GamePanel {
  * give the card's centre seen from above; ([upX], [upZ]) is the unit direction the top
  * of the card points to. A card with a [tilt] stands on its bottom edge, leaning that
  * many degrees up from flat, so its face turns towards whoever sits behind it.
+ *
+ * A card that was not on the table before flies in from ([fromX], [fromZ]), for example
+ * from the deck when cards are dealt. Cards that were already there slide to their new
+ * place; see [io.github.konyaco.tukuai.client.render.CardMotion].
  */
 data class TableCard(
     val x: Float,
@@ -80,6 +87,10 @@ data class TableCard(
     /** Lifts a flat card over the earlier, overlapping cards of its row. */
     val layer: Int = 0,
     val tilt: Float = 0f,
+    /** Raises the card off the table, in blocks; used while it flies. */
+    val lift: Float = 0f,
+    val fromX: Float = x,
+    val fromZ: Float = z,
 )
 
 object GameUis {
