@@ -1,131 +1,219 @@
-<p align="center"><img src="docs/logo.png" alt="土块棋牌室 TuKuai" width="600"></p>
+<p align="center"><img src="docs/logo.png" alt="TuKuai" width="520"></p>
 
-# 土块棋牌室 TuKuai
+<p align="center">
+  <b>English</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.zh-TW.md">繁體中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a>
+</p>
 
-在 Minecraft 里摆一张牌桌，和朋友或电脑一起打斗地主、玩 UNO。以后还会加入更多棋牌游戏。
+<p align="center">
+  A card table for Minecraft. Pull up a stool, deal in your friends or a few computer players, and play Dou Dizhu or UNO without leaving your world.
+</p>
 
-支持 Minecraft 26.1.2，NeoForge 和 Fabric 都能用。
+<p align="center">
+  <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
+  <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/Minecraft-26.1.2-62B47A" alt="Minecraft 26.1.2">
+  <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge and Fabric">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT license"></a>
+</p>
 
-## 能做什么
+![Two card tables in a small library: Dou Dizhu on the left, villagers playing UNO on the right](docs/images/hero.webp)
 
-- **斗地主**：三种规则可选，分别是「经典叫分」「抢地主」和「不洗牌」（炸弹更多）。
-- **UNO**：2 到 4 人，四种规则：4 人经典、4 人罚牌可叠加（+2 能接 +2，+4 能接 +2 或 +4），以及 3 人、2 人经典。
-- **多人加电脑**：几个人坐一桌，空位可以让电脑补上。电脑有简单、普通、困难三档，困难会先在心里把牌局推演很多遍再出牌。
-- **在世界里看得见**：牌桌上摆着每个人的手牌（背面朝上）、刚出的牌和底牌，周围的人都能看到。
-- **两种视角**：「牌桌」视角把牌桌铺满屏幕；「沉浸」视角不挡住世界，抬头就是真实的牌桌。按 Tab 切换。
-- **回放**：每局打完自动存档。可以一步步重看，能看到所有人的牌，也能换成任何一家的视角。
-- **外观**：牌桌占 3x3 格，桌上的牌有厚度，手牌立着朝向自己。用染料右键牌桌换桌布颜色，界面右上角换牌背。凳子有 16 种坐垫颜色。
-- **多种语言**：简体中文、繁体中文、英文、日文、韩文，跟着游戏的语言设置走。
-- **掉线不卡局**：有人走开或掉线，电脑先替他打；连续超时两次会自动托管，回来点「取消托管」就能接着打。
+TuKuai (土块棋牌室, "Dirt Block Parlor") adds a card table you can craft and place. Sit at it with other players, fill the empty seats with computers, and play. The cards are really on the table, so anyone walking past can watch. Dou Dizhu and UNO for now, more games later.
 
-只用游戏内积分，不涉及真实金钱。
+It only uses in-game points. Nobody loses real money here, only their dignity.
 
-## 怎么玩
+## Download
 
-1. 合成一张牌桌：第一排放 3 块任意颜色的羊毛，第二排放 3 块任意木板，第三排左右两格各放 1 块任意原木。创造模式在「功能方块」栏里。
-2. 把牌桌放下，右键打开。牌桌占 3x3 格，从你点的那一格往前铺开，所以前方和左右要留出空地。旧版本放的一格牌桌会自动长成 3x3，周围没空地的话会变回物品掉在地上。点「坐这里」入座，空位点「加电脑」，或者直接点「空位都补电脑」。
-3. 点「游戏」切换斗地主或 UNO，选好规则和出牌时限，点「开始」。
+Get the jar for your loader from [Releases](https://github.com/Konyaco/TuKuai/releases/latest). It needs Minecraft 26.1.2 and:
 
-想坐得像样一点，可以在牌桌有座位的边外面（斗地主三条边，4 人 UNO 四条边）、正对中间的位置放上凳子：凳子用一块羊毛、一个木台阶和一根木棍竖着合成，羊毛的颜色就是坐垫的颜色，之后也能用染料右键换色。右键凳子就是坐到那一边的座位上；不挨着牌桌的凳子也能直接坐。
-
-斗地主出牌时：
-
-| 操作 | 作用 |
+| Loader | Also install |
 | --- | --- |
-| 左键点牌 | 选中或取消这张牌 |
-| 右键 | 清空选择 |
-| 空格 / 回车 | 出选中的牌；没选牌时就是「不出」 |
-| H | 提示，多按几次换一种出法 |
-| Tab | 切换牌桌 / 沉浸视角 |
+| NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 or newer |
+| Fabric | [Fabric API](https://modrinth.com/mod/fabric-api) and [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 or newer |
 
-UNO 出牌时，能出的牌会抬起来，点一下就出；万能牌出之前要选颜色。
+## What's in it
 
-| 操作 | 作用 |
+### Dou Dizhu
+
+The Chinese three-player game: one landlord against two farmers. Three rule sets: classic bidding (1 to 3 points), rob the landlord, and unshuffled, which deals noticeably more bombs.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/en/ddz-table.webp" alt="Dou Dizhu in the table view"></td>
+    <td width="50%"><img src="docs/images/en/ddz-immersive.webp" alt="Dou Dizhu in the world view"></td>
+  </tr>
+  <tr>
+    <td align="center">Table view: the whole screen is the table.</td>
+    <td align="center">World view: the same game, with the room still around you. Tab switches.</td>
+  </tr>
+</table>
+
+### UNO
+
+Two to four players, with four rule sets: classic for 4, 3 or 2 players, and a 4-player version where draw cards stack (+2 on +2, +4 on either).
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/en/uno-table.webp" alt="UNO in the table view"></td>
+    <td width="50%"><img src="docs/images/uno-seated.webp" alt="Sitting at the UNO table with three villagers"></td>
+  </tr>
+  <tr>
+    <td align="center">Playable cards pop up; click one to play it.</td>
+    <td align="center">Close the screen and you're still at the table.</td>
+  </tr>
+</table>
+
+### Out in the world
+
+The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and pick a card back with the button in the top right of the screen. Stools come in all 16 colors.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/en/seated.webp" alt="The view from a stool at the Dou Dizhu table"></td>
+    <td width="50%"><img src="docs/images/villagers.webp" alt="Villagers standing around the UNO table"></td>
+  </tr>
+  <tr>
+    <td align="center">Your own hand stands up facing you.</td>
+    <td align="center">The villagers are only set dressing. The computer players are invisible, which is either polite or unsettling.</td>
+  </tr>
+</table>
+
+### Computers, and people who wander off
+
+Empty seats can take a computer: easy, normal or hard. Hard plays the hand out in its head many times before it commits to a card.
+
+If someone walks away or drops out, a computer plays their turns so the game doesn't stall. Run out of time twice in a row and the computer takes over for you; click "Stop auto" to get your hand back.
+
+### Replays and records
+
+Every finished game is saved. Step through it, see everyone's cards, and watch it from any seat. The table also keeps a record for each player.
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/images/en/result.webp" alt="The result of a round"></td>
+    <td width="33%"><img src="docs/images/en/replay.webp" alt="Watching a replay"></td>
+    <td width="33%"><img src="docs/images/en/lobby.webp" alt="The table lobby with a player's record"></td>
+  </tr>
+  <tr>
+    <td align="center">End of the round</td>
+    <td align="center">Replay, all cards showing</td>
+    <td align="center">The lobby, with your record</td>
+  </tr>
+</table>
+
+It speaks English, Simplified Chinese, Traditional Chinese, Japanese and Korean, and follows your game language.
+
+## How to play
+
+1. **Craft a card table.** Top row: 3 wool of any color. Middle row: 3 planks of any wood. Bottom row: a log of any kind in each corner. In creative it's in the Functional Blocks tab.
+2. **Place it and right-click it.** The table spreads out 3x3 from the block you clicked, so leave room in front and to both sides. Click "Sit here" to take a seat, "Add computer" on an empty seat, or "Fill with computers" for all of them.
+3. **Pick a game.** "Game" switches between Dou Dizhu and UNO. Choose the rules and the turn timer, then click "Start".
+
+Tables placed by older versions (one block big) grow into 3x3 tables by themselves. If there isn't room, they drop as an item instead.
+
+**Stools.** Craft one from a wool, a wooden slab and a stick, stacked top to bottom. The wool sets the cushion color, and you can re-dye it later. Put a stool just outside the middle of a side that has a seat (three sides for Dou Dizhu, all four for 4-player UNO), and right-clicking it sits you in that seat. A stool that isn't next to a table is still a perfectly good stool.
+
+### Controls
+
+Dou Dizhu:
+
+| Input | Does |
 | --- | --- |
-| 左键点牌 | 出这张牌 |
-| 右键 | 取消选颜色 |
-| D | 摸牌（被罚时一次摸完） |
-| 空格 / 回车 | 摸到能出的牌但想留着 |
-| U | 剩两张时喊 UNO，再出牌；忘了喊会罚摸 2 张 |
-| Tab | 切换牌桌 / 沉浸视角 |
+| Left-click a card | Select or deselect it |
+| Right-click | Clear the selection |
+| Space / Enter | Play the selected cards; with nothing selected, pass |
+| H | Hint. Press again for a different play |
+| Tab | Switch between the table view and the world view |
 
-UNO 的几处简化：翻开的第一张一定是数字牌；+4 只能在手里没有当前颜色时出（不用质疑）；喊 UNO 要在出倒数第二张牌时一起喊，没喊就直接罚。谁先出完谁赢，其他人按手里剩下的牌给分：数字牌按点数，功能牌 20 分，万能牌 50 分。
+UNO. Playable cards are raised; click one to play it. Wild cards ask for a color first.
 
-回放：
+| Input | Does |
+| --- | --- |
+| Left-click a card | Play it |
+| Right-click | Back out of choosing a color |
+| D | Draw (a penalty is drawn all at once) |
+| Space / Enter | Keep the playable card you just drew |
+| U | Call UNO with two cards left, then play. Forget and you draw 2 |
+| Tab | Switch between the table view and the world view |
 
-- 一局结束后，结算框里点「看回放」。
-- `/tukuai replays` 列出最近的对局，点名字就能打开；`/tukuai replay <名字>` 按名字打开。
-- 回放里空格暂停或继续，左右方向键前后一步，Home / End 跳到开头或结尾，Tab 换视角。
+A few UNO simplifications: the first card turned up is always a number card. +4 can only be played when you have nothing of the current color, so there's no challenging it. UNO has to be called as you play your second-to-last card; miss it and the penalty is immediate. First to empty their hand wins, and everyone else pays what's left in theirs: face value for numbers, 20 for action cards, 50 for wilds.
 
-回放文件存在存档目录的 `tukuai/replays` 里。
+### Replays
 
-战绩：
+- When a round ends, click "Replay" in the result box.
+- `/tukuai replays` lists recent games; click a name to watch it. `/tukuai replay <name>` opens one by name.
+- In a replay: Space pauses and resumes, Left and Right step back and forward, Home and End jump to the start and the end, Tab changes whose seat you watch from.
 
-- `/tukuai stats` 看自己打了多少局、赢了多少、积分多少；`/tukuai stats <玩家名>` 看别人的。
-- `/tukuai top` 看积分排行前十。
+Replays are saved in `tukuai/replays` inside the world folder.
 
-战绩存在存档目录的 `tukuai/stats.json` 里，只算真人，电脑不记。
+### Records
 
-## 服务器设置
+- `/tukuai stats` shows how many games you've played and won, and your points. `/tukuai stats <player>` shows someone else's.
+- `/tukuai top` shows the ten players with the most points.
 
-第一次开服（或进单人存档）后会生成 `config/tukuai-server.properties`，改完后 `/reload` 或重启生效：
+Records are kept in `tukuai/stats.json` inside the world folder. Only people count; the computers don't get a record.
 
-| 设置 | 默认 | 作用 |
+## Server settings
+
+The first time a server starts (or a single-player world opens), the mod writes `config/tukuai-server.properties`. Change it, then `/reload` or restart:
+
+| Setting | Default | What it does |
 | --- | --- | --- |
-| `allowBots` | `true` | 是否允许电脑玩家入座 |
-| `botDelaySeconds` | `1.1` | 电脑出牌前平均等几秒 |
-| `saveReplays` | `true` | 是否保存回放 |
-| `maxReplays` | `500` | 最多留多少局回放，多了先删最旧的；`0` 表示不限 |
-| `keepStats` | `true` | 是否记录战绩 |
+| `allowBots` | `true` | Whether computers may take seats |
+| `botDelaySeconds` | `1.1` | Roughly how many seconds a computer waits before it plays |
+| `saveReplays` | `true` | Whether finished games are saved |
+| `maxReplays` | `500` | How many replays to keep; the oldest go first. `0` keeps them all |
+| `keepStats` | `true` | Whether to keep player records |
 
-## 玩家需要安装
+## For developers
 
-| 加载器 | 还需要 |
-| --- | --- |
-| NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 或更新 |
-| Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 或更新 |
+<details>
+<summary>Building, code layout, adding a game, tests</summary>
 
-## 开发
+### Building
 
-需要 JDK 25。在仓库根目录运行：
+You need JDK 25. From the repository root:
 
 ```sh
-./gradlew build                 # 编译、测试，并打出两个加载器的 jar
-./gradlew :engine:test          # 只跑规则引擎的单元测试
-./gradlew :fabric:runClient     # 用 Fabric 启动游戏
-./gradlew :neoforge:runClient   # 用 NeoForge 启动游戏
+./gradlew build                 # compile, test, and build the jars for both loaders
+./gradlew :engine:test          # only the rules engine's unit tests
+./gradlew :fabric:runClient     # start the game with Fabric
+./gradlew :neoforge:runClient   # start the game with NeoForge
 ```
 
-打好的 jar 在 `fabric/build/libs` 和 `neoforge/build/libs`。
+The jars end up in `fabric/build/libs` and `neoforge/build/libs`.
 
-## 代码结构
+### Code layout
 
-| 目录 | 放什么 |
+| Directory | What's in it |
 | --- | --- |
-| `engine` | 规则、电脑、回放等纯 Kotlin 代码，不依赖 Minecraft，可以单独跑单元测试 |
-| `common` | 两个加载器共用的 Minecraft 代码和资源（方块、网络、界面、渲染、贴图、语言文件） |
-| `fabric`、`neoforge` | 各加载器的入口、注册和事件转接，越薄越好 |
+| `engine` | Rules, computer players and replays. Plain Kotlin with no Minecraft in it, so it can be unit tested on its own |
+| `common` | Minecraft code and resources shared by both loaders: blocks, networking, screens, rendering, textures, language files |
+| `fabric`, `neoforge` | Each loader's entry point, registration and event glue. The thinner the better |
 
-`engine` 和 `common` 的源码由两个加载器各自编译进自己的 jar，所以每个加载器只发布一个 jar。
-`engine` 里不能引用任何 `net.minecraft` 的类；Mixin 以后放在 `common/src/main/java`，用 Java 写。
+Each loader compiles `engine` and `common` into its own jar, so there is one jar per loader.
+Nothing in `engine` may reference `net.minecraft`. Mixins, when there are any, go in `common/src/main/java` and are written in Java.
 
-### 加一个新游戏
+### Adding a game
 
-1. 在 `engine` 里实现 `GameDefinition`（规则、发牌、出招、每个座位能看到什么、电脑），在 `TuKuai.init()` 里注册到 `GameRegistry`。
-2. 在 `common/.../client` 里实现 `GameUi`（界面怎么画、桌面上摆什么牌），在 `TuKuaiClient.init()` 里注册到 `GameUis`。
-3. 在每个语言文件里加上 `tukuai.game.<id>` 和各个规则的名字。CI 会检查所有语言文件的键是否和 `en_us.json` 一致。
+1. In `engine`, implement `GameDefinition` (rules, dealing, moves, what each seat can see, the computer player) and register it with `GameRegistry` in `TuKuai.init()`.
+2. In `common/.../client`, implement `GameUi` (how the screen is drawn and which cards go on the table) and register it with `GameUis` in `TuKuaiClient.init()`.
+3. Add `tukuai.game.<id>` and the name of each rule set to every language file. CI checks that every language file has the same keys as `en_us.json`.
 
-牌桌、座位、电脑代打、计时、同步、存档和回放都是通用的，不用再写一遍。
+Tables, seats, computers filling in, turn timers, syncing, saving and replays are shared, so a new game gets them for free.
 
-### 测试
+### Tests
 
-- `./gradlew :engine:test` 跑规则和电脑的测试，包括「困难电脑在同样的牌局里比普通电脑赢得多」。
-- `./gradlew :fabric:runClientGameTest` 会真的打开游戏打一局：坐下、加电脑、托管打完、看回放，每一步截图。CI 上用 xvfb 跑，截图以 base64 打在日志里。
+- `./gradlew :engine:test` runs the rules and computer tests, including one that checks the hard computer really does win more than the normal one on the same deals.
+- `./gradlew :fabric:runClientGameTest` opens the real game and plays a round: sits down, adds computers, lets them finish, watches the replay, and takes a screenshot at each step. CI runs it under xvfb and prints the screenshots into the log as base64.
+- `TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest` takes the screenshots in this README instead, once for each language listed. They land in `fabric/build/run/clientGameTest/screenshots`. The ones used here are converted to WebP and kept in `docs/images`.
 
-提交信息统一写成 `[type](scope) Title`，例如 `[feat](engine) Add Dou Dizhu hand types`。
+Commit messages look like `[type](scope) Title`, for example `[feat](engine) Add Dou Dizhu hand types`.
 
-依赖版本都在 `gradle.properties`。`kotlin_version` 不能高于 Kotlin for Forge 和 Fabric Language Kotlin 自带的 Kotlin 版本。
+Dependency versions are all in `gradle.properties`. `kotlin_version` must not be newer than the Kotlin bundled with Kotlin for Forge and Fabric Language Kotlin.
 
-## 许可证
+</details>
+
+## License
 
 [MIT](LICENSE)
