@@ -94,6 +94,12 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             ClientConfig.save()
             rebuildWidgets()
         }
+        // The card faces' button sits beside the card back's, as the rule book's does beside the view's.
+        button(faceGlyph(ClientConfig.cardFace), width - CORNER, 26, 20) {
+            ClientConfig.cardFace = (ClientConfig.cardFace + 1) % CardArt.FACE_STYLES.size
+            ClientConfig.save()
+            rebuildWidgets()
+        }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.card_face", faceName(ClientConfig.cardFace))))
         if (t == null) return
         if (inLobby(t)) {
             initLobby(t)
@@ -313,6 +319,16 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         fun botLevelName(level: BotLevel): Component = Component.translatable("tukuai.bot.${level.name.lowercase()}")
 
         fun botLevelText(level: BotLevel): Component = Component.translatable("tukuai.table.bot_level", botLevelName(level))
+
+        /** The name of a card face style, see [CardArt.FACE_STYLES]. */
+        fun faceName(style: Int): Component = Component.translatable("tukuai.card_face.${CardArt.FACE_STYLES[style]}")
+
+        /** A hint of each card face style on its button: a red diamond, a big A, a blue diamond. */
+        private fun faceGlyph(style: Int): Component = when (CardArt.FACE_STYLES[style]) {
+            "large" -> Component.literal("A").withStyle { it.withBold(true) }
+            "four_color" -> Component.literal("♦").withColor(0x4A7CFF)
+            else -> Component.literal("♦").withColor(0xFF5A50)
+        }
 
         fun gameName(gameId: String): Component = Component.translatable("tukuai.game.$gameId")
 

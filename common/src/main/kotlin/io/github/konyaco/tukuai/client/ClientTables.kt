@@ -27,11 +27,11 @@ class ClientTable(val pos: BlockPos, val snapshot: TableSnapshot, private val re
     }
 
     private var scene: List<TableCard>? = null
-    private var sceneKey: Pair<List<Direction>, Int>? = null
+    private var sceneKey: Triple<List<Direction>, Int, Int>? = null
 
     /** Cards on the table top, worked out once per update rather than every frame. */
     fun scene(sides: List<Direction>): List<TableCard> {
-        val key = sides to ClientConfig.cardBack
+        val key = Triple(sides, ClientConfig.cardBack, ClientConfig.cardFace)
         if (key != sceneKey) {
             sceneKey = key
             scene = if (view == null) emptyList() else ui?.scene(this, sides) ?: emptyList()

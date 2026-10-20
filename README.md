@@ -71,7 +71,7 @@ When someone is down to one card, their box and the table show a red warning, an
 
 ### Out in the world
 
-The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and pick a card back with the button in the top right of the screen. Tables and stools come in every kind of wood, from oak to warped, and stool cushions in all 16 colors.
+The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and pick a card back with the button in the top right of the screen. The small button beside it changes the card faces: classic, large corners that are easier to read in a squeezed hand, or four colors (diamonds blue, clubs green). Tables and stools come in every kind of wood, from oak to warped, and stool cushions in all 16 colors.
 
 <table>
   <tr>

@@ -10,6 +10,9 @@ import net.minecraft.client.Minecraft
 object ClientConfig {
     /** Which card back to use, see [CardArt.BACK_COUNT]. */
     var cardBack = 0
+
+    /** Which look playing card faces have, an index into [CardArt.FACE_STYLES]. */
+    var cardFace = 0
     var immersive = false
     var botLevel = BotLevel.NORMAL
 
@@ -29,6 +32,7 @@ object ClientConfig {
             val p = Properties()
             Files.newBufferedReader(f).use(p::load)
             cardBack = p.getProperty("cardBack")?.toIntOrNull()?.takeIf { it in 0 until CardArt.BACK_COUNT } ?: 0
+            cardFace = CardArt.FACE_STYLES.indexOf(p.getProperty("cardFace")).coerceAtLeast(0)
             immersive = p.getProperty("immersive") == "true"
             botLevel = BotLevel.entries.firstOrNull { it.name == p.getProperty("botLevel") } ?: BotLevel.NORMAL
             guideSeen = p.getProperty("guideSeen") == "true"
@@ -43,6 +47,7 @@ object ClientConfig {
             Files.createDirectories(f.parent)
             val p = Properties()
             p.setProperty("cardBack", cardBack.toString())
+            p.setProperty("cardFace", CardArt.FACE_STYLES[cardFace.coerceIn(0, CardArt.FACE_STYLES.size - 1)])
             p.setProperty("immersive", immersive.toString())
             p.setProperty("botLevel", botLevel.name)
             p.setProperty("guideSeen", guideSeen.toString())

@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.fabric.test
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.ReplayScreen
@@ -128,6 +129,20 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             }
             context.waitTicks(5)
             shot(context, "4-screen-immersive")
+
+            // The same hand in each of the other card face styles, on the screen and on the table.
+            for ((i, style) in CardArt.FACE_STYLES.withIndex().drop(1)) {
+                for (immersive in listOf(false, true)) {
+                    context.runOnClient<RuntimeException> {
+                        ClientConfig.cardFace = i
+                        ClientConfig.immersive = immersive
+                        (it.screen as? TableScreen)?.refresh()
+                    }
+                    context.waitTicks(5)
+                    shot(context, "4-face-$style-${if (immersive) "world" else "screen"}")
+                }
+            }
+            context.runOnClient<RuntimeException> { ClientConfig.cardFace = 0 }
 
             // Let the computer play for us until the round ends.
             act(server, table, TableOp.AUTO, 1)

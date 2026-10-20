@@ -12,8 +12,9 @@ from PIL import Image
 OUT = "common/src/main/resources/assets/tukuai/textures"
 CARD_W, CARD_H = 32, 44
 COLS = 14
-ATLAS_W, ATLAS_H = 512, 512
+ATLAS_W, ATLAS_H = 512, 1024
 UNO_ROW = 6  # UNO cards start on this row of cards, below the icons; see CardArt.UNO_FIRST.
+STYLE_ROW = 11  # The other face styles start on this row, 54 cards each; see CardArt.STYLE_FIRST.
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
@@ -150,9 +151,19 @@ def corner(card, label, suit, color):
     bitmap(card, PIPS[suit], 2, 12, color)
 
 
-def face(rank, suit):
+# The four-colour style: diamonds blue and clubs green, so no two suits share a colour.
+FOUR_COLORS = {"S": BLACK, "H": RED, "D": (36, 92, 204, 255), "C": (28, 136, 60, 255)}
+
+
+def suit_color(suit, four=False):
+    if four:
+        return FOUR_COLORS[suit]
+    return RED if suit in ("H", "D") else BLACK
+
+
+def face(rank, suit, four=False):
     card = blank()
-    color = RED if suit in ("H", "D") else BLACK
+    color = suit_color(suit, four)
     corner(card, rank, suit, color)
     if rank in ("J", "Q", "K"):
         for x in range(10, 22):
@@ -166,6 +177,34 @@ def face(rank, suit):
     else:
         big_pip(card, suit, 16, 22, 7 if rank == "A" else 6, color)
     paste_turned_corner(card, 11, 20)
+    return card
+
+
+def large_face(rank, suit):
+    """Rank and suit twice the usual size in the top-left corner, the part of a card that shows in a fanned hand."""
+    card = blank()
+    color = suit_color(suit)
+    # Twice the size; a 10 only twice the height, and bold, so it fits the strip a fanned card shows.
+    big = [scaled(FONT[ch], 2) if len(rank) == 1 else bold(tall(FONT[ch])) for ch in rank]
+    gap = 2 if len(rank) == 1 else 1
+    width = sum(len(rows[0]) for rows in big) + gap * (len(big) - 1)
+    x = 2 + max(0, (11 - width) // 2)
+    for rows in big:
+        bitmap(card, rows, x, 3, color)
+        x += len(rows[0]) + gap
+    bitmap(card, scaled(PIPS[suit], 2), 3, 20, color)
+    # The usual small corner, turned around, at the bottom right.
+    small = Image.new("RGBA", (CARD_W, CARD_H), CLEAR)
+    corner(small, rank, suit, color)
+    turned = small.rotate(180)
+    for y in range(CARD_H - 20, CARD_H):
+        for x in range(CARD_W - 11, CARD_W):
+            px = turned.getpixel((x, y))
+            if px[3] > 0:
+                card.putpixel((x, y), px)
+    if rank in ("J", "Q", "K"):
+        for y in range(4, 40):
+            put(card, 22, y, GOLD)
     return card
 
 
@@ -235,6 +274,15 @@ REVERSE = [".....#..", "########", ".....#..", "........", "..#.....", "########
 
 def scaled(rows, k):
     return ["".join(ch * k for ch in row) for row in rows for _ in range(k)]
+
+
+def tall(rows):
+    return [row for row in rows for _ in range(2)]
+
+
+def bold(rows):
+    """Each pixel also one to its right."""
+    return ["".join("#" if ch == "#" or (i > 0 and row[i - 1] == "#") else "." for i, ch in enumerate(row + ".")) for row in rows]
 
 
 def rotated(rows):
@@ -424,6 +472,11 @@ def atlas():
     sheet.paste(farmer_icon(), (16, icon_y))
     for i, card in enumerate(uno_cards()):
         sheet.paste(card, ((i % COLS) * CARD_W, (UNO_ROW + i // COLS) * CARD_H))
+    # The other face styles, each in the same order as the classic faces.
+    styled = [large_face(r, s) for s in SUITS for r in RANKS] + [joker(False), joker(True)]
+    styled += [face(r, s, four=True) for s in SUITS for r in RANKS] + [joker(False), joker(True)]
+    for i, card in enumerate(styled):
+        sheet.paste(card, ((i % COLS) * CARD_W, (STYLE_ROW + i // COLS) * CARD_H))
     # The paper colour of a card's edges, for cards drawn with thickness on the table.
     for y in range(8):
         for x in range(8):
