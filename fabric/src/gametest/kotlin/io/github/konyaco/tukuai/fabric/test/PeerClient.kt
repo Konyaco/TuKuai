@@ -25,7 +25,8 @@ import net.minecraft.core.BlockPos
  * turns. It does nothing unless the test started it, which sets `tukuai.peer.server`.
  *
  * It writes what it sees to `peer-status.properties` in its game folder every half
- * second, and quits when the test leaves a file named `stop` there.
+ * second, and quits when the test leaves a file named `stop` there. A file named
+ * `command` holds one thing for it to do: a [TableOp] to send, or CLOSE to close the screen.
  */
 class PeerClient : ClientModInitializer {
     override fun onInitializeClient() {
@@ -43,6 +44,14 @@ class PeerClient : ClientModInitializer {
             if (Files.exists(dir.resolve("stop"))) {
                 mc.stop()
                 return@register
+            }
+            val command = dir.resolve("command")
+            if (mc.level != null && Files.exists(command)) {
+                when (val text = Files.readString(command).trim()) {
+                    "CLOSE" -> mc.setScreen(null)
+                    else -> SeatPlayer.send(table, TableOp.valueOf(text))
+                }
+                Files.delete(command)
             }
             if (mc.level == null) {
                 // Join once the title screen is up, and again only if the first try failed.
@@ -66,11 +75,14 @@ class PeerClient : ClientModInitializer {
         p["connected"] = (mc.level != null).toString()
         p["name"] = mc.user.name
         p["sent"] = player.sent.toString()
+        p["screen"] = mc.screen?.javaClass?.simpleName ?: ""
         val t = ClientTables[table]
         if (t != null) {
             val s = t.snapshot
             p["status"] = s.status.name
             p["step"] = s.step.toString()
+            p["rounds"] = s.rounds.toString()
+            p["tally"] = s.tally.joinToString(";")
             p["you"] = (s.you ?: -1).toString()
             p["seats"] = s.seats.joinToString(";") { seat ->
                 when (val o = seat.occupant) {

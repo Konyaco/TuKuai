@@ -227,6 +227,7 @@ Tables, seats, computers filling in, turn timers, syncing, saving and replays ar
 - `./gradlew :engine:test` runs the rules and computer tests, including one that checks the hard computer really does win more than the normal one on the same deals.
 - `./gradlew :fabric:runClientGameTest` opens the real game and plays a round: sits down, adds computers, lets them finish, watches the replay, and takes a screenshot at each step. CI runs it under xvfb and prints the screenshots into the log as base64.
 - `TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest` takes the screenshots in this README instead, once for each language listed. They land in `fabric/build/run/clientGameTest/screenshots`. The ones used here are converted to WebP and kept in `docs/images`.
+- `./gradlew :fabric:runMultiplayerTest` starts a dedicated server and two game windows, each a separate player, and has them play two rounds of Dou Dizhu at one table with a computer, over the network. Partway through, each player in turn drops off and comes back to their seat.
 
 Commit messages look like `[type](scope) Title`, for example `[feat](engine) Add Dou Dizhu hand types`.
 

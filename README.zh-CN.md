@@ -227,6 +227,7 @@ UNO 的几处简化：翻开的第一张一定是数字牌；+4 只能在手里�
 - `./gradlew :engine:test` 跑规则和电脑的测试，包括「困难电脑在同样的牌局里比普通电脑赢得多」。
 - `./gradlew :fabric:runClientGameTest` 会真的打开游戏打一局：坐下、加电脑、托管打完、看回放，每一步截图。CI 上用 xvfb 跑，截图以 base64 打在日志里。
 - `TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest` 改为拍这份 README 里的截图，列出的每种语言各拍一套，存在 `fabric/build/run/clientGameTest/screenshots`。用到的几张转成 WebP 放在 `docs/images`。
+- `./gradlew :fabric:runMultiplayerTest` 开一个专用服务器和两个游戏窗口（两个不同的玩家），通过网络和一个电脑同桌打两局斗地主。中途两人先后掉线，再回到自己的座位上。
 
 提交信息统一写成 `[type](scope) Title`，例如 `[feat](engine) Add Dou Dizhu hand types`。
 
