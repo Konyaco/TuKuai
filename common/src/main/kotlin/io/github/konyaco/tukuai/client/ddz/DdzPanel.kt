@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.client.ddz
 
 import io.github.konyaco.tukuai.client.CardArt
+import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.PanelHost
@@ -266,8 +267,12 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
     }
 
     private fun renderOpponent(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView, seat: Seat, recent: DdzEvent?, onLeft: Boolean) {
-        val boxW = 96
-        val x = if (onLeft) 8 else width - 8 - boxW
+        // With the world in view, the table's own hands stand in the middle of the screen, so
+        // the boxes shrink to the edges and keep everything they show in their own column.
+        val compact = ClientConfig.immersive && screen.interactive
+        val boxW = if (compact) 74 else 96
+        val margin = if (compact) 4 else 8
+        val x = if (onLeft) margin else width - margin - boxW
         val y = 70
         val acting = view.turn == seat && table.snapshot.status == TableStatus.PLAYING
         g.fill(x - 2, y - 2, x + boxW + 2, y + 54, if (acting) 0x90806020.toInt() else 0x70000000)
@@ -277,19 +282,28 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
 
         CardArt.draw(g, CardArt.back(), x, y + 18, 0.5f)
         g.text(font, Component.literal("× ${view.handCounts[seat]}"), x + 20, y + 26, TableScreen.YELLOW, true)
-        if (view.doubles.getOrNull(seat) == true) g.text(font, Component.translatable("tukuai.ddz.doubled"), x + 56, y + 26, TableScreen.RED, true)
+        if (view.doubles.getOrNull(seat) == true) {
+            if (compact) g.text(font, Component.translatable("tukuai.ddz.doubled"), x, y + 42, TableScreen.RED, true)
+            else g.text(font, Component.translatable("tukuai.ddz.doubled"), x + 56, y + 26, TableScreen.RED, true)
+        }
         if (acting) renderTimer(g, table, x + boxW - 4, y + 42, alignRight = true)
 
-        // What they just did beside the box. Their whole hand, once it is shown (at the end,
-        // or in a replay), goes below the box so the result in the middle does not cover it.
-        val playX = if (onLeft) x + boxW + 8 else x - 8
+        // What they just did beside the box, or below it when compact. Their whole hand, once
+        // it is shown (at the end, or in a replay), goes below the box so the result in the
+        // middle does not cover it.
         val align = if (onLeft) Align.LEFT else Align.RIGHT
+        val edgeX = if (onLeft) x else x + boxW
         val revealed = view.revealedHands.getOrNull(seat)
         val finished = table.snapshot.status == TableStatus.FINISHED
         if (revealed != null) {
-            renderCards(g, revealed.sortedWith(DDZ_ORDER.reversed()), if (onLeft) x else x + boxW, y + 60, 0.5f, 7, align)
+            renderCards(g, revealed.sortedWith(DDZ_ORDER.reversed()), edgeX, y + 60, 0.5f, 7, align)
         }
-        if (recent != null && !(finished && revealed != null)) renderEvent(g, view, recent, playX, y + 4, align)
+        if (recent == null || (finished && revealed != null)) return
+        if (compact) {
+            renderEvent(g, view, recent, edgeX, if (recent.kind == DdzEventKind.PLAY) y + 58 else y + 48, align, scale = 0.5f, step = 7)
+        } else {
+            renderEvent(g, view, recent, if (onLeft) x + boxW + 8 else x - 8, y + 4, align)
+        }
     }
 
     private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView, me: Seat) {
@@ -329,9 +343,9 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
 
     private enum class Align { LEFT, CENTER, RIGHT }
 
-    private fun renderEvent(g: GuiGraphicsExtractor, view: DdzView, event: DdzEvent, x: Int, y: Int, align: Align) {
+    private fun renderEvent(g: GuiGraphicsExtractor, view: DdzView, event: DdzEvent, x: Int, y: Int, align: Align, scale: Float = 0.75f, step: Int = 13) {
         if (event.kind == DdzEventKind.PLAY) {
-            renderCards(g, event.cards.sortedWith(DDZ_ORDER.reversed()), x, y, 0.75f, 13, align)
+            renderCards(g, event.cards.sortedWith(DDZ_ORDER.reversed()), x, y, scale, step, align)
             return
         }
         val text = eventText(event) ?: return
