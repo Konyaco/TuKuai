@@ -2,10 +2,12 @@ package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.table.TableSnapshot
+import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Direction
+import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvent
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.Level
@@ -35,6 +37,17 @@ class ClientTable(val pos: BlockPos, val snapshot: TableSnapshot, private val re
             scene = if (view == null) emptyList() else ui?.scene(this, sides) ?: emptyList()
         }
         return scene ?: emptyList()
+    }
+
+    /** True for a player who is not in the game on this table, only looking on. */
+    val watching: Boolean get() = snapshot.you == null && snapshot.status != TableStatus.LOBBY
+
+    /** For a player [watching] a game: whether they can see every hand, or why not. */
+    fun watchingLine(): Component? = when {
+        !watching -> null
+        snapshot.status == TableStatus.FINISHED -> Component.translatable("tukuai.table.watching")
+        snapshot.spectators -> Component.translatable("tukuai.table.watching_open")
+        else -> Component.translatable("tukuai.table.watching_closed")
     }
 
     /** Ticks left on the turn timer, counted down locally between updates; -1 when there is none. */

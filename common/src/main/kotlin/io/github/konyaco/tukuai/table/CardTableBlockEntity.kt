@@ -11,6 +11,7 @@ import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.core.MatchHandle
 import io.github.konyaco.tukuai.engine.core.Replay
 import io.github.konyaco.tukuai.engine.core.Seat
+import io.github.konyaco.tukuai.engine.core.Watching
 import io.github.konyaco.tukuai.engine.core.newMatch
 import io.github.konyaco.tukuai.engine.core.rebuildAny
 import io.github.konyaco.tukuai.engine.core.seatCount
@@ -57,6 +58,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         private set
     private var turnSeconds = 30
 
+    /** Whether players who are not in the game see every hand; only the [host] may change it. */
+    private var spectators = true
+
     private var seats: MutableList<Occupant?> = MutableList(3) { null }
     private var auto = BooleanArray(3)
     private var present = BooleanArray(3)
@@ -65,6 +69,12 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private var tally = IntArray(3)
     private var rounds = 0
     private var match: MatchHandle? = null
+
+    /** The seat each player was dealt into when [match] started; they see nothing else until it is over. */
+    private var dealtIn: Map<UUID, Seat> = emptyMap()
+
+    /** Players in the order they sat down, earliest first, to tell who the [host] is. */
+    private val arrivals = ArrayList<UUID>()
 
     /** Goes up on every change a client should see; each player is sent the table once per revision. */
     private var revision = 0
@@ -100,6 +110,16 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private val center: Vec3 get() = Vec3.atCenterOf(worldPosition)
 
     fun seatOf(uuid: UUID): Seat? = seats.indexOfFirst { it is Occupant.Human && it.uuid == uuid }.takeIf { it >= 0 }
+
+    /**
+     * The player who sat down first of those at the table now, who decides whether others
+     * may watch every hand; null when no player sits here, and then anyone may.
+     */
+    val host: UUID?
+        get() = arrivals.firstOrNull { seatOf(it) != null } ?: seats.firstNotNullOfOrNull { (it as? Occupant.Human)?.uuid }
+
+    /** The seat whose cards [uuid] may see, or null when they watch; see [Watching.seatFor]. */
+    private fun viewSeatOf(uuid: UUID): Seat? = Watching.seatFor(dealtIn[uuid], seatOf(uuid), status != TableStatus.PLAYING)
 
     /** The side of the table seat [seat] sits on; play goes counterclockwise seen from above. */
     fun sideOf(seat: Seat): Direction {
@@ -176,6 +196,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private fun takeSeat(level: ServerLevel, player: ServerPlayer, seat: Seat) {
         seatOf(player.uuid)?.let { seats[it] = null }
         seats[seat] = Occupant.Human(player.uuid, player.plainTextName)
+        arrivals.remove(player.uuid)
+        arrivals.retainAll { seatOf(it) != null }
+        arrivals += player.uuid
         present[seat] = true
         absentChecks[seat] = 0
         changed()
@@ -318,6 +341,12 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 timeouts[mine] = 0
                 changed()
             }
+            TableOp.SPECTATE -> {
+                val host = host
+                if (!idle || (host != null && host != player.uuid)) return
+                spectators = request.a != 0
+                changed()
+            }
             TableOp.REPLAY -> {
                 val m = match?.takeIf { it.result != null } ?: return
                 Services.platform.sendToPlayer(player, ReplayPayload(lastReplay ?: "", m.replay(playerNames()).encode()))
@@ -329,6 +358,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         val m = game.newMatch(presetId, level.random.nextLong())
         resizeSeats(m.seatCount)
         match = m
+        dealtIn = seats.indices.mapNotNull { seat -> (seats[seat] as? Occupant.Human)?.let { it.uuid to seat } }.toMap()
         auto.fill(false)
         timeouts.fill(0)
         lastStep = -1
@@ -500,8 +530,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private fun sync(level: ServerLevel) {
         val c = center
-        var spectatorView: ByteArray? = null
-        var spectatorDone = false
+        var watcherView: ByteArray? = null
+        var watcherDone = false
         for (player in level.players()) {
             if (player.distanceToSqr(c) > SYNC_RANGE * SYNC_RANGE) {
                 sentRevision.remove(player.uuid)
@@ -509,15 +539,19 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             }
             if (sentRevision[player.uuid] == revision) continue
             sentRevision[player.uuid] = revision
-            val seat = seatOf(player.uuid)
-            val view = if (seat != null) {
-                match?.encodedView(seat)
-            } else {
-                if (!spectatorDone) {
-                    spectatorView = match?.encodedView(null)
-                    spectatorDone = true
+            val seat = viewSeatOf(player.uuid)
+            val m = match
+            val view = when {
+                m == null -> null
+                seat != null -> m.encodedView(seat)
+                else -> {
+                    // Everyone watching gets the same view, so it is worked out once.
+                    if (!watcherDone) {
+                        watcherView = Watching.encodedView(m, null, null, spectators)
+                        watcherDone = true
+                    }
+                    watcherView
                 }
-                spectatorView
             }
             Services.platform.sendToPlayer(player, TableSyncPayload(worldPosition, snapshot(level, seat, view).encode()))
         }
@@ -545,6 +579,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             step = m?.step ?: 0,
             timerTicks = if (timed) (turnSeconds * 20 - turnTicks).coerceAtLeast(0) else -1,
             view = view,
+            spectators = spectators,
+            host = host?.let(::seatOf),
         )
     }
 
@@ -556,12 +592,15 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         output.putString("preset", presetId)
         output.putInt("felt", felt.id)
         output.putInt("timer", turnSeconds)
+        output.putInt("spectators", if (spectators) 1 else 0)
+        output.putString("arrivals", arrivals.filter { seatOf(it) != null }.joinToString(","))
         output.putInt("rounds", rounds)
         output.putIntArray("tally", tally)
         output.putInt("seat_count", seats.size)
         seats.forEachIndexed { i, occupant -> output.putString("seat_$i", occupant?.save() ?: "") }
         output.putIntArray("auto", IntArray(auto.size) { if (auto[it]) 1 else 0 })
         match?.let { output.putString("match", Base64.getEncoder().encodeToString(it.replay(playerNames()).encode())) }
+        output.putString("dealt_in", dealtIn.entries.joinToString(",") { (uuid, seat) -> "$uuid=$seat" })
     }
 
     override fun loadAdditional(input: ValueInput) {
@@ -570,6 +609,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         presetId = input.getStringOr("preset", game.presets.first().id)
         felt = DyeColor.byId(input.getIntOr("felt", DyeColor.GREEN.id))
         turnSeconds = input.getIntOr("timer", 30).takeIf { it in TIMER_CHOICES } ?: 30
+        spectators = input.getIntOr("spectators", 1) != 0
+        arrivals.clear()
+        input.getStringOr("arrivals", "").split(',').mapNotNullTo(arrivals) { runCatching { UUID.fromString(it) }.getOrNull() }
         val count = input.getIntOr("seat_count", game.seatCount(presetId))
         seats = MutableList(count) { Occupant.load(input.getStringOr("seat_$it", "")) }
         auto = BooleanArray(count)
@@ -588,6 +630,11 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 null
             }
         }.orElse(null)
+        dealtIn = input.getStringOr("dealt_in", "").split(',').mapNotNull { entry ->
+            val (uuid, seat) = entry.split('=').takeIf { it.size == 2 } ?: return@mapNotNull null
+            val id = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return@mapNotNull null
+            seat.toIntOrNull()?.takeIf { it in 0 until count }?.let { id to it }
+        }.toMap()
         lastStep = -1
         revision++
     }

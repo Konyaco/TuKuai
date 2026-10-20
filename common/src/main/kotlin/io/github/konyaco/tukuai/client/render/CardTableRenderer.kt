@@ -183,7 +183,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         )
         val neg = { v: FloatArray -> floatArrayOf(-v[0], -v[1], -v[2]) }
         val face = sprite(card.sprite)
-        val backUv = sprite(back)
+        val backUv = sprite(if (card.backSprite >= 0) card.backSprite else back)
         side(buffer, pose, light, c, n, halfT, r, halfW, u, halfH, face)
         side(buffer, pose, light, c, neg(n), halfT, neg(r), halfW, u, halfH, backUv)
         side(buffer, pose, light, c, r, halfW, neg(n), halfT, u, halfH, EDGE)

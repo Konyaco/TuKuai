@@ -60,7 +60,9 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
 
     private fun handX(n: Int): Int = (width - (CardArt.WIDTH + handStep(n) * (n - 1))) / 2
 
-    private fun sortedHand(view: DdzView): List<PlayingCard> = view.hand.sortedWith(DDZ_ORDER.reversed())
+    /** Your own hand, or for a watcher who may see every hand, that of seat 0 at the bottom. */
+    private fun sortedHand(view: DdzView): List<PlayingCard> =
+        (if (view.seat == null) view.revealedHands.getOrNull(0).orEmpty() else view.hand).sortedWith(DDZ_ORDER.reversed())
 
     // ---- Buttons -------------------------------------------------------------------------------
 
@@ -161,6 +163,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
     override fun mouseClicked(table: ClientTable, x: Double, y: Double, button: Int): Boolean {
         if (!screen.interactive) return false
         val view = table.view as? DdzView ?: return false
+        if (view.seat == null) return false
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             if (selected.isEmpty()) return false
             selected.clear()
@@ -238,6 +241,11 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         if (!screen.interactive) return
         val round = s.rounds + if (s.status == TableStatus.PLAYING) 1 else 0
         g.text(font, Component.translatable("tukuai.table.rounds", round), 6, 17, TableScreen.GRAY, true)
+        // Wrapped to stay clear of what sits in the middle at the top.
+        val watching = table.watchingLine() ?: return
+        font.split(watching, width / 2 - 60).forEachIndexed { i, line ->
+            g.text(font, line, 6, 28 + i * 10, if (s.spectators) TableScreen.YELLOW else TableScreen.GRAY, true)
+        }
     }
 
     private fun renderTop(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView) {
@@ -296,7 +304,9 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         val revealed = view.revealedHands.getOrNull(seat)
         val finished = table.snapshot.status == TableStatus.FINISHED
         if (revealed != null) {
-            renderCards(g, revealed.sortedWith(DDZ_ORDER.reversed()), edgeX, y + 60, 0.5f, 7, align)
+            // A watcher sees hands while play goes on; with the box compact, its last move comes first.
+            val below = if (compact && !finished && recent != null) 58 + CardArt.HEIGHT / 2 + 4 else 60
+            renderCards(g, revealed.sortedWith(DDZ_ORDER.reversed()), edgeX, y + below, 0.5f, 7, align)
         }
         if (recent == null || (finished && revealed != null)) return
         if (compact) {
@@ -309,10 +319,12 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
     private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView, me: Seat) {
         val y = buttonY() + 4
         val x = 8
-        if (view.landlord != null && table.snapshot.you != null) CardArt.drawHat(g, view.isLandlord(me), x, y - 4)
-        val label = if (table.snapshot.you == null) Component.translatable("tukuai.table.watching") else seatLabel(table, me)
+        // A watcher who sees every hand watches from seat 0; one who does not just watches.
+        val seen = table.snapshot.you != null || view.revealedHands.isNotEmpty()
+        if (view.landlord != null && seen) CardArt.drawHat(g, view.isLandlord(me), x, y - 4)
+        val label = if (!seen) Component.translatable("tukuai.table.watching") else seatLabel(table, me)
         g.text(font, label, x + 20, y, TableScreen.WHITE, true)
-        if (view.turn == me && table.snapshot.status == TableStatus.PLAYING && table.snapshot.you != null) {
+        if (view.turn == me && table.snapshot.status == TableStatus.PLAYING && seen) {
             renderTimer(g, table, x + 20, y + 12, alignRight = false)
         }
     }

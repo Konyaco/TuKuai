@@ -7,6 +7,7 @@ import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.Occupant
 import io.github.konyaco.tukuai.table.TableOp
+import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
@@ -133,9 +134,10 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val canEdit = s.status != TableStatus.PLAYING
 
         val games = GameRegistry.all.map { it.id }.filter { GameUis[it] != null }
-        button(Component.translatable("tukuai.table.game", gameName(s.gameId)), left, top + 16, 196, canEdit && games.size > 1) {
+        button(Component.translatable("tukuai.table.game", gameName(s.gameId)), left, top + 16, 112, canEdit && games.size > 1) {
             send(TableOp.GAME, text = games[(games.indexOf(s.gameId) + 1).mod(games.size)])
         }
+        spectateButton(s, left + 116, top + 16, 80, canEdit)
         val timers = listOf(0, 15, 30, 60)
         button(timerText(s.turnSeconds), left + 200, top + 16, 100, canEdit) {
             send(TableOp.TIMER, timers[(timers.indexOf(s.turnSeconds) + 1).mod(timers.size)])
@@ -186,6 +188,16 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         }
     }
 
+    /** Whether others may see every hand. Only the host changes it; the server checks too. */
+    private fun spectateButton(s: TableSnapshot, x: Int, y: Int, w: Int, canEdit: Boolean) {
+        val mayChange = s.host == null || s.host == s.you
+        val text = Component.translatable(if (s.spectators) "tukuai.table.spectate.on" else "tukuai.table.spectate.off")
+        val tip = Component.translatable("tukuai.table.spectate.tip")
+        if (!mayChange) tip.append("\n").append(Component.translatable("tukuai.table.spectate.host_only", seatName(s.seats.getOrNull(s.host ?: -1)?.occupant)))
+        button(text, x, y, w, canEdit && mayChange) { send(TableOp.SPECTATE, if (s.spectators) 0 else 1) }
+            .setTooltip(Tooltip.create(tip))
+    }
+
     private fun renderLobby(g: GuiGraphicsExtractor, t: ClientTable) {
         val s = t.snapshot
         val left = lobbyLeft()
@@ -220,9 +232,13 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
                 val p = Component.literal(if (points > 0) "+$points" else points.toString())
                 g.text(font, p, left + 146 - font.width(p), y + 6, if (points >= 0) GREEN else RED, false)
             }
+            var tagX = left + 40 + font.width(name) + 4
             if (seat.occupant is Occupant.Human && !seat.present) {
-                g.text(font, Component.translatable("tukuai.table.away"), left + 40 + font.width(name) + 4, nameY, GRAY, false)
+                val away = Component.translatable("tukuai.table.away")
+                g.text(font, away, tagX, nameY, GRAY, false)
+                tagX += font.width(away) + 4
             }
+            if (s.host == i) g.text(font, Component.translatable("tukuai.table.host"), tagX, nameY, YELLOW, false)
         }
     }
 
