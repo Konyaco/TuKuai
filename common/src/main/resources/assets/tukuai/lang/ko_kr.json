@@ -30,6 +30,7 @@
   "tukuai.table.rounds": "%s번째 판",
   "tukuai.table.turn": "%s 차례",
   "tukuai.table.away": "(자리 비움)",
+  "tukuai.table.record": "%s판 %s승",
   "tukuai.table.name_away": "%s (자리 비움)",
   "tukuai.table.name_auto": "%s (자동)",
   "tukuai.table.auto.on": "자동 진행",

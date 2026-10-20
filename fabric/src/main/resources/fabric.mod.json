@@ -9,6 +9,7 @@
     "sources": "https://github.com/Konyaco/TuKuai"
   },
   "license": "${license}",
+  "icon": "assets/${mod_id}/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": ["io.github.konyaco.tukuai.fabric.TuKuaiFabric"],

@@ -48,6 +48,12 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     override fun refresh() = rebuildWidgets()
 
+    /** Back to the seats and rules once a game is over, to start the next one. */
+    fun openLobby() {
+        showLobby = true
+        rebuildWidgets()
+    }
+
     override fun button(text: Component, x: Int, y: Int, w: Int, active: Boolean, h: Int, onPress: () -> Unit): Button {
         val b = Button.builder(text) { onPress() }.bounds(x, y, w, h).build()
         b.active = active
@@ -80,10 +86,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             }
             panel?.rebuild(t)
             if (t.snapshot.status == TableStatus.FINISHED) {
-                button(Component.translatable("tukuai.table.lobby"), width - 74, 48, 70) {
-                    showLobby = true
-                    rebuildWidgets()
-                }
+                button(Component.translatable("tukuai.table.lobby"), width - 74, 48, 70) { openLobby() }
             }
         }
     }
@@ -93,9 +96,14 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     private val lobbyWidth = 300
 
     /** Centred, but pushed left on narrow screens so the panel stays clear of the top-right buttons. */
-    private fun lobbyLeft() = maxOf(8, minOf((width - lobbyWidth) / 2, width - 74 - 12 - lobbyWidth))
+    private fun lobbyLeft() = maxOf(8, minOf((width - lobbyWidth) / 2, width - 76 - 8 - lobbyWidth))
 
-    private fun lobbyTop(t: ClientTable) = (height - (SEATS_Y + 46 + t.snapshot.seats.size * 24)) / 2
+    /** Centred, but below the buttons in the top right corner on a screen too narrow to keep clear of them. */
+    private fun lobbyTop(t: ClientTable): Int {
+        val centred = (height - (SEATS_Y + 46 + t.snapshot.seats.size * 24)) / 2
+        val underButtons = lobbyLeft() + lobbyWidth + 8 > width - 76
+        return if (underButtons) maxOf(centred, 56) else centred
+    }
 
     private fun initLobby(t: ClientTable) {
         val s = t.snapshot
@@ -176,14 +184,19 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
                 else -> WHITE
             }
             g.text(font, Component.translatable("tukuai.table.seat", i + 1), left, y + 6, GRAY, false)
-            g.text(font, name, left + 40, y + 6, color, false)
+            // A player who has played before gets their record under the name.
+            val nameY = if (seat.games > 0) y + 1 else y + 6
+            g.text(font, name, left + 40, nameY, color, false)
+            if (seat.games > 0) {
+                g.text(font, Component.translatable("tukuai.table.record", seat.games, seat.wins), left + 40, y + 12, GRAY, false)
+            }
             val points = s.tally.getOrNull(i) ?: 0
             if (s.rounds > 0) {
                 val p = Component.literal(if (points > 0) "+$points" else points.toString())
                 g.text(font, p, left + 146 - font.width(p), y + 6, if (points >= 0) GREEN else RED, false)
             }
             if (seat.occupant is Occupant.Human && !seat.present) {
-                g.text(font, Component.translatable("tukuai.table.away"), left + 40 + font.width(name) + 4, y + 6, GRAY, false)
+                g.text(font, Component.translatable("tukuai.table.away"), left + 40 + font.width(name) + 4, nameY, GRAY, false)
             }
         }
     }

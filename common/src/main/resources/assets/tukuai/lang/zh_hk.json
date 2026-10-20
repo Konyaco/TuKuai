@@ -30,6 +30,7 @@
   "tukuai.table.rounds": "第 %s 局",
   "tukuai.table.turn": "輪到 %s",
   "tukuai.table.away": "（離開）",
+  "tukuai.table.record": "%s 局，贏 %s 局",
   "tukuai.table.name_away": "%s（離開）",
   "tukuai.table.name_auto": "%s（託管）",
   "tukuai.table.auto.on": "託管",

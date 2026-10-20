@@ -30,6 +30,7 @@
   "tukuai.table.rounds": "第 %s 局",
   "tukuai.table.turn": "%s の番",
   "tukuai.table.away": "（離席）",
+  "tukuai.table.record": "%s 回、%s 勝",
   "tukuai.table.name_away": "%s（離席）",
   "tukuai.table.name_auto": "%s（オート）",
   "tukuai.table.auto.on": "オート",
