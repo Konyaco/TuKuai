@@ -130,10 +130,11 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             server?.playerList?.getPlayer(occupant.uuid)?.let(::dismount)
         }
         seats = MutableList(count) { seats.getOrNull(it) }
-        auto = BooleanArray(count)
-        present = BooleanArray(count)
-        absentChecks = IntArray(count)
-        timeouts = IntArray(count)
+        // The players who stay keep their state; only the scores start over.
+        auto = BooleanArray(count) { auto.getOrElse(it) { false } }
+        present = BooleanArray(count) { present.getOrElse(it) { false } }
+        absentChecks = IntArray(count) { absentChecks.getOrElse(it) { 0 } }
+        timeouts = IntArray(count) { timeouts.getOrElse(it) { 0 } }
         tally = IntArray(count)
         rounds = 0
     }
