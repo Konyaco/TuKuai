@@ -59,6 +59,21 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             world.clientLevel.waitForChunksRender()
             server.runOnServer<RuntimeException> { s -> checkOldTables(s) }
 
+            // The table and a stool from the side, to show how they are built.
+            moveTo(server, table.offset(-4, 0, 3))
+            context.waitTicks(5)
+            context.input.lookAt(table)
+            context.waitTicks(5)
+            shot(context, "0-world-table-side")
+            val stool = table.east(StoolBlock.TABLE_DISTANCE)
+            moveTo(server, stool.offset(2, 0, 2))
+            context.waitTicks(5)
+            context.input.lookAt(stool)
+            context.waitTicks(5)
+            shot(context, "0-world-stool")
+            moveTo(server, oldBase)
+            context.waitTicks(5)
+
             // The whole table with its stools, before anyone sits down.
             context.input.lookAt(table)
             context.waitTicks(5)
@@ -308,6 +323,13 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             val player = s.playerList.players.first()
             val table = s.overworld().getBlockEntity(pos) as CardTableBlockEntity
             table.handle(player, TableActionPayload(pos, op, a, b, text))
+        }
+    }
+
+    /** Stands the player in the middle of the block at [pos] and waits for the client to follow. */
+    private fun moveTo(server: TestServerContext, pos: BlockPos) {
+        server.runOnServer<RuntimeException> { s ->
+            s.playerList.players.first().teleportTo(pos.x + 0.5, pos.y.toDouble(), pos.z + 0.5)
         }
     }
 
