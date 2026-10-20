@@ -19,6 +19,11 @@ class GdHand(private val host: PanelHost) {
     private var hintIndex = 0
     private var lastStep = -1
 
+    /** While the left button is held after a click: whether that card got picked, and which row the sweep runs along. */
+    private var sweep: Boolean? = null
+    private var sweepRow = 0
+    private var sweepX = 0.0
+
     /** The picked cards, in hand order. */
     val selected: List<PlayingCard> get() = cards.indices.filter { it in picked }.map { cards[it] }
 
@@ -98,7 +103,10 @@ class GdHand(private val host: PanelHost) {
         for (i in cards.indices) if (left.remove(cards[i])) picked += i
     }
 
-    /** Left-click picks or drops a card, right-click drops them all. */
+    /**
+     * Left-click picks or drops a card, and dragging on from there sweeps the other cards
+     * of its row passed over the same way. Right-click drops them all.
+     */
     fun click(x: Double, y: Double, button: Int): Boolean {
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             if (picked.isEmpty()) return false
@@ -107,8 +115,38 @@ class GdHand(private val host: PanelHost) {
         }
         val i = cardAt(x, y) ?: return false
         if (!picked.remove(i)) picked += i
+        sweep = i in picked
+        sweepRow = rows(cards.size)[i].first
+        sweepX = x
         host.refresh()
         return true
+    }
+
+    /** The mouse moved with the left button held: the cards of the sweep's row whose strip it crossed go the same way. */
+    fun drag(x: Double): Boolean {
+        val picking = sweep ?: return false
+        val from = minOf(sweepX, x)
+        val to = maxOf(sweepX, x)
+        sweepX = x
+        val n = cards.size
+        val layout = rows(n)
+        val count = rowSize(n, sweepRow)
+        val step = step(count)
+        var changed = false
+        for (i in 0 until n) {
+            val (row, place) = layout[i]
+            if (row != sweepRow) continue
+            val left = position(n, i).first
+            val right = left + if (place == count - 1 || step == 0) CardArt.WIDTH else step
+            if (right <= from || left > to) continue
+            changed = changed or if (picking) picked.add(i) else picked.remove(i)
+        }
+        if (changed) host.refresh()
+        return true
+    }
+
+    fun release() {
+        sweep = null
     }
 
     /** Front row first, and the right-hand card of each row before those it covers. */

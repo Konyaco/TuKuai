@@ -76,26 +76,11 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
         }
         wasMyTurn = myTurn
 
-        val me = s.you
-        if (s.status == TableStatus.PLAYING && me != null) {
-            val auto = s.seats.getOrNull(me)?.auto == true
-            screen.button(Component.translatable(if (auto) "tukuai.table.auto.off" else "tukuai.table.auto.on"), width - 74, 48, 70) {
-                screen.send(TableOp.AUTO, if (auto) 0 else 1)
-            }
-        }
         val resultBottom = RESULT_TOP + resultHeight(view)
         if (view.phase == GdPhase.ROUND_OVER && live(table) && view.isMyTurn) {
             screen.button(Component.translatable("tukuai.guandan.next"), width / 2 - 49, resultBottom - 24, 98) { send(GdAction.Next) }
         }
-        if (s.status == TableStatus.FINISHED) {
-            val ready = me != null && s.seats.all { it.occupant != null }
-            screen.button(Component.translatable("tukuai.table.again"), width / 2 - 100, resultBottom - 24, 98, ready) {
-                screen.send(TableOp.START)
-            }
-            screen.button(Component.translatable("tukuai.table.replay"), width / 2 + 2, resultBottom - 24, 98) {
-                screen.send(TableOp.REPLAY)
-            }
-        }
+        if (s.status == TableStatus.FINISHED) screen.finishButtons(table, width / 2, resultBottom - 24)
         if (owesReturn(table, view)) {
             val choice = returnChoice(view)
             screen.button(Component.translatable("tukuai.guandan.give_back"), width / 2 - 40, buttonY(), 80, choice != null) {
@@ -135,6 +120,10 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
         if (view.seat == null) return false
         return picker.click(x, y, button)
     }
+
+    override fun mouseDragged(table: ClientTable, x: Double, y: Double): Boolean = picker.drag(x)
+
+    override fun mouseReleased(table: ClientTable) = picker.release()
 
     override fun keyPressed(table: ClientTable, key: Int): Boolean {
         val view = table.view as? GdView ?: return false

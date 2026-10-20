@@ -70,6 +70,19 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private var rounds = 0
     private var match: MatchHandle? = null
 
+    /** How many games make a match, see [matchOver]; 0 for no limit. */
+    private var matchRounds = DEFAULT_MATCH_ROUNDS
+
+    /**
+     * The match has been played out, or everyone agreed to stop it: [tally] is final, and
+     * the next game starts a new match from nothing.
+     */
+    private var matchOver = false
+
+    /** Who is ready for the next game, see [TableOp.START], and who agreed to end the match, see [TableOp.END]. */
+    private var ready = BooleanArray(3)
+    private var endVotes = BooleanArray(3)
+
     /** The seat each player was dealt into when [match] started; they see nothing else until it is over. */
     private var dealtIn: Map<UUID, Seat> = emptyMap()
 
@@ -155,8 +168,52 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         present = BooleanArray(count) { present.getOrElse(it) { false } }
         absentChecks = IntArray(count) { absentChecks.getOrElse(it) { 0 } }
         timeouts = IntArray(count) { timeouts.getOrElse(it) { 0 } }
+        ready = BooleanArray(count)
+        endVotes = BooleanArray(count)
         tally = IntArray(count)
         rounds = 0
+        matchOver = false
+    }
+
+    /**
+     * The people at the table who are here and playing for themselves. They decide together
+     * when the next game starts and whether to stop; one alone with computers decides alone.
+     */
+    private fun voters(): List<Seat> = seats.indices.filter { seats[it] is Occupant.Human && present[it] && !auto[it] }
+
+    /** Seats or rules changed, so whoever was ready has to look again. */
+    private fun lobbyChanged() {
+        ready.fill(false)
+        changed()
+    }
+
+    /** Starts the next game once everyone at the table is ready; a finished match starts over. */
+    private fun startIfReady(level: ServerLevel) {
+        if (!idle || seats.any { it == null } || ready.none { it }) return
+        if (voters().any { !ready[it] }) return
+        if (matchOver) {
+            tally.fill(0)
+            rounds = 0
+            matchOver = false
+        }
+        start(level)
+    }
+
+    /** Ends the match once everyone at the table agreed; a game still being played is dropped. */
+    private fun endIfAgreed(level: ServerLevel) {
+        if (endVotes.none { it } || voters().any { !endVotes[it] }) return
+        endVotes.fill(false)
+        ready.fill(false)
+        if (status == TableStatus.PLAYING) {
+            thinking?.cancel(false)
+            thinking = null
+            match = null
+            dealtIn = emptyMap()
+            auto.fill(false)
+        }
+        matchOver = rounds > 0
+        changed()
+        level.playSound(null, worldPosition, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1f, 0.8f)
     }
 
     /** Right-click on the table: take the free seat on the side the player stands on, if there is one. */
@@ -201,7 +258,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         arrivals += player.uuid
         present[seat] = true
         absentChecks[seat] = 0
-        changed()
+        lobbyChanged()
         mount(level, player, seat)
     }
 
@@ -270,7 +327,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 if (mine == null) return
                 if (idle) seats[mine] = null else auto[mine] = true
                 dismount(player)
-                changed()
+                if (idle) lobbyChanged() else changed()
+                endIfAgreed(level)
             }
             TableOp.ADD_BOT -> {
                 if (!idle) return
@@ -283,13 +341,13 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 for (seat in targets) {
                     if (seat in seats.indices && seats[seat] == null) seats[seat] = Occupant.Computer(botLevel)
                 }
-                changed()
+                lobbyChanged()
             }
             TableOp.REMOVE_BOT -> {
                 val seat = request.a
                 if (idle && seat in seats.indices && seats[seat] is Occupant.Computer) {
                     seats[seat] = null
-                    changed()
+                    lobbyChanged()
                 }
             }
             TableOp.PRESET -> {
@@ -297,7 +355,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 presetId = request.text
                 resizeSeats(game.seatCount(presetId))
                 if (match != null) match = null
-                changed()
+                lobbyChanged()
             }
             TableOp.GAME -> {
                 val next = GameRegistry[request.text] ?: return
@@ -307,17 +365,47 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 resizeSeats(next.seatCount(presetId))
                 tally.fill(0)
                 rounds = 0
+                matchOver = false
                 match = null
-                changed()
+                lobbyChanged()
             }
             TableOp.TIMER -> {
                 if (idle && request.a in TIMER_CHOICES) {
                     turnSeconds = request.a
-                    changed()
+                    lobbyChanged()
+                }
+            }
+            TableOp.ROUNDS -> {
+                if (idle && request.a in ROUND_CHOICES) {
+                    matchRounds = request.a
+                    // With fewer games to a match, it may be over already.
+                    if (matchRounds in 1..rounds) matchOver = true
+                    lobbyChanged()
                 }
             }
             TableOp.START -> {
-                if (idle && mine != null && seats.all { it != null }) start(level)
+                if (!idle || mine == null || seats.any { it == null }) return
+                ready[mine] = true
+                changed()
+                startIfReady(level)
+            }
+            TableOp.UNREADY -> {
+                if (idle && mine != null && ready[mine]) {
+                    ready[mine] = false
+                    changed()
+                }
+            }
+            TableOp.END -> {
+                if (mine == null || matchOver || (idle && rounds == 0)) return
+                endVotes[mine] = true
+                changed()
+                endIfAgreed(level)
+            }
+            TableOp.KEEP -> {
+                if (mine != null && endVotes.any { it }) {
+                    endVotes.fill(false)
+                    changed()
+                }
             }
             TableOp.ACT -> {
                 val m = match ?: return
@@ -340,12 +428,13 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 auto[mine] = request.a != 0
                 timeouts[mine] = 0
                 changed()
+                endIfAgreed(level)
             }
             TableOp.SPECTATE -> {
                 val host = host
                 if (!idle || (host != null && host != player.uuid)) return
                 spectators = request.a != 0
-                changed()
+                lobbyChanged()
             }
             TableOp.REPLAY -> {
                 val m = match?.takeIf { it.result != null } ?: return
@@ -361,6 +450,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         dealtIn = seats.indices.mapNotNull { seat -> (seats[seat] as? Occupant.Human)?.let { it.uuid to seat } }.toMap()
         auto.fill(false)
         timeouts.fill(0)
+        ready = BooleanArray(m.seatCount)
+        endVotes = BooleanArray(m.seatCount)
         lastStep = -1
         changed()
         level.playSound(null, worldPosition, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1f, 1f)
@@ -428,10 +519,15 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             absentChecks[seat] = if (here) 0 else absentChecks[seat] + 1
             if (idle && absentChecks[seat] >= LOBBY_ABSENT_SECONDS) {
                 seats[seat] = null
+                ready.fill(false)
                 dirty = true
             }
         }
-        if (dirty) changed()
+        if (!dirty) return
+        changed()
+        // Someone who walked off no longer holds up the others.
+        startIfReady(level)
+        endIfAgreed(level)
     }
 
     private fun driveTurn(level: ServerLevel, m: MatchHandle) {
@@ -509,6 +605,15 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         val result = m.result ?: return
         result.scores.forEachIndexed { seat, points -> if (seat < tally.size) tally[seat] += points }
         rounds++
+        if (matchRounds in 1..rounds) matchOver = true
+        endVotes.fill(false)
+        // Whoever let the computer play while staying in their seat is back in charge for the next
+        // game, and so has a say in when it starts; those who stood up are not.
+        for (seat in seats.indices) {
+            val occupant = seats[seat] as? Occupant.Human ?: continue
+            val vehicle = level.server.playerList.getPlayer(occupant.uuid)?.vehicle
+            if (auto[seat] && vehicle is SeatEntity && vehicle.table == worldPosition) auto[seat] = false
+        }
         level.playSound(null, worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7f, 1f)
         StatsStore.record(level.server, gameId, seats, result.scores, result.winners)
         lastReplay = if (ServerSettings.saveReplays) ReplayStore.save(level.server, m.replay(playerNames())) else null
@@ -528,6 +633,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         val c = center
         var watcherView: ByteArray? = null
         var watcherDone = false
+        val leaders by lazy { leaderboard(level) }
         val nearby = HashSet<UUID>()
         for (player in level.players()) {
             if (player.distanceToSqr(c) > SYNC_RANGE * SYNC_RANGE) continue
@@ -548,13 +654,22 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                     watcherView
                 }
             }
-            Services.platform.sendToPlayer(player, TableSyncPayload(worldPosition, snapshot(level, seat, view).encode()))
+            Services.platform.sendToPlayer(player, TableSyncPayload(worldPosition, snapshot(level, seat, view, leaders).encode()))
         }
         // Whoever walks off, leaves this level or logs off gets the whole table again when they are back.
         sentRevision.keys.retainAll(nearby)
     }
 
-    private fun snapshot(level: ServerLevel, you: Seat?, view: ByteArray?): TableSnapshot {
+    /** The best players at this table's game, sent between games for the lobby's leaderboard. */
+    private fun leaderboard(level: ServerLevel): List<LeaderEntry> {
+        if (status == TableStatus.PLAYING) return emptyList()
+        return StatsStore.all(level.server).values
+            .mapNotNull { stats -> stats.games[gameId]?.takeIf { it.games > 0 }?.let { LeaderEntry(stats.name, it.games, it.wins, it.points) } }
+            .sortedWith(compareByDescending<LeaderEntry> { it.points }.thenByDescending { it.wins }.thenBy { it.games })
+            .take(LEADERBOARD_SIZE)
+    }
+
+    private fun snapshot(level: ServerLevel, you: Seat?, view: ByteArray?, leaders: List<LeaderEntry>): TableSnapshot {
         val m = match
         val actor = m?.toAct
         val timed = actor != null && m.result == null && seats.getOrNull(actor) is Occupant.Human &&
@@ -567,7 +682,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             seats = seats.indices.map { seat ->
                 val occupant = seats[seat]
                 val record = (occupant as? Occupant.Human)?.let { StatsStore.of(level.server, it.uuid)?.games?.get(gameId) }
-                SeatInfo(occupant, present[seat], auto[seat], record?.games ?: 0, record?.wins ?: 0)
+                SeatInfo(occupant, present[seat], auto[seat], record?.games ?: 0, record?.wins ?: 0, ready[seat], endVotes[seat])
             },
             you = you,
             tally = tally.toList(),
@@ -578,6 +693,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             view = view,
             spectators = spectators,
             host = host?.let(::seatOf),
+            matchRounds = matchRounds,
+            matchOver = matchOver,
+            leaderboard = leaders,
         )
     }
 
@@ -592,6 +710,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         output.putInt("spectators", if (spectators) 1 else 0)
         output.putString("arrivals", arrivals.filter { seatOf(it) != null }.joinToString(","))
         output.putInt("rounds", rounds)
+        output.putInt("match_rounds", matchRounds)
+        output.putInt("match_over", if (matchOver) 1 else 0)
         output.putIntArray("tally", tally)
         output.putInt("seat_count", seats.size)
         seats.forEachIndexed { i, occupant -> output.putString("seat_$i", occupant?.save() ?: "") }
@@ -619,6 +739,10 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         tally = IntArray(count)
         input.getIntArray("tally").ifPresent { saved -> saved.take(count).forEachIndexed { i, v -> tally[i] = v } }
         rounds = input.getIntOr("rounds", 0)
+        matchRounds = input.getIntOr("match_rounds", DEFAULT_MATCH_ROUNDS).takeIf { it in ROUND_CHOICES } ?: DEFAULT_MATCH_ROUNDS
+        matchOver = input.getIntOr("match_over", 0) != 0
+        ready = BooleanArray(count)
+        endVotes = BooleanArray(count)
         match = input.getString("match").map { encoded ->
             try {
                 Replay.decode(Base64.getDecoder().decode(encoded)).rebuildAny().takeIf { it.seatCount == count }
@@ -660,6 +784,12 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         }
         const val TIMEOUTS_BEFORE_AUTO = 2
         val TIMER_CHOICES = listOf(0, 15, 30, 60)
+
+        /** Games in a match: short and long ones, and no limit. Stopping after a while keeps a session from going on forever. */
+        val ROUND_CHOICES = listOf(4, 8, 12, 16, 0)
+        const val DEFAULT_MATCH_ROUNDS = 8
+
+        const val LEADERBOARD_SIZE = 10
 
         /** The computer that plays for a player who is away or out of time. */
         val STAND_IN = BotLevel.NORMAL

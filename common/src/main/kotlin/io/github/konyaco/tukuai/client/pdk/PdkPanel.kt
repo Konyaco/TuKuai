@@ -70,22 +70,7 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
         }
         wasMyTurn = turn != null
 
-        val me = s.you
-        if (s.status == TableStatus.PLAYING && me != null) {
-            val auto = s.seats.getOrNull(me)?.auto == true
-            screen.button(Component.translatable(if (auto) "tukuai.table.auto.off" else "tukuai.table.auto.on"), width - 74, 48, 70) {
-                screen.send(TableOp.AUTO, if (auto) 0 else 1)
-            }
-        }
-        if (s.status == TableStatus.FINISHED) {
-            val ready = me != null && s.seats.all { it.occupant != null }
-            screen.button(Component.translatable("tukuai.table.again"), width / 2 - 100, RESULT_TOP + RESULT_HEIGHT - 24, 98, ready) {
-                screen.send(TableOp.START)
-            }
-            screen.button(Component.translatable("tukuai.table.replay"), width / 2 + 2, RESULT_TOP + RESULT_HEIGHT - 24, 98) {
-                screen.send(TableOp.REPLAY)
-            }
-        }
+        if (s.status == TableStatus.FINISHED) screen.finishButtons(table, width / 2, RESULT_TOP + RESULT_HEIGHT - 24)
         if (turn == null) return
         val w = 56
         val gap = 6
@@ -126,6 +111,18 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
     }
 
     override fun isRaised(table: ClientTable, card: TableCard): Boolean = picker.isRaised(card)
+
+    override fun mouseDragged(table: ClientTable, x: Double, y: Double): Boolean {
+        val view = table.view as? PdkView ?: return false
+        return picker.drag(sortedHand(view), x)
+    }
+
+    override fun mouseReleased(table: ClientTable) = picker.release()
+
+    override fun dragTableCard(table: ClientTable, card: TableCard) {
+        val view = table.view as? PdkView ?: return
+        picker.dragTableCard(view.hand, card)
+    }
 
     override fun keyPressed(table: ClientTable, key: Int): Boolean {
         val view = table.view as? PdkView ?: return false

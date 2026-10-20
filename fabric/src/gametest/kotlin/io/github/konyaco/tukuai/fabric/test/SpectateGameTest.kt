@@ -48,6 +48,8 @@ class SpectateGameTest : FabricClientGameTest {
 
     override fun runTest(context: ClientGameTestContext) {
         if (System.getenv("TUKUAI_SHOWCASE") != null || System.getenv("TUKUAI_MULTIPLAYER") != null) return
+        // TUKUAI_ONLY=<name> runs just one of the tests, to try it quickly.
+        if (System.getenv("TUKUAI_ONLY")?.let { it != "spectate" } == true) return
         context.worldBuilder().create().use { world ->
             val server = world.server
             val tables = server.computeOnServer<List<BlockPos>, RuntimeException> { s -> buildScene(s) }
@@ -161,7 +163,7 @@ class SpectateGameTest : FabricClientGameTest {
         command(server, "gamemode spectator @a")
         server.runOnServer<RuntimeException> { s ->
             val player = s.playerList.players.first()
-            val target = "${table.x + 0.5} ${table.y + 1.0} ${table.z + 0.5}"
+            val target = "${table.x + 0.5} ${table.y + CardTableBlock.TOP_HEIGHT} ${table.z + 0.5}"
             s.commands.performPrefixedCommand(
                 s.createCommandSourceStack(),
                 "tp ${player.plainTextName} ${table.x - 0.6} ${table.y + 2.3} ${table.z + 2.6} facing $target",

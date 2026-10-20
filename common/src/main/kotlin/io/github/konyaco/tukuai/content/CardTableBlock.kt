@@ -181,6 +181,12 @@ class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(pr
         /** Half the table's width in blocks, measured from the middle block's centre. */
         const val HALF_WIDTH = 1.5
 
+        /**
+         * Height of the table top, where the cloth and the cards lie, in blocks. A little
+         * under a full block, so someone on a stool looks down onto it; see tools/gen_models.py.
+         */
+        const val TOP_HEIGHT = 14f / 16f
+
         val CODEC: MapCodec<CardTableBlock> = Block.simpleCodec(::CardTableBlock)
 
         fun dxOf(part: Int): Int = part % 3 - 1
@@ -200,7 +206,7 @@ class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(pr
         fun sameTable(other: BlockState, state: BlockState, part: Int): Boolean =
             other.block is CardTableBlock && other.getValue(PART) == part && other.getValue(FACING) == state.getValue(FACING)
 
-        private val TOP: VoxelShape = Block.box(0.0, 12.0, 0.0, 16.0, 16.0, 16.0)
+        private val TOP: VoxelShape = Block.box(0.0, 12.0, 0.0, 16.0, 14.0, 16.0)
 
         /** The top everywhere, with a leg under each outer corner. */
         private val SHAPES: List<VoxelShape> = List(PARTS) { part ->
@@ -209,9 +215,9 @@ class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(pr
             if (dx == 0 || dz == 0) {
                 TOP
             } else {
-                val x = if (dx < 0) 1.0 else 12.0
-                val z = if (dz < 0) 1.0 else 12.0
-                Shapes.or(TOP, Block.box(x, 0.0, z, x + 3.0, 12.0, z + 3.0))
+                val x = if (dx < 0) 1.0 else 11.0
+                val z = if (dz < 0) 1.0 else 11.0
+                Shapes.or(TOP, Block.box(x, 0.0, z, x + 4.0, 12.0, z + 4.0))
             }
         }
     }

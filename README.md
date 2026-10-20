@@ -77,7 +77,7 @@ Your partner's box is blue and the other team's red, and the level being played 
 
 ### Out in the world
 
-The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and pick a card back with the button in the top right of the screen. The small button beside it changes the card faces: classic, large corners that are easier to read in a squeezed hand, or four colors (diamonds blue, clubs green). Tables and stools come in every kind of wood, from oak to warped, and stool cushions in all 16 colors.
+The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and open the ☰ menu in the top right of the screen to pick a card back and the card faces: classic, large corners that are easier to read in a squeezed hand, or four colors (diamonds blue, clubs green). Tables and stools come in every kind of wood, from oak to warped, and stool cushions in all 16 colors.
 
 <table>
   <tr>
@@ -136,6 +136,7 @@ Dou Dizhu:
 | Input | Does |
 | --- | --- |
 | Left-click a card | Select or deselect it |
+| Drag across cards | Select or deselect all of them in one sweep |
 | Right-click | Clear the selection |
 | Space / Enter | Play the selected cards; with nothing selected, pass |
 | H | Hint. Press again for a different play |
@@ -159,6 +160,7 @@ Pao De Kuai:
 | Input | Does |
 | --- | --- |
 | Left-click a card | Select or deselect it |
+| Drag across cards | Select or deselect all of them in one sweep |
 | Right-click | Clear the selection |
 | Space / Enter | Play the selected cards; with nothing selected, pass, if you're allowed to |
 | H | Hint. Press again for a different play |
@@ -171,6 +173,7 @@ Guandan:
 | Input | Does |
 | --- | --- |
 | Left-click a card | Select or deselect it |
+| Drag across cards | Select or deselect all of them in one sweep |
 | Right-click | Clear the selection |
 | Space / Enter | Play the selected cards; with nothing selected, pass |
 | H | Hint. Press again for a different play |
@@ -186,10 +189,14 @@ A long hand is shown in two rows, and wild cards have a gold frame. When playing
 
 Replays are saved in `tukuai/replays` inside the world folder.
 
+### Matches
+
+A match is 8 games by default (4, 12, 16 or no limit in the lobby). The box in the top left shows which game it is and everyone's points so far. After the last game, "Standings" shows the final places, and the next game starts a new match from zero. With more than one person at the table, the next game starts only when everyone has clicked "Play again", so nobody misses the result. To stop early, open the ☰ menu and click "End the match": everyone at the table has to agree, the game being played is dropped and the finished games are settled.
+
 ### Records
 
 - `/tukuai stats` shows how many games you've played and won, and your points. `/tukuai stats <player>` shows someone else's.
-- `/tukuai top` shows the ten players with the most points.
+- `/tukuai top` shows the ten players with the most points, and "Leaders" in the lobby shows the best players at that table's game.
 
 Records are kept in `tukuai/stats.json` inside the world folder. Only people count; the computers don't get a record.
 

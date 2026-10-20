@@ -4,6 +4,7 @@ import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.PanelHost
+import io.github.konyaco.tukuai.client.PanelText
 import io.github.konyaco.tukuai.client.PlayingCardHand
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
@@ -87,22 +88,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         }
         wasMyTurn = myTurn
 
-        val me = s.you
-        if (s.status == TableStatus.PLAYING && me != null) {
-            val auto = s.seats.getOrNull(me)?.auto == true
-            screen.button(Component.translatable(if (auto) "tukuai.table.auto.off" else "tukuai.table.auto.on"), width - 74, 48, 70) {
-                screen.send(TableOp.AUTO, if (auto) 0 else 1)
-            }
-        }
-        if (s.status == TableStatus.FINISHED) {
-            val ready = me != null && s.seats.all { it.occupant != null }
-            screen.button(Component.translatable("tukuai.table.again"), width / 2 - 100, resultTop() + resultHeight(view) - 26, 98, ready) {
-                screen.send(TableOp.START)
-            }
-            screen.button(Component.translatable("tukuai.table.replay"), width / 2 + 2, resultTop() + resultHeight(view) - 26, 98) {
-                screen.send(TableOp.REPLAY)
-            }
-        }
+        if (s.status == TableStatus.FINISHED) screen.finishButtons(table, width / 2, resultTop() + resultHeight(view) - 26)
         if (myTurn) addTurnButtons(view)
     }
 
@@ -234,18 +220,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         if (view.finished) renderResult(g, table, view)
     }
 
-    private fun renderTitle(g: GuiGraphicsExtractor, table: ClientTable) {
-        val s = table.snapshot
-        g.text(font, TableScreen.presetName(s.gameId, s.presetId), 6, 6, TableScreen.GRAY, true)
-        if (!screen.interactive) return
-        val round = s.rounds + if (s.status == TableStatus.PLAYING) 1 else 0
-        g.text(font, Component.translatable("tukuai.table.rounds", round), 6, 17, TableScreen.GRAY, true)
-        // Wrapped to stay clear of what sits in the middle at the top.
-        val watching = table.watchingLine() ?: return
-        font.split(watching, width / 2 - 60).forEachIndexed { i, line ->
-            g.text(font, line, 6, 28 + i * 10, if (s.spectators) TableScreen.YELLOW else TableScreen.GRAY, true)
-        }
-    }
+    private fun renderTitle(g: GuiGraphicsExtractor, table: ClientTable) = PanelText.title(g, table, screen.interactive, width)
 
     private enum class Place { LEFT, TOP, RIGHT }
 

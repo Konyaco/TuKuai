@@ -45,6 +45,8 @@ import kotlin.math.abs
 class ImmersiveInputGameTest : FabricClientGameTest {
     override fun runTest(context: ClientGameTestContext) {
         if (System.getenv("TUKUAI_SHOWCASE") != null || System.getenv("TUKUAI_MULTIPLAYER") != null) return
+        // TUKUAI_ONLY=<name> runs just one of the tests, to try it quickly.
+        if (System.getenv("TUKUAI_ONLY")?.let { it != "immersive" } == true) return
         context.worldBuilder().create().use { world ->
             val server = world.server
             val table = server.computeOnServer<BlockPos, RuntimeException> { s -> buildScene(s) }
@@ -79,7 +81,7 @@ class ImmersiveInputGameTest : FabricClientGameTest {
 
             // Look down at our own hand, which stands at the near edge of the table.
             val side = context.computeOnClient<Direction, RuntimeException> { sides(table).first() }
-            val hand = Vec3(table.x + 0.5 + side.stepX * 1.05, table.y + 1.1, table.z + 0.5 + side.stepZ * 1.05)
+            val hand = Vec3(table.x + 0.5 + side.stepX * 1.05, table.y + CardTableBlock.TOP_HEIGHT + 0.2, table.z + 0.5 + side.stepZ * 1.05)
             context.runOnClient<RuntimeException> { it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, hand) }
             context.waitTicks(10)
             shot(context, "immersive-hand")

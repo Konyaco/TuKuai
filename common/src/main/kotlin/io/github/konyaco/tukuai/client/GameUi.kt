@@ -55,6 +55,12 @@ interface PanelHost {
 
     /** Lays the buttons out again, for example after the selection changed. */
     fun refresh()
+
+    /**
+     * The buttons under a finished game's result, centred on [centerX]: play again (once
+     * everyone is ready) or, after the last game of a match, the final standings; and the replay.
+     */
+    fun finishButtons(table: ClientTable, centerX: Int, y: Int) {}
 }
 
 /** The game part of the table screen or the replay viewer. It lives as long as the screen. */
@@ -69,6 +75,12 @@ interface GamePanel {
 
     fun mouseClicked(table: ClientTable, x: Double, y: Double, button: Int): Boolean = false
 
+    /** The mouse moved with the left button held after [mouseClicked], to pick several cards in one sweep. */
+    fun mouseDragged(table: ClientTable, x: Double, y: Double): Boolean = false
+
+    /** The left button went up, which ends a sweep. */
+    fun mouseReleased(table: ClientTable) {}
+
     fun keyPressed(table: ClientTable, key: Int): Boolean = false
 
     /**
@@ -76,6 +88,9 @@ interface GamePanel {
      * than in a hand along the bottom of the screen. [card] is one of theirs ([TableCard.mine]).
      */
     fun clickTableCard(table: ClientTable, card: TableCard): Boolean = false
+
+    /** The pointer swept over [card] with the left button held after [clickTableCard]: it gets picked or dropped too. */
+    fun dragTableCard(table: ClientTable, card: TableCard) {}
 
     /** Whether one of the player's own cards on the table should stand raised, as picked or playable. */
     fun isRaised(table: ClientTable, card: TableCard): Boolean = false

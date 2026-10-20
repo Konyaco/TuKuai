@@ -3,7 +3,6 @@ package io.github.konyaco.tukuai.client
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.table.Occupant
-import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.network.chat.Component
@@ -20,6 +19,13 @@ class PlayingCardHand(private val host: PanelHost) {
     private var hints: List<List<PlayingCard>> = emptyList()
     private var hintIndex = 0
     private var lastStep = -1
+
+    /**
+     * While the left button is held after picking or dropping a card: true if that card was
+     * picked, so every card swept over is picked too, false if they are all dropped.
+     */
+    private var sweep: Boolean? = null
+    private var sweepX = 0.0
 
     fun y() = host.panelHeight - CardArt.HEIGHT - 8
 
@@ -56,7 +62,10 @@ class PlayingCardHand(private val host: PanelHost) {
         return true
     }
 
-    /** Left-click picks or drops a card, right-click drops them all. */
+    /**
+     * Left-click picks or drops a card, and dragging on from there sweeps the cards passed
+     * over the same way. Right-click drops them all.
+     */
     fun click(hand: List<PlayingCard>, x: Double, y: Double, button: Int): Boolean {
         if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             if (selected.isEmpty()) return false
@@ -66,13 +75,55 @@ class PlayingCardHand(private val host: PanelHost) {
         }
         val card = cardAt(hand, x, y) ?: return false
         toggle(card)
+        sweep = card in selected
+        sweepX = x
         return true
     }
 
-    /** A click on one of the player's cards on the table: picks or drops the card of [hand] it shows. */
-    fun clickTableCard(hand: Collection<PlayingCard>, card: TableCard): Boolean {
-        toggle(hand.firstOrNull { CardArt.face(it) == card.sprite } ?: return false)
+    /**
+     * The mouse moved with the left button held: every card whose column it crossed since
+     * the last move goes the way of the first one. Only the left and right matter, so the
+     * sweep may wander up and down over raised and lowered cards.
+     */
+    fun drag(hand: List<PlayingCard>, x: Double): Boolean {
+        val picking = sweep ?: return false
+        if (host.inWorld) return false
+        val from = minOf(sweepX, x)
+        val to = maxOf(sweepX, x)
+        sweepX = x
+        val n = hand.size
+        val step = step(n)
+        val x0 = x(n)
+        var changed = false
+        hand.forEachIndexed { i, card ->
+            // The part of the card that shows: all of the last one, the strip left of the next for the others.
+            val left = x0 + i * step
+            val right = left + if (i == n - 1 || step == 0) CardArt.WIDTH else step
+            if (right <= from || left > to) return@forEachIndexed
+            changed = changed or if (picking) selected.add(card) else selected.remove(card)
+        }
+        if (changed) host.refresh()
         return true
+    }
+
+    /** The left button went up: the sweep is over. */
+    fun release() {
+        sweep = null
+    }
+
+    /** A click on one of the player's cards on the table: picks or drops the card of [hand] it shows, and starts a sweep. */
+    fun clickTableCard(hand: Collection<PlayingCard>, card: TableCard): Boolean {
+        val picked = hand.firstOrNull { CardArt.face(it) == card.sprite } ?: return false
+        toggle(picked)
+        sweep = picked in selected
+        return true
+    }
+
+    /** The pointer swept over [card] on the table with the button held: it goes the way of the first card. */
+    fun dragTableCard(hand: Collection<PlayingCard>, card: TableCard) {
+        val picking = sweep ?: return
+        val swept = hand.firstOrNull { CardArt.face(it) == card.sprite } ?: return
+        if (if (picking) selected.add(swept) else selected.remove(swept)) host.refresh()
     }
 
     /** Whether [card] on the table shows a picked card. */
@@ -160,18 +211,17 @@ object PanelText {
         cards.forEachIndexed { i, card -> CardArt.drawCard(g, card, x0 + i * step, y, scale) }
     }
 
-    /** The rules at the top left, and for players at the table the round and who may watch. */
+    /**
+     * The scores of the match so far at the top left, see [Scoreboard]; in a replay, which
+     * rules it was played by.
+     */
     fun title(g: GuiGraphicsExtractor, table: ClientTable, interactive: Boolean, width: Int) {
+        if (interactive) {
+            Scoreboard.render(g, table)
+            return
+        }
         val s = table.snapshot
         g.text(font, TableScreen.presetName(s.gameId, s.presetId), 6, 6, TableScreen.GRAY, true)
-        if (!interactive) return
-        val round = s.rounds + if (s.status == TableStatus.PLAYING) 1 else 0
-        g.text(font, Component.translatable("tukuai.table.rounds", round), 6, 17, TableScreen.GRAY, true)
-        // Wrapped to stay clear of what sits in the middle at the top.
-        val watching = table.watchingLine() ?: return
-        font.split(watching, width / 2 - 60).forEachIndexed { i, line ->
-            g.text(font, line, 6, 28 + i * 10, if (s.spectators) TableScreen.YELLOW else TableScreen.GRAY, true)
-        }
     }
 
     /** One line of text lined up on [x] as [align] says. */

@@ -96,18 +96,18 @@ class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
 
         val CODEC: MapCodec<StoolBlock> = Block.simpleCodec(::StoolBlock)
 
-        /** Height of the top of the cushion, in blocks. */
-        const val SEAT_HEIGHT = 10.0 / 16.0
+        /** Height of the top of the cushion, in blocks; see tools/gen_models.py. */
+        const val SEAT_HEIGHT = 12.0 / 16.0
 
         /** How far a stool that serves as a table's seat is from the table's middle block. */
         const val TABLE_DISTANCE = 2
 
         private val SHAPE: VoxelShape = Shapes.or(
-            Block.box(1.0, 6.0, 1.0, 15.0, 10.0, 15.0),
-            Block.box(2.0, 0.0, 2.0, 4.0, 6.0, 4.0),
-            Block.box(12.0, 0.0, 2.0, 14.0, 6.0, 4.0),
-            Block.box(2.0, 0.0, 12.0, 4.0, 6.0, 14.0),
-            Block.box(12.0, 0.0, 12.0, 14.0, 6.0, 14.0),
+            Block.box(1.0, 8.0, 1.0, 15.0, 12.0, 15.0),
+            Block.box(2.0, 0.0, 2.0, 4.0, 8.0, 4.0),
+            Block.box(12.0, 0.0, 2.0, 14.0, 8.0, 4.0),
+            Block.box(2.0, 0.0, 12.0, 4.0, 8.0, 14.0),
+            Block.box(12.0, 0.0, 12.0, 14.0, 8.0, 14.0),
         )
 
         /** The card table this stool is a seat of, and the side of the table it is on. */

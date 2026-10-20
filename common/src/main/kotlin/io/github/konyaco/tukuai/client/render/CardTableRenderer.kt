@@ -90,6 +90,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         val light = state.lightCoords
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(CardArt.ATLAS)) { pose, buffer ->
             drawFelt(buffer, pose, light, ARGB_OPAQUE or lighten(state.feltColor))
+            drawFeltTrim(buffer, pose, light, state.feltColor)
             drawDisplay(buffer, pose, light, state.turnSide)
             for (card in state.cards) drawCard(buffer, pose, light, card, state.back)
         }
@@ -110,14 +111,35 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
                 (CardArt.FELT_U + x1 * tile) / CardArt.TEXTURE_WIDTH,
                 (CardArt.FELT_V + z1 * tile) / CardArt.TEXTURE_HEIGHT,
             )
-            val c = floatArrayOf(bx + (x0 + x1) / 2, 1.0005f, bz + (z0 + z1) / 2)
+            val c = floatArrayOf(bx + (x0 + x1) / 2, TOP + 0.0005f, bz + (z0 + z1) / 2)
             side(buffer, pose, light, c, UP, 0f, EAST, (x1 - x0) / 2, NORTH, (z1 - z0) / 2, uv, color)
         }
     }
 
+    /**
+     * A shadow along the rim, where the cloth tucks under the wood, and a fine pale line
+     * a hand's width in from it around the playing area, as on a card table's cloth.
+     */
+    private fun drawFeltTrim(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, felt: Int) {
+        val lo = -1f + RIM
+        val hi = 2f - RIM
+        fun frame(inset: Float, width: Float, y: Float, color: Int) {
+            val a = lo + inset
+            val b = hi - inset
+            val mid = (a + b) / 2
+            val half = (b - a) / 2
+            val w = width / 2
+            // Along the north and south, then the west and east between them.
+            for (z in floatArrayOf(a + w, b - w)) side(buffer, pose, light, floatArrayOf(mid, y, z), UP, 0f, EAST, half, NORTH, w, EDGE, color)
+            for (x in floatArrayOf(a + w, b - w)) side(buffer, pose, light, floatArrayOf(x, y, mid), UP, 0f, EAST, w, NORTH, half - width, EDGE, color)
+        }
+        frame(0f, SHADOW_WIDTH, TOP + 0.0008f, ARGB_OPAQUE or shade(lighten(felt), 0.72f))
+        frame(LINE_INSET, LINE_WIDTH, TOP + 0.0008f, ARGB_OPAQUE or lighten(lighten(lighten(felt))))
+    }
+
     /** A dark box in the middle of the table, its top edge lit on the side whose turn it is. */
     private fun drawDisplay(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, turn: Direction?) {
-        val c = floatArrayOf(0.5f, 1f + DISPLAY_HEIGHT / 2, 0.5f)
+        val c = floatArrayOf(0.5f, TOP + DISPLAY_HEIGHT / 2, 0.5f)
         val w = DISPLAY_HALF_WIDTH
         val h = DISPLAY_HEIGHT / 2
         side(buffer, pose, light, c, UP, h, EAST, w, NORTH, w, EDGE, DISPLAY_COLOR)
@@ -129,7 +151,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         // A lamp strip along the top edge facing the player to act.
         val strip = floatArrayOf(
             0.5f + turn.stepX * (w - TURN_STRIP / 2),
-            1f + DISPLAY_HEIGHT + 0.001f,
+            TOP + DISPLAY_HEIGHT + 0.001f,
             0.5f + turn.stepZ * (w - TURN_STRIP / 2),
         )
         val halfX = if (turn.stepX == 0) w else TURN_STRIP / 2
@@ -145,7 +167,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         val top = -(lines.size * LINE_HEIGHT - 1) / 2f
         for (side in Direction.Plane.HORIZONTAL) {
             poseStack.pushPose()
-            poseStack.translate(0.5f, 1f + DISPLAY_HEIGHT / 2, 0.5f)
+            poseStack.translate(0.5f, TOP + DISPLAY_HEIGHT / 2, 0.5f)
             poseStack.mulPose(Axis.YP.rotation(atan2(side.stepX.toFloat(), side.stepZ.toFloat())))
             poseStack.translate(0f, 0f, DISPLAY_HALF_WIDTH + 0.002f)
             poseStack.scale(scale, -scale, scale)
@@ -231,6 +253,11 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
     }
 
     companion object {
+        private fun shade(rgb: Int, k: Float): Int {
+            fun channel(shift: Int) = ((rgb shr shift and 0xFF) * k).toInt().coerceIn(0, 255) shl shift
+            return channel(16) or channel(8) or channel(0)
+        }
+
         /** Dye colours are dark for cloth seen from above, so mix in a quarter of white. */
         private fun lighten(rgb: Int): Int {
             fun channel(shift: Int) = ((rgb shr shift and 0xFF) * 3 + 255) / 4 shl shift
@@ -273,6 +300,12 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         /** Blocks per font pixel at most; long lines shrink to fit the display. */
         private const val TEXT_SCALE = 0.0085f
         private const val LINE_HEIGHT = 10f
+
+        private const val TOP = CardTableBlock.TOP_HEIGHT
+
+        private const val SHADOW_WIDTH = 0.035f
+        private const val LINE_INSET = 0.2f
+        private const val LINE_WIDTH = 0.018f
 
         /** Width of the bare wooden rim around the cloth, in blocks. */
         private const val RIM = 2f / 16f
