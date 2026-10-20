@@ -26,12 +26,12 @@ import net.minecraft.world.level.material.PushReaction
  */
 object TuKuaiContent {
     val CARD_TABLE: CardTableBlock = CardTableBlock(
-        blockProperties("card_table").noOcclusion().pushReaction(PushReaction.BLOCK),
+        blockProperties("card_table").mapColor(Wood::mapColorOf).noOcclusion().pushReaction(PushReaction.BLOCK),
     )
 
     val CARD_TABLE_ITEM: Item = BlockItem(CARD_TABLE, itemProperties("card_table").useBlockDescriptionPrefix())
 
-    val STOOL: StoolBlock = StoolBlock(blockProperties("stool").noOcclusion().strength(1.5f))
+    val STOOL: StoolBlock = StoolBlock(blockProperties("stool").mapColor(Wood::mapColorOf).noOcclusion().strength(1.5f))
 
     val STOOL_ITEM: Item = BlockItem(STOOL, itemProperties("stool").useBlockDescriptionPrefix())
 
@@ -46,10 +46,15 @@ object TuKuaiContent {
         .clientTrackingRange(8)
         .build(ResourceKey.create(Registries.ENTITY_TYPE, TuKuai.id("seat")))
 
-    /** The creative tab entries: the table, then a stool in every colour. */
-    fun creativeStacks(): List<ItemStack> = listOf(ItemStack(CARD_TABLE_ITEM)) + DyeColor.entries.map { color ->
-        ItemStack(STOOL_ITEM).apply { set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, color)) }
-    }
+    /** The creative tab entries: a table in every wood, then an oak stool in every colour and a red one in every other wood. */
+    fun creativeStacks(): List<ItemStack> =
+        Wood.entries.map { wood -> withState(ItemStack(CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
+            DyeColor.entries.map { color -> withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, color)) } +
+            Wood.entries.drop(1).map { wood ->
+                withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, DyeColor.RED).with(StoolBlock.WOOD, wood))
+            }
+
+    private fun withState(stack: ItemStack, state: BlockItemStateProperties): ItemStack = stack.apply { set(DataComponents.BLOCK_STATE, state) }
 
     private fun blockProperties(name: String): BlockBehaviour.Properties =
         BlockBehaviour.Properties.of()

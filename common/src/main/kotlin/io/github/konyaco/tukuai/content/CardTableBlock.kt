@@ -42,17 +42,18 @@ import net.minecraft.world.phys.shapes.VoxelShape
  * passes clicks on to it. Breaking any part breaks the whole table.
  *
  * Right-click to sit down and open the table; right-click with a dye to recolour the
- * cloth. [FACING] points at seat 0, the side the placer stood on.
+ * cloth. [FACING] points at seat 0, the side the placer stood on. [WOOD] is the wood of
+ * the frame and legs; the item keeps it, and placing the item gives it to all nine parts.
  */
 class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(properties) {
     init {
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PART, CENTER))
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(PART, CENTER).setValue(WOOD, Wood.OAK))
     }
 
     override fun codec(): MapCodec<out BaseEntityBlock> = CODEC
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
-        builder.add(FACING, PART)
+        builder.add(FACING, PART, WOOD)
     }
 
     /**
@@ -168,6 +169,8 @@ class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(pr
         val PART: IntegerProperty = IntegerProperty.create("part", 0, 8)
 
         const val PARTS = 9
+
+        val WOOD = Wood.PROPERTY
 
         /**
          * The middle part. It is also the default, so a table saved as one block, before

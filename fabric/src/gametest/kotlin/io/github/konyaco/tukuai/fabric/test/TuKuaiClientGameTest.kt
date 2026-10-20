@@ -10,6 +10,7 @@ import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
 import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
+import io.github.konyaco.tukuai.content.Wood
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.paodekuai.PdkAction
 import io.github.konyaco.tukuai.engine.paodekuai.PdkCodecs
@@ -25,6 +26,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
+import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
@@ -33,6 +35,7 @@ import net.minecraft.world.InteractionHand
 import net.minecraft.world.entity.item.ItemEntity
 import net.minecraft.world.item.DyeColor
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.component.BlockItemStateProperties
 import net.minecraft.world.item.context.UseOnContext
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.phys.AABB
@@ -60,8 +63,10 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             val server = world.server
             val table = server.computeOnServer<BlockPos, RuntimeException> { s -> buildScene(s) }
             check(server.computeOnServer<Boolean, RuntimeException> { s ->
-                s.recipeManager.byKey(ResourceKey.create(Registries.RECIPE, TuKuai.id("card_table"))).isPresent
-            }) { "The card table recipe did not load" }
+                listOf("card_table/oak", "card_table/cherry", "stool/birch_red").all {
+                    s.recipeManager.byKey(ResourceKey.create(Registries.RECIPE, TuKuai.id(it))).isPresent
+                }
+            }) { "The card table and stool recipes did not load" }
             context.waitTicks(40)
             world.clientLevel.waitForChunksRender()
             server.runOnServer<RuntimeException> { s -> checkOldTables(s) }
@@ -80,6 +85,8 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             shot(context, "0-world-stool")
             moveTo(server, oldBase)
             context.waitTicks(5)
+
+            woodenTables(context, server)
 
             // The whole table with its stools, before anyone sits down.
             context.input.lookAt(table)
@@ -383,14 +390,19 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         // Placed by a player looking west: the table reaches west from the clicked block and seat 0 faces them.
         player.setYRot(90f)
         val clicked = base.west(2)
+        // A birch table: all nine parts are birch, and so is the table it drops.
         val stack = ItemStack(TuKuaiContent.CARD_TABLE_ITEM)
+        stack.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, Wood.BIRCH))
         player.setItemInHand(InteractionHand.MAIN_HAND, stack)
         val hit = BlockHitResult(Vec3.atCenterOf(clicked.below()).add(0.0, 0.5, 0.0), Direction.UP, clicked.below(), false)
         stack.useOn(UseOnContext(player, InteractionHand.MAIN_HAND, hit))
         val placed = clicked.west()
         for (part in 0 until CardTableBlock.PARTS) {
             val state = level.getBlockState(CardTableBlock.posOf(placed, part))
-            check(state.block is CardTableBlock && state.getValue(CardTableBlock.PART) == part && state.getValue(CardTableBlock.FACING) == Direction.EAST) {
+            check(
+                state.block is CardTableBlock && state.getValue(CardTableBlock.PART) == part &&
+                    state.getValue(CardTableBlock.FACING) == Direction.EAST && state.getValue(CardTableBlock.WOOD) == Wood.BIRCH,
+            ) {
                 "Placing a table left part $part as $state"
             }
         }
@@ -401,6 +413,9 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         }
         val drops = tableItems(level, placed)
         check(drops == 1) { "Breaking a table dropped $drops tables" }
+        val dropped = level.getEntitiesOfClass(ItemEntity::class.java, AABB(placed).inflate(2.5)) { it.item.`is`(TuKuaiContent.CARD_TABLE_ITEM) }
+            .first().item.get(DataComponents.BLOCK_STATE)?.get(CardTableBlock.WOOD)
+        check(dropped == Wood.BIRCH) { "A birch table dropped a $dropped table" }
 
         val table = base.relative(Direction.NORTH, 3)
         for (part in 0 until CardTableBlock.PARTS) {
@@ -423,6 +438,55 @@ class TuKuaiClientGameTest : FabricClientGameTest {
     }
 
     private var oldBase: BlockPos = BlockPos.ZERO
+
+    /**
+     * A row of tables in different woods, each with a stool of the same wood, seen from
+     * the side in daylight. Away from the rest of the test, south of the player.
+     */
+    private fun woodenTables(context: ClientGameTestContext, server: TestServerContext) {
+        val woods = listOf(Wood.SPRUCE, Wood.BIRCH, Wood.CHERRY, Wood.DARK_OAK, Wood.MANGROVE, Wood.CRIMSON, Wood.WARPED, Wood.BAMBOO)
+        val colors = listOf(DyeColor.BLUE, DyeColor.RED, DyeColor.PINK, DyeColor.ORANGE, DyeColor.LIME, DyeColor.CYAN, DyeColor.YELLOW, DyeColor.PURPLE)
+        val row = server.computeOnServer<BlockPos, RuntimeException> { s ->
+            val level = s.overworld()
+            s.commands.performPrefixedCommand(s.createCommandSourceStack(), "time set noon")
+            s.commands.performPrefixedCommand(s.createCommandSourceStack(), "weather clear")
+            val start = oldBase.offset(-14, 0, 12)
+            for (x in -2..32) for (z in -3..8) {
+                for (y in 0..4) level.setBlockAndUpdate(start.offset(x, y, z), Blocks.AIR.defaultBlockState())
+                level.setBlockAndUpdate(start.offset(x, -1, z), Blocks.STONE_BRICKS.defaultBlockState())
+            }
+            woods.forEachIndexed { i, wood ->
+                val center = start.offset(i * 4, 0, 0)
+                for (part in 0 until CardTableBlock.PARTS) {
+                    level.setBlockAndUpdate(
+                        CardTableBlock.posOf(center, part),
+                        TuKuaiContent.CARD_TABLE.defaultBlockState().setValue(CardTableBlock.FACING, Direction.SOUTH)
+                            .setValue(CardTableBlock.PART, part).setValue(CardTableBlock.WOOD, wood),
+                    )
+                }
+                (level.getBlockEntity(center) as CardTableBlockEntity).dye(colors[i])
+                level.setBlockAndUpdate(
+                    center.south(StoolBlock.TABLE_DISTANCE),
+                    TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.WOOD, wood).setValue(StoolBlock.COLOR, colors[i]),
+                )
+            }
+            start
+        }
+        context.waitTicks(20)
+        val middle = row.offset(14, 0, 0)
+        moveTo(server, middle.offset(0, 0, 13))
+        context.waitTicks(10)
+        context.input.lookAt(middle)
+        context.waitTicks(20)
+        shot(context, "0-world-wood-tables")
+        moveTo(server, row.offset(6, 0, 5))
+        context.waitTicks(5)
+        context.input.lookAt(row.offset(4, 0, 1))
+        context.waitTicks(10)
+        shot(context, "0-world-wood-close")
+        moveTo(server, oldBase)
+        context.waitTicks(5)
+    }
 
     /** The roomy old table grew into a 3x3 one; the cramped one dropped as an item. */
     private fun checkOldTables(server: MinecraftServer) {

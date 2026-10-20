@@ -12,7 +12,8 @@
               "function": "minecraft:copy_state",
               "block": "tukuai:stool",
               "properties": [
-                "color"
+                "color",
+                "wood"
               ]
             }
           ]

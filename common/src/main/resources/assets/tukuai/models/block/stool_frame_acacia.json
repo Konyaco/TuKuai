@@ -1,0 +1,7 @@
+{
+  "parent": "tukuai:block/stool_frame",
+  "textures": {
+    "wood": "minecraft:block/acacia_planks",
+    "leg": "minecraft:block/stripped_acacia_log"
+  }
+}

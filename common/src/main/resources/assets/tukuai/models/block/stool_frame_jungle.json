@@ -1,0 +1,7 @@
+{
+  "parent": "tukuai:block/stool_frame",
+  "textures": {
+    "wood": "minecraft:block/jungle_planks",
+    "leg": "minecraft:block/stripped_jungle_log"
+  }
+}

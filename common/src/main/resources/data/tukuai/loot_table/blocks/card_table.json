@@ -4,15 +4,31 @@
     {
       "rolls": 1,
       "entries": [
-        { "type": "minecraft:item", "name": "tukuai:card_table" }
+        {
+          "type": "minecraft:item",
+          "name": "tukuai:card_table",
+          "functions": [
+            {
+              "function": "minecraft:copy_state",
+              "block": "tukuai:card_table",
+              "properties": [
+                "wood"
+              ]
+            }
+          ]
+        }
       ],
       "conditions": [
         {
           "condition": "minecraft:block_state_property",
           "block": "tukuai:card_table",
-          "properties": { "part": "4" }
+          "properties": {
+            "part": "4"
+          }
         },
-        { "condition": "minecraft:survives_explosion" }
+        {
+          "condition": "minecraft:survives_explosion"
+        }
       ]
     }
   ],

@@ -2,79 +2,1045 @@
   "multipart": [
     {
       "when": {
-        "part": "0"
+        "part": "0",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_corner"
+        "model": "tukuai:block/card_table_corner_oak"
       }
     },
     {
       "when": {
-        "part": "1"
+        "part": "1",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_edge"
+        "model": "tukuai:block/card_table_edge_oak"
       }
     },
     {
       "when": {
-        "part": "2"
+        "part": "2",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_corner",
+        "model": "tukuai:block/card_table_corner_oak",
         "y": 90
       }
     },
     {
       "when": {
-        "part": "3"
+        "part": "3",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_edge",
+        "model": "tukuai:block/card_table_edge_oak",
         "y": 270
       }
     },
     {
       "when": {
-        "part": "4"
+        "part": "4",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_center"
+        "model": "tukuai:block/card_table_center_oak"
       }
     },
     {
       "when": {
-        "part": "5"
+        "part": "5",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_edge",
+        "model": "tukuai:block/card_table_edge_oak",
         "y": 90
       }
     },
     {
       "when": {
-        "part": "6"
+        "part": "6",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_corner",
+        "model": "tukuai:block/card_table_corner_oak",
         "y": 270
       }
     },
     {
       "when": {
-        "part": "7"
+        "part": "7",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_edge",
+        "model": "tukuai:block/card_table_edge_oak",
         "y": 180
       }
     },
     {
       "when": {
-        "part": "8"
+        "part": "8",
+        "wood": "oak"
       },
       "apply": {
-        "model": "tukuai:block/card_table_corner",
+        "model": "tukuai:block/card_table_corner_oak",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_spruce"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_spruce"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_spruce",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_spruce",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_spruce"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_spruce",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_spruce",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_spruce",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_spruce",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_birch"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_birch"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_birch",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_birch",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_birch"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_birch",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_birch",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_birch",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_birch",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_jungle"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_jungle"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_jungle",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_jungle",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_jungle"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_jungle",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_jungle",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_jungle",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_jungle",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_acacia"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_acacia"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_acacia",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_acacia",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_acacia"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_acacia",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_acacia",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_acacia",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_acacia",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_dark_oak"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_dark_oak"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_dark_oak",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_dark_oak",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_dark_oak"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_dark_oak",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_dark_oak",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_dark_oak",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_dark_oak",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_mangrove"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_mangrove"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_mangrove",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_mangrove",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_mangrove"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_mangrove",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_mangrove",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_mangrove",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_mangrove",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_cherry"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_cherry"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_cherry",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_cherry",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_cherry"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_cherry",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_cherry",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_cherry",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_cherry",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_pale_oak"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_pale_oak"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_pale_oak",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_pale_oak",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_pale_oak"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_pale_oak",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_pale_oak",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_pale_oak",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_pale_oak",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_bamboo"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_bamboo"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_bamboo",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_bamboo",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_bamboo"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_bamboo",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_bamboo",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_bamboo",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_bamboo",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_crimson"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_crimson"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_crimson",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_crimson",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_crimson"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_crimson",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_crimson",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_crimson",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_crimson",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "0",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_warped"
+      }
+    },
+    {
+      "when": {
+        "part": "1",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_warped"
+      }
+    },
+    {
+      "when": {
+        "part": "2",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_warped",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "3",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_warped",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "4",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_center_warped"
+      }
+    },
+    {
+      "when": {
+        "part": "5",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_warped",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "part": "6",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_warped",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "part": "7",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_edge_warped",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "part": "8",
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/card_table_corner_warped",
         "y": 180
       }
     }

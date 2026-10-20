@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "tukuai:stool",
+  "key": {
+    "W": "minecraft:green_wool",
+    "S": "minecraft:acacia_slab",
+    "T": "minecraft:stick"
+  },
+  "pattern": [
+    "W",
+    "S",
+    "T"
+  ],
+  "result": {
+    "count": 1,
+    "id": "tukuai:stool",
+    "components": {
+      "minecraft:block_state": {
+        "color": "green",
+        "wood": "acacia"
+      }
+    }
+  }
+}

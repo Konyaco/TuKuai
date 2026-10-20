@@ -1,0 +1,7 @@
+{
+  "parent": "tukuai:block/stool_frame",
+  "textures": {
+    "wood": "minecraft:block/bamboo_planks",
+    "leg": "minecraft:block/stripped_bamboo_block"
+  }
+}
