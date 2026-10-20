@@ -5,7 +5,10 @@
   "name": "TuKuai client tests",
   "environment": "client",
   "entrypoints": {
-    "fabric-client-gametest": ["io.github.konyaco.tukuai.fabric.test.TuKuaiClientGameTest"]
+    "fabric-client-gametest": [
+      "io.github.konyaco.tukuai.fabric.test.TuKuaiClientGameTest",
+      "io.github.konyaco.tukuai.fabric.test.ShowcaseGameTest"
+    ]
   },
   "depends": {
     "tukuai": "*"
