@@ -431,10 +431,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 dirty = true
             }
         }
-        if (ticks % 200 == 0L) {
-            val online = level.players().mapTo(HashSet()) { it.uuid }
-            sentRevision.keys.retainAll(online)
-        }
         if (dirty) changed()
     }
 
@@ -532,11 +528,10 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         val c = center
         var watcherView: ByteArray? = null
         var watcherDone = false
+        val nearby = HashSet<UUID>()
         for (player in level.players()) {
-            if (player.distanceToSqr(c) > SYNC_RANGE * SYNC_RANGE) {
-                sentRevision.remove(player.uuid)
-                continue
-            }
+            if (player.distanceToSqr(c) > SYNC_RANGE * SYNC_RANGE) continue
+            nearby += player.uuid
             if (sentRevision[player.uuid] == revision) continue
             sentRevision[player.uuid] = revision
             val seat = viewSeatOf(player.uuid)
@@ -555,6 +550,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             }
             Services.platform.sendToPlayer(player, TableSyncPayload(worldPosition, snapshot(level, seat, view).encode()))
         }
+        // Whoever walks off, leaves this level or logs off gets the whole table again when they are back.
+        sentRevision.keys.retainAll(nearby)
     }
 
     private fun snapshot(level: ServerLevel, you: Seat?, view: ByteArray?): TableSnapshot {
