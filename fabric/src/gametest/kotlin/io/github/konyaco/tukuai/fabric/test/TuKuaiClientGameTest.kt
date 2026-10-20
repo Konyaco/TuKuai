@@ -434,6 +434,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             context.waitTicks(100)
             waited += 100
         }
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.finished == true }, 200)
         val view = ClientTables[table]!!.view as GdView
         check(view.finished && view.rounds.size == 1 && view.scores.sum() == 0) { "The Guandan round ended oddly: $view" }
         context.waitTicks(20)
@@ -463,12 +464,14 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         act(server, table, TableOp.AUTO, 1)
         context.setScreen { TableScreen(table) }
         // Slow down again near the end of the round, so the screens in between stay up a while.
-        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { v -> v.order.isNotEmpty() || v.handCounts.any { it <= 4 } } == true }, 6000)
+        // Until the new match's first view arrives, the finished round above is still on the
+        // client, with its order filled in; only a to_ace view in play counts.
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { v -> v.rules.toAce && v.round == 0 && v.phase == GdPhase.PLAYING && (v.order.isNotEmpty() || v.handCounts.any { it <= 4 }) } == true }, 6000)
         botDelay(server, 2.5)
-        context.waitFor({ (ClientTables[table]?.view as? GdView)?.phase == GdPhase.ROUND_OVER }, 2400)
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { it.rules.toAce && it.phase == GdPhase.ROUND_OVER } == true }, 4800)
         context.waitTicks(5)
         shot(context, "39-gd-screen-round-over")
-        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { it.round == 1 && it.phase != GdPhase.ROUND_OVER } == true }, 400)
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { it.rules.toAce && it.round == 1 && it.phase != GdPhase.ROUND_OVER } == true }, 400)
         context.waitTicks(5)
         shot(context, "40-gd-screen-tribute")
         botDelay(server, 1.1)
