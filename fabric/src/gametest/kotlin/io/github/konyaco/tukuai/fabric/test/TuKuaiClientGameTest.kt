@@ -171,7 +171,59 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             }
             context.waitTicks(5)
             shot(context, "11-replay-end")
+
+            playUno(context, server, table)
         }
+    }
+
+    /** Switches the same table to UNO, which needs a fourth seat, and plays a hand of it. */
+    private fun playUno(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        act(server, table, TableOp.GAME, text = "uno")
+        act(server, table, TableOp.ADD_BOT, -1, BotLevel.HARD.ordinal)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "uno" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "12-uno-lobby")
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "uno" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.input.lookAt(table)
+        context.waitTicks(12)
+        shot(context, "13-uno-world-dealing")
+        context.waitTicks(30)
+        shot(context, "14-uno-world")
+
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "15-uno-screen")
+
+        act(server, table, TableOp.AUTO, 1)
+        context.waitTicks(200)
+        shot(context, "16-uno-screen-midgame")
+
+        var waited = 0
+        while (status(server, table) != TableStatus.FINISHED) {
+            check(waited < 12000) { "The UNO hand did not finish" }
+            context.waitTicks(100)
+            waited += 100
+        }
+        context.waitTicks(20)
+        shot(context, "17-uno-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "18-uno-world-result")
+
+        act(server, table, TableOp.REPLAY)
+        context.waitFor({ it.screen is ReplayScreen }, 100)
+        context.runOnClient<RuntimeException> {
+            val replay = it.screen as ReplayScreen
+            replay.pause()
+            replay.seek(replay.total / 2)
+        }
+        context.waitTicks(5)
+        shot(context, "19-uno-replay")
     }
 
     /**
@@ -251,11 +303,11 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         level.getEntitiesOfClass(ItemEntity::class.java, AABB(around).inflate(2.5)) { it.item.`is`(TuKuaiContent.CARD_TABLE_ITEM) }
             .sumOf { it.item.count }
 
-    private fun act(server: TestServerContext, pos: BlockPos, op: TableOp, a: Int = 0, b: Int = 0) {
+    private fun act(server: TestServerContext, pos: BlockPos, op: TableOp, a: Int = 0, b: Int = 0, text: String = "") {
         server.runOnServer<RuntimeException> { s ->
             val player = s.playerList.players.first()
             val table = s.overworld().getBlockEntity(pos) as CardTableBlockEntity
-            table.handle(player, TableActionPayload(pos, op, a, b))
+            table.handle(player, TableActionPayload(pos, op, a, b, text))
         }
     }
 

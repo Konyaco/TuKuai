@@ -12,11 +12,14 @@ import kotlin.math.sin
  * Moves the cards on one table from where they were to where the latest update puts
  * them, instead of letting them jump.
  *
- * Each new card is paired with a card that was shown before: first a card with the same
- * face, so a played card leaves the hand it came from; then the nearest card left over,
- * so a hand that shrinks closes up and a hand turned face up flips where it stood. A card
- * with no partner flies in from its [TableCard.fromX], [TableCard.fromZ], one after the
- * other, so a new game looks dealt from a deck.
+ * Each new card is paired with a card that was shown before: first the card with the same
+ * [TableCard.key], for games whose decks hold several cards with one face; then a card
+ * with the same face, so a played card leaves the hand it came from; then the nearest card
+ * left over, so a hand that shrinks closes up and a hand turned face up flips where it
+ * stood. Cards with a key that went away are not paired by face or nearness, since they
+ * are known to have gone somewhere else. A card with no partner flies in from its
+ * [TableCard.fromX], [TableCard.fromZ], one after the other, so a new game looks dealt
+ * from a deck.
  */
 class CardMotion {
     private var target: List<TableCard>? = null
@@ -39,12 +42,20 @@ class CardMotion {
 
     private fun retarget(shown: List<TableCard>, scene: List<TableCard>, now: Double) {
         val partner = arrayOfNulls<TableCard>(scene.size)
-        val used = BooleanArray(shown.size)
+        // Cards with a key only ever pair with the card of the same key.
+        val used = BooleanArray(shown.size) { shown[it].key >= 0 }
+        val byKey = HashMap<Int, Int>()
+        shown.forEachIndexed { i, card -> if (card.key >= 0) byKey.putIfAbsent(card.key, i) }
+        scene.forEachIndexed { i, card ->
+            if (card.key < 0) return@forEachIndexed
+            val j = byKey.remove(card.key) ?: return@forEachIndexed
+            partner[i] = shown[j]
+        }
         // The same face: the same physical card. Backs all look alike, so they wait for the next pass.
         val byFace = HashMap<Int, Int>()
-        shown.forEachIndexed { i, card -> if (!CardArt.isBack(card.sprite)) byFace.putIfAbsent(card.sprite, i) }
+        shown.forEachIndexed { i, card -> if (!used[i] && !CardArt.isBack(card.sprite)) byFace.putIfAbsent(card.sprite, i) }
         scene.forEachIndexed { i, card ->
-            if (CardArt.isBack(card.sprite)) return@forEachIndexed
+            if (partner[i] != null || CardArt.isBack(card.sprite)) return@forEachIndexed
             val j = byFace.remove(card.sprite) ?: return@forEachIndexed
             partner[i] = shown[j]
             used[j] = true

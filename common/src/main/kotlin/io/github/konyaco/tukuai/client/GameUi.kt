@@ -91,6 +91,12 @@ data class TableCard(
     val lift: Float = 0f,
     val fromX: Float = x,
     val fromZ: Float = z,
+    /**
+     * Tells apart cards that look the same, such as the two red fives of an UNO deck, so
+     * each one moves from where it was. -1 for a card nobody may tell apart, such as one
+     * seen from the back.
+     */
+    val key: Int = -1,
 )
 
 object GameUis {

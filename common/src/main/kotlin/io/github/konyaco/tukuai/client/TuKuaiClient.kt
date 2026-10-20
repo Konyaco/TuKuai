@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.ddz.DdzUi
+import io.github.konyaco.tukuai.client.uno.UnoUi
 import io.github.konyaco.tukuai.platform.ClientPlatform
 import io.github.konyaco.tukuai.platform.Services
 
@@ -13,6 +14,7 @@ object TuKuaiClient {
         Services.receiveTable = ClientTables::receive
         Services.openReplay = ReplayScreen::open
         GameUis.register(DdzUi)
+        GameUis.register(UnoUi)
     }
 
     private var ready = false

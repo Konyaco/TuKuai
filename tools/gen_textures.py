@@ -12,7 +12,8 @@ from PIL import Image
 OUT = "common/src/main/resources/assets/tukuai/textures"
 CARD_W, CARD_H = 32, 44
 COLS = 14
-ATLAS_W, ATLAS_H = 512, 256
+ATLAS_W, ATLAS_H = 512, 512
+UNO_ROW = 6  # UNO cards start on this row of cards, below the icons; see CardArt.UNO_FIRST.
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
@@ -38,6 +39,7 @@ FONT = {
     "J": ["..###", "...#.", "...#.", "...#.", "#..#.", "#..#.", ".##.."],
     "Q": [".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#"],
     "K": ["#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"],
+    "+": [".....", "..#..", "..#..", "#####", "..#..", "..#..", "....."],
 }
 SMALL = {
     "J": ["###", "..#", "..#", "#.#", "##."],
@@ -216,6 +218,154 @@ def back(style):
     return card
 
 
+# ---- UNO -----------------------------------------------------------------------------------
+
+UNO_COLORS = {  # Same order as UnoColor in the engine.
+    "R": (214, 44, 40, 255),
+    "Y": (238, 196, 28, 255),
+    "G": (58, 158, 62, 255),
+    "B": (34, 98, 200, 255),
+}
+UNO_BLACK = (34, 34, 38, 255)
+WHITE = (250, 250, 250, 255)
+
+SKIP = ["..###..", ".##..#.", "#.#...#", "#..#..#", "#...#.#", ".#..##.", "..###.."]
+REVERSE = [".....#..", "########", ".....#..", "........", "..#.....", "########", "..#....."]
+
+
+def scaled(rows, k):
+    return ["".join(ch * k for ch in row) for row in rows for _ in range(k)]
+
+
+def rotated(rows):
+    return [row[::-1] for row in reversed(rows)]
+
+
+def uno_inside(x, y, a=10.0, b=17.0, angle=math.radians(30)):
+    """Inside the tilted oval in the middle of an UNO card."""
+    dx, dy = x + 0.5 - 16, y + 0.5 - 22
+    u = (dx * math.cos(angle) + dy * math.sin(angle)) / a
+    v = (-dx * math.sin(angle) + dy * math.cos(angle)) / b
+    return u * u + v * v <= 1
+
+
+def uno_blank(field, oval):
+    """A card with a white margin, a coloured field and a tilted oval; [oval] colours each oval pixel."""
+    card = blank(WHITE)
+    for y in range(3, CARD_H - 3):
+        for x in range(3, CARD_W - 3):
+            card.putpixel((x, y), oval(x, y) if uno_inside(x, y) else field)
+    return card
+
+
+def centered(card, rows, color, cy=22):
+    bitmap(card, rows, 16 - len(rows[0]) // 2, cy - len(rows) // 2, color)
+
+
+def corners(card, rows, color):
+    """A small symbol in the top-left corner and the same, turned around, in the bottom-right."""
+    bitmap(card, rows, 4, 4, color)
+    turned = rotated(rows)
+    bitmap(card, turned, CARD_W - 4 - len(turned[0]), CARD_H - 4 - len(turned), color)
+
+
+def label_rows(label):
+    """Rows of the 5x7 font for [label], one column apart."""
+    rows = [""] * 7
+    for i, ch in enumerate(label):
+        for r in range(7):
+            rows[r] += ("." if i else "") + FONT[ch][r]
+    return rows
+
+
+def big_skip(card, color, cx=16, cy=22, r=7.0):
+    """A ring with a slash across it."""
+    for y in range(cy - 9, cy + 9):
+        for x in range(cx - 9, cx + 9):
+            dx, dy = x + 0.5 - cx, y + 0.5 - cy
+            d = math.hypot(dx, dy)
+            if r - 2.2 <= d <= r or (d < r and abs(dx - dy) < 1.6):
+                put(card, x, y, color)
+
+
+def arrow(card, x_from, x_to, y, color):
+    """A thick arrow along a row, pointing from [x_from] to [x_to]."""
+    step = 1 if x_to > x_from else -1
+    for x in range(x_from, x_to - step * 3, step):
+        put(card, x, y, color)
+        put(card, x, y + 1, color)
+    for k in range(4):
+        x = x_to - step * k
+        for dy in range(-k, k + 2):
+            put(card, x, y + dy, color)
+
+
+def uno_face(color, kind):
+    field = UNO_COLORS[color]
+    card = uno_blank(field, lambda x, y: WHITE)
+    if kind.isdigit():
+        small = label_rows(kind)
+        big = scaled(FONT[kind], 2)
+    elif kind == "S":
+        small = SKIP
+        big = None
+        big_skip(card, field)
+    elif kind == "R":
+        small = REVERSE
+        big = None
+        arrow(card, 9, 23, 17, field)
+        arrow(card, 23, 9, 25, field)
+    else:  # Draw two
+        small = label_rows("+2")
+        big = scaled(label_rows("+2"), 2)
+    if big:
+        centered(card, big, field)
+    corners(card, small, WHITE)
+    return card
+
+
+def quarters(x, y):
+    """The four colours of a wild card's oval, a quarter each."""
+    top = y + 0.5 < 22
+    left = x + 0.5 < 16
+    return UNO_COLORS["R" if top and left else "B" if top else "Y" if left else "G"]
+
+
+def uno_wild(draw_four, chosen=None):
+    """A wild card; once played, [chosen] fills the oval with the colour that was named."""
+    card = uno_blank(UNO_BLACK, (lambda x, y: UNO_COLORS[chosen]) if chosen else quarters)
+    if draw_four:
+        if chosen:
+            centered(card, scaled(label_rows("+4"), 2), WHITE)
+        else:
+            # Four little cards, one of each colour, fanned out across the oval.
+            for i, c in enumerate("BGRY"):
+                x0, y0 = 8 + i * 4, 13 + (i % 2) * 5
+                for y in range(y0, y0 + 11):
+                    for x in range(x0, x0 + 6):
+                        edge = x in (x0, x0 + 5) or y in (y0, y0 + 10)
+                        card.putpixel((x, y), WHITE if edge else UNO_COLORS[c])
+        corners(card, label_rows("+4"), WHITE)
+    else:
+        for (dx, dy), c in zip([(0, 0), (2, 0), (0, 2), (2, 2)], "RBYG"):
+            for y in range(2):
+                for x in range(2):
+                    put(card, 4 + dx + x, 4 + dy + y, UNO_COLORS[c])
+                    put(card, CARD_W - 8 + (2 - dx) + x, CARD_H - 8 + (2 - dy) + y, UNO_COLORS[c])
+    return card
+
+
+def uno_cards():
+    """Same order as UnoDeck.FACES, then each wild card with each colour named, see CardArt.uno."""
+    cards = []
+    for color in UNO_COLORS:
+        cards += [uno_face(color, kind) for kind in [str(n) for n in range(10)] + ["S", "R", "+2"]]
+    cards += [uno_wild(False), uno_wild(True)]
+    for draw_four in (False, True):
+        cards += [uno_wild(draw_four, color) for color in UNO_COLORS]
+    return cards
+
+
 def landlord_icon():
     icon = Image.new("RGBA", (16, 16), CLEAR)
     hat = ["................",
@@ -272,6 +422,8 @@ def atlas():
     icon_y = 5 * CARD_H
     sheet.paste(landlord_icon(), (0, icon_y))
     sheet.paste(farmer_icon(), (16, icon_y))
+    for i, card in enumerate(uno_cards()):
+        sheet.paste(card, ((i % COLS) * CARD_W, (UNO_ROW + i // COLS) * CARD_H))
     # The paper colour of a card's edges, for cards drawn with thickness on the table.
     for y in range(8):
         for x in range(8):
