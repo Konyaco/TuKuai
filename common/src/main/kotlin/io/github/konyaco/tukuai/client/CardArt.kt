@@ -56,13 +56,19 @@ object CardArt {
     private val faceIndex: Map<PlayingCard, Int> = Decks.STANDARD_54.withIndex().associate { it.value to it.index }
 
     /** A playing card in the face style this player picked. */
-    fun face(card: PlayingCard): Int {
-        val style = ClientConfig.cardFace.coerceIn(0, FACE_STYLES.size - 1)
+    fun face(card: PlayingCard): Int = face(card, ClientConfig.cardFace)
+
+    /** A playing card in one of the [FACE_STYLES], to show what each looks like. */
+    fun face(card: PlayingCard, faceStyle: Int): Int {
+        val style = faceStyle.coerceIn(0, FACE_STYLES.size - 1)
         val index = faceIndex.getValue(card)
         return if (style == 0) index else STYLE_FIRST + (style - 1) * Decks.STANDARD_54.size + index
     }
 
-    fun back(): Int = FIRST_BACK + ClientConfig.cardBack.coerceIn(0, BACK_COUNT - 1)
+    fun back(): Int = back(ClientConfig.cardBack)
+
+    /** One of the [BACK_COUNT] card backs. */
+    fun back(index: Int): Int = FIRST_BACK + index.coerceIn(0, BACK_COUNT - 1)
 
     fun isBack(sprite: Int): Boolean = sprite in FIRST_BACK until FIRST_BACK + BACK_COUNT
 

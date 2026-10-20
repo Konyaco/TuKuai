@@ -79,7 +79,12 @@ class MultiplayerGameTest : FabricClientGameTest {
                 }
                 waitPeer(context, peer, 1200, "The second client did not sit down") { it["you"] == "$PEER_SEAT" }
                 context.waitFor({ ClientTables[table]?.snapshot?.seats?.all { it.occupant != null } == true }, 100)
+                // With two people at the table, the game starts once both are ready.
                 context.runOnClient<RuntimeException> { SeatPlayer.send(table, TableOp.START) }
+                context.waitFor({ ClientTables[table]?.snapshot?.seats?.get(MY_SEAT)?.ready == true }, 100)
+                context.waitTicks(10)
+                check(ClientTables[table]!!.snapshot.status == TableStatus.LOBBY) { "The game started before the other player was ready" }
+                peer.command(context, "START")
                 context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
                 waitPeer(context, peer, 200, "The second client did not see the game start") { it["status"] == "PLAYING" }
 
@@ -124,8 +129,15 @@ class MultiplayerGameTest : FabricClientGameTest {
                 waitPeer(context, peer, 200, "The other client could not open the replay") { it["screen"] == "ReplayScreen" }
                 peer.command(context, "CLOSE")
 
-                // Round two, started by the other player.
+                // Round two: the other player is ready first, and the result stays up until we are too.
                 peer.command(context, "START")
+                context.waitFor({ ClientTables[table]?.snapshot?.seats?.get(PEER_SEAT)?.ready == true }, 200)
+                context.setScreen { TableScreen(table) }
+                context.waitTicks(10)
+                shot(context, "mp-2b-waiting-for-us")
+                context.setScreen { null }
+                check(ClientTables[table]!!.snapshot.status == TableStatus.FINISHED) { "The next round started before we were ready" }
+                context.runOnClient<RuntimeException> { SeatPlayer.send(table, TableOp.START) }
                 context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.PLAYING && it.rounds == 1 } == true }, 200)
                 play(context, player, table, peer) { t -> (t.view as DdzView).let { it.phase == DdzPhase.PLAYING && it.handCounts.sum() <= 50 } }
 
@@ -149,6 +161,23 @@ class MultiplayerGameTest : FabricClientGameTest {
                 context.setScreen { TableScreen(table) }
                 context.waitTicks(10)
                 shot(context, "mp-3-second-result")
+                context.setScreen { null }
+
+                // Round three is stopped halfway, which takes both players' agreement.
+                context.runOnClient<RuntimeException> { SeatPlayer.send(table, TableOp.START) }
+                peer.command(context, "START")
+                context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.PLAYING && it.rounds == 2 } == true }, 200)
+                peer.command(context, "END")
+                context.waitFor({ ClientTables[table]?.snapshot?.seats?.get(PEER_SEAT)?.endVote == true }, 200)
+                context.setScreen { TableScreen(table) }
+                context.waitTicks(10)
+                shot(context, "mp-4-end-proposed")
+                check(ClientTables[table]!!.snapshot.status == TableStatus.PLAYING) { "The match ended before we agreed" }
+                context.runOnClient<RuntimeException> { SeatPlayer.send(table, TableOp.END) }
+                context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.LOBBY && it.matchOver && it.rounds == 2 } == true }, 200)
+                waitPeer(context, peer, 200, "The other client did not see the match end") { it["status"] == "LOBBY" }
+                context.waitTicks(10)
+                shot(context, "mp-5-standings")
                 context.setScreen { null }
                 connection.close()
                 TuKuai.LOGGER.info("Two players finished two rounds")
