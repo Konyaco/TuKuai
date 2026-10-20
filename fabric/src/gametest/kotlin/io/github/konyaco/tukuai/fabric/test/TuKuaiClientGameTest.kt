@@ -58,7 +58,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
 
     override fun runTest(context: ClientGameTestContext) {
         // Taking README screenshots with ShowcaseGameTest; no need to play the whole test round too.
-        if (System.getenv("TUKUAI_SHOWCASE") != null) return
+        if (System.getenv("TUKUAI_SHOWCASE") != null || System.getenv("TUKUAI_MULTIPLAYER") != null) return
         context.worldBuilder().create().use { world ->
             world.clientLevel.waitForChunksRender()
             val server = world.server
