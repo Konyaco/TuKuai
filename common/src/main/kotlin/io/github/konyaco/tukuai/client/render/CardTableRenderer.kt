@@ -110,7 +110,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
                 (CardArt.FELT_U + x1 * tile) / CardArt.TEXTURE_WIDTH,
                 (CardArt.FELT_V + z1 * tile) / CardArt.TEXTURE_HEIGHT,
             )
-            val c = floatArrayOf(0.5f + bx + (x0 + x1) / 2, 1.0005f, 0.5f + bz + (z0 + z1) / 2)
+            val c = floatArrayOf(bx + (x0 + x1) / 2, 1.0005f, bz + (z0 + z1) / 2)
             side(buffer, pose, light, c, UP, 0f, EAST, (x1 - x0) / 2, NORTH, (z1 - z0) / 2, uv, color)
         }
     }
