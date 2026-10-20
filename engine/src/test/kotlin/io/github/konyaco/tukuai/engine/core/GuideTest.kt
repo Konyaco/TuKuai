@@ -7,6 +7,7 @@ import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.engine.doudizhu.Patterns
 import io.github.konyaco.tukuai.engine.doudizhu.BiddingMode
 import io.github.konyaco.tukuai.engine.doudizhu.DealMode
+import io.github.konyaco.tukuai.engine.guandan.Guandan
 import io.github.konyaco.tukuai.engine.paodekuai.PaoDeKuai
 import io.github.konyaco.tukuai.engine.paodekuai.PdkGuide
 import io.github.konyaco.tukuai.engine.paodekuai.PdkPatternType
@@ -24,7 +25,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GuideTest {
-    private val games = listOf(DouDizhu, Uno, PaoDeKuai)
+    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan)
 
     /** The English language file, read with a regex since the engine has no JSON library. */
     private val english: Map<String, String> by lazy {

@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.ddz.DdzUi
+import io.github.konyaco.tukuai.client.gd.GdUi
 import io.github.konyaco.tukuai.client.pdk.PdkUi
 import io.github.konyaco.tukuai.client.uno.UnoUi
 import io.github.konyaco.tukuai.platform.ClientPlatform
@@ -17,6 +18,7 @@ object TuKuaiClient {
         GameUis.register(DdzUi)
         GameUis.register(UnoUi)
         GameUis.register(PdkUi)
+        GameUis.register(GdUi)
     }
 
     private var ready = false
