@@ -13,12 +13,15 @@ import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.content.Wood
 import io.github.konyaco.tukuai.engine.core.BotLevel
+import io.github.konyaco.tukuai.engine.guandan.GdPhase
+import io.github.konyaco.tukuai.engine.guandan.GdView
 import io.github.konyaco.tukuai.engine.paodekuai.PdkAction
 import io.github.konyaco.tukuai.engine.paodekuai.PdkCodecs
 import io.github.konyaco.tukuai.engine.paodekuai.PdkView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.ReplayStore
+import io.github.konyaco.tukuai.table.ServerSettings
 import io.github.konyaco.tukuai.table.StatsStore
 import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableStatus
@@ -362,6 +365,117 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         }
         context.waitTicks(5)
         shot(context, "28-pdk-replay")
+
+        playGuandan(context, server, table)
+    }
+
+    /**
+     * Switches the table to Guandan, four seats in two teams, and plays a round of it with
+     * the computers: the lobby, the rule book, our turn with a hint picked, both views, the
+     * result and its replay. Then a few rounds of the long game, for the screen between
+     * rounds and the tribute.
+     */
+    private fun playGuandan(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        act(server, table, TableOp.GAME, text = "guandan")
+        act(server, table, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "guandan" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "29-gd-lobby")
+        readRules(context, "guandan", "patterns")
+        for (section in listOf("wild", "bombs", "tribute")) {
+            context.runOnClient<RuntimeException> { (it.screen as TableScreen).openRules() }
+            context.waitFor({ it.screen is RulesScreen }, 20)
+            context.runOnClient<RuntimeException> { (it.screen as RulesScreen).showSection(section) }
+            context.waitTicks(5)
+            shot(context, "rules-guandan-$section")
+            context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
+            context.waitFor({ it.screen is TableScreen }, 20)
+        }
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "guandan" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.input.lookAt(table)
+        context.waitTicks(12)
+        shot(context, "30-gd-world-dealing")
+        context.waitTicks(40)
+        shot(context, "31-gd-world")
+
+        // Our turn, with the hint's cards picked out.
+        context.setScreen { TableScreen(table) }
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { v -> v.isMyTurn && v.phase == GdPhase.PLAYING } == true }, 2400)
+        context.waitTicks(10)
+        context.input.pressKey(GLFW.GLFW_KEY_H)
+        context.waitTicks(5)
+        shot(context, "32-gd-screen-turn")
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = true
+            (it.screen as? TableScreen)?.refresh()
+        }
+        context.waitTicks(5)
+        shot(context, "33-gd-screen-immersive")
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = false
+            (it.screen as? TableScreen)?.refresh()
+        }
+
+        act(server, table, TableOp.AUTO, 1)
+        context.waitTicks(400)
+        shot(context, "34-gd-screen-midgame")
+        context.setScreen { null }
+        context.waitTicks(5)
+        shot(context, "35-gd-world-midgame")
+
+        var waited = 0
+        while (status(server, table) != TableStatus.FINISHED) {
+            check(waited < 12000) { "The Guandan round did not finish" }
+            context.waitTicks(100)
+            waited += 100
+        }
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.finished == true }, 200)
+        val view = ClientTables[table]!!.view as GdView
+        check(view.finished && view.rounds.size == 1 && view.scores.sum() == 0) { "The Guandan round ended oddly: $view" }
+        context.waitTicks(20)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "36-gd-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "37-gd-world-result")
+
+        act(server, table, TableOp.REPLAY)
+        context.waitFor({ it.screen is ReplayScreen }, 100)
+        context.runOnClient<RuntimeException> {
+            val replay = it.screen as ReplayScreen
+            replay.pause()
+            replay.seek(replay.total / 2)
+        }
+        context.waitTicks(5)
+        shot(context, "38-gd-replay")
+
+        // The long game, with the computers quick: the screen between rounds, then the tribute.
+        context.setScreen { null }
+        act(server, table, TableOp.PRESET, text = "to_ace")
+        botDelay(server, 0.15)
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.presetId == "to_ace" && it.status == TableStatus.PLAYING } == true }, 200)
+        act(server, table, TableOp.AUTO, 1)
+        context.setScreen { TableScreen(table) }
+        // Slow down again near the end of the round, so the screens in between stay up a while.
+        // Until the new match's first view arrives, the finished round above is still on the
+        // client, with its order filled in; only a to_ace view in play counts.
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { v -> v.rules.toAce && v.round == 0 && v.phase == GdPhase.PLAYING && (v.order.isNotEmpty() || v.handCounts.any { it <= 4 }) } == true }, 6000)
+        botDelay(server, 2.5)
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { it.rules.toAce && it.phase == GdPhase.ROUND_OVER } == true }, 4800)
+        context.waitTicks(5)
+        shot(context, "39-gd-screen-round-over")
+        context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { it.rules.toAce && it.round == 1 && it.phase != GdPhase.ROUND_OVER } == true }, 400)
+        context.waitTicks(5)
+        shot(context, "40-gd-screen-tribute")
+        botDelay(server, 1.1)
+        context.setScreen { null }
     }
 
     /**
@@ -532,6 +646,15 @@ class TuKuaiClientGameTest : FabricClientGameTest {
     private fun moveTo(server: TestServerContext, pos: BlockPos) {
         server.runOnServer<RuntimeException> { s ->
             s.playerList.players.first().teleportTo(pos.x + 0.5, pos.y.toDouble(), pos.z + 0.5)
+        }
+    }
+
+    /** Sets how long computers wait before they play; the setting is only read from the config file otherwise. */
+    private fun botDelay(server: TestServerContext, seconds: Double) {
+        server.runOnServer<RuntimeException> {
+            val field = ServerSettings::class.java.getDeclaredField("botDelaySeconds")
+            field.isAccessible = true
+            field.set(null, seconds)
         }
     }
 
