@@ -52,7 +52,10 @@ object PdkUi : GameUi {
                 else -> List(view.handCounts[seat]) { CardArt.back() }
             }
             val watched = revealed != null && seat != view.seat
-            scene.row(side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ, standing = !finished, bothSides = watched)
+            scene.row(
+                side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ,
+                standing = !finished, bothSides = watched, mine = seat == view.seat && !finished,
+            )
             val play = recent[seat]
             if (play != null && play.kind == PdkEventKind.PLAY) {
                 scene.row(side, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE, side.stepX * HAND_DISTANCE, side.stepZ * HAND_DISTANCE)

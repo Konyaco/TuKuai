@@ -7,6 +7,7 @@ import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PanelText
 import io.github.konyaco.tukuai.client.PlayingCardHand
+import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -117,6 +118,14 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
         if (view.seat == null) return false
         return picker.click(sortedHand(view), x, y, button)
     }
+
+    override fun clickTableCard(table: ClientTable, card: TableCard): Boolean {
+        if (!screen.interactive) return false
+        val view = table.view as? PdkView ?: return false
+        return picker.clickTableCard(view.hand, card)
+    }
+
+    override fun isRaised(table: ClientTable, card: TableCard): Boolean = picker.isRaised(card)
 
     override fun keyPressed(table: ClientTable, key: Int): Boolean {
         val view = table.view as? PdkView ?: return false

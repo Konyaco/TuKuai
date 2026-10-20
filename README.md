@@ -123,6 +123,8 @@ Tables placed by older versions (one block big) grow into 3x3 tables by themselv
 
 ### Controls
 
+In the world view, hold the right mouse button and drag to look around, and click your cards on the table itself rather than at the bottom of the screen. A right click that does not turn the view still does what the tables below say.
+
 Dou Dizhu:
 
 | Input | Does |

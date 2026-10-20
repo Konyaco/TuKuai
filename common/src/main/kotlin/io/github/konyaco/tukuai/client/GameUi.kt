@@ -42,6 +42,12 @@ interface PanelHost {
     /** False when watching a replay: there are no turns to take and nothing to send. */
     val interactive: Boolean
 
+    /**
+     * True in the immersive view at a table: the world stays in sight and the player picks
+     * their cards on the table itself, so panels leave out their own hand.
+     */
+    val inWorld: Boolean get() = false
+
     /** Adds a button for this layout; panels call it from [GamePanel.rebuild]. */
     fun button(text: Component, x: Int, y: Int, w: Int, active: Boolean = true, h: Int = 20, onPress: () -> Unit): Button
 
@@ -64,6 +70,15 @@ interface GamePanel {
     fun mouseClicked(table: ClientTable, x: Double, y: Double, button: Int): Boolean = false
 
     fun keyPressed(table: ClientTable, key: Int): Boolean = false
+
+    /**
+     * In the immersive view the player picks cards by clicking them on the table, rather
+     * than in a hand along the bottom of the screen. [card] is one of theirs ([TableCard.mine]).
+     */
+    fun clickTableCard(table: ClientTable, card: TableCard): Boolean = false
+
+    /** Whether one of the player's own cards on the table should stand raised, as picked or playable. */
+    fun isRaised(table: ClientTable, card: TableCard): Boolean = false
 }
 
 /**
@@ -102,6 +117,17 @@ data class TableCard(
      * as the face again, for a standing hand a watcher should read from either side.
      */
     val backSprite: Int = -1,
+    /**
+     * One of the player's own cards, which they pick by clicking it on the table in the
+     * immersive view, see [GamePanel.clickTableCard].
+     */
+    val mine: Boolean = false,
+    /** Slides the card this far up along its face, in blocks, as when picked out of a hand. */
+    val rise: Float = 0f,
+    /** Colour the face is tinted with, as ARGB; -1 leaves it as it is. */
+    val tint: Int = -1,
+    /** Colour of a lit frame around the card, as ARGB; 0 for none. */
+    val outline: Int = 0,
 )
 
 object GameUis {

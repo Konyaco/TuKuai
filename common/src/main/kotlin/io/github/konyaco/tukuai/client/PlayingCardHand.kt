@@ -11,7 +11,8 @@ import org.lwjgl.glfw.GLFW
 
 /**
  * Your own hand of playing cards along the bottom of the screen, where cards are picked
- * before playing them, as in Dou Dizhu and Pao De Kuai. It also keeps the hints: pressing
+ * before playing them, as in Dou Dizhu and Pao De Kuai. In the immersive view the hand is
+ * left out and cards are picked on the table instead. It also keeps the hints: pressing
  * hint again picks the next play.
  */
 class PlayingCardHand(private val host: PanelHost) {
@@ -22,8 +23,8 @@ class PlayingCardHand(private val host: PanelHost) {
 
     fun y() = host.panelHeight - CardArt.HEIGHT - 8
 
-    /** The row above the hand where the turn buttons go. */
-    fun buttonY() = y() - 14 - 22
+    /** The row above the hand where the turn buttons go; near the bottom when the hand is on the table. */
+    fun buttonY() = if (host.inWorld) host.panelHeight - BOTTOM_BUTTONS else y() - 14 - 22
 
     private fun step(n: Int): Int = if (n <= 1) 0 else minOf(18, (host.panelWidth - 120 - CardArt.WIDTH) / (n - 1))
 
@@ -64,12 +65,26 @@ class PlayingCardHand(private val host: PanelHost) {
             return true
         }
         val card = cardAt(hand, x, y) ?: return false
-        if (!selected.remove(card)) selected += card
-        host.refresh()
+        toggle(card)
         return true
     }
 
+    /** A click on one of the player's cards on the table: picks or drops the card of [hand] it shows. */
+    fun clickTableCard(hand: Collection<PlayingCard>, card: TableCard): Boolean {
+        toggle(hand.firstOrNull { CardArt.face(it) == card.sprite } ?: return false)
+        return true
+    }
+
+    /** Whether [card] on the table shows a picked card. */
+    fun isRaised(card: TableCard): Boolean = selected.any { CardArt.face(it) == card.sprite }
+
+    private fun toggle(card: PlayingCard) {
+        if (!selected.remove(card)) selected += card
+        host.refresh()
+    }
+
     private fun cardAt(hand: List<PlayingCard>, mx: Double, my: Double): PlayingCard? {
+        if (host.inWorld) return null
         val n = hand.size
         val step = step(n)
         val x0 = x(n)
@@ -83,7 +98,7 @@ class PlayingCardHand(private val host: PanelHost) {
     }
 
     fun render(g: GuiGraphicsExtractor, hand: List<PlayingCard>, mouseX: Int, mouseY: Int) {
-        if (hand.isEmpty()) return
+        if (hand.isEmpty() || host.inWorld) return
         val step = step(hand.size)
         val x0 = x(hand.size)
         val hovered = cardAt(hand, mouseX.toDouble(), mouseY.toDouble())
@@ -95,8 +110,14 @@ class PlayingCardHand(private val host: PanelHost) {
         }
     }
 
-    private companion object {
-        const val RAISE = 10
+    companion object {
+        private const val RAISE = 10
+
+        /**
+         * How far above the bottom of the screen the turn buttons go when there is no hand
+         * under them: just above the hotbar, the health and the food.
+         */
+        const val BOTTOM_BUTTONS = 64
     }
 }
 

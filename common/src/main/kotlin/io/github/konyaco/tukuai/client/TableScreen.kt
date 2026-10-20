@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
@@ -25,6 +26,8 @@ import org.lwjgl.glfw.GLFW
  * time limit) is the same for every game; the game itself is drawn by that game's [GamePanel].
  *
  * In immersive mode nothing covers the world, so the table and the cards on it stay in view.
+ * There the player turns their head by dragging with the right mouse button, and picks
+ * their cards by clicking them on the table; see [TablePointer].
  */
 class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.table.title")), PanelHost {
     private var table: ClientTable? = ClientTables[pos]
@@ -37,6 +40,13 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     override val panelWidth: Int get() = width
     override val panelHeight: Int get() = height
     override val interactive: Boolean get() = true
+    override val inWorld: Boolean get() = ClientConfig.immersive
+
+    /** Set while the right mouse button turns the player's head: where the cursor was when it went down. */
+    private var turnFrom: Pair<Double, Double>? = null
+
+    /** How far the mouse has moved while turning, in screen pixels; a right click that barely moves is a click. */
+    private var turned = 0.0
 
     override fun send(op: TableOp, a: Int, b: Int, text: String, data: ByteArray) {
         Services.client.sendToServer(TableActionPayload(pos, op, a, b, text, data))
@@ -258,6 +268,11 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) {
         val t = table
+        TablePointer.hovered = if (t != null && !inLobby(t) && turnFrom == null && children().none { it.isMouseOver(mouseX.toDouble(), mouseY.toDouble()) }) {
+            tableCardAt(mouseX.toDouble(), mouseY.toDouble())
+        } else {
+            null
+        }
         when {
             t == null -> g.centeredText(font, Component.translatable("tukuai.table.loading"), width / 2, height / 2, WHITE)
             inLobby(t) -> renderLobby(g, t)
@@ -268,15 +283,90 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
         if (super.mouseClicked(event, doubleClick)) return true
+        if (inWorld && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            startTurning()
+            return true
+        }
         val t = table ?: return false
         if (inLobby(t)) return false
+        if (inWorld && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            val card = tableCardAt(event.x(), event.y())
+            if (card != null && panel?.clickTableCard(t, card) == true) return true
+        }
         return panel?.mouseClicked(t, event.x(), event.y(), event.button()) ?: false
+    }
+
+    // ---- The immersive view --------------------------------------------------------------------
+
+    /** Whether one of the player's cards on the table stands raised, as the game panel says. */
+    fun isRaised(t: ClientTable, card: TableCard): Boolean = !inLobby(t) && panel?.isRaised(t, card) == true
+
+    private fun tableCardAt(x: Double, y: Double): TableCard? = if (inWorld) TablePointer.cardAt(pos, x, y, width, height) else null
+
+    /**
+     * Hides the cursor and holds it in place while the right button turns the head, so the
+     * view can turn as far as the player likes, as in the world without a screen.
+     */
+    private fun startTurning() {
+        val mouse = minecraft.mouseHandler
+        turnFrom = mouse.xpos() to mouse.ypos()
+        turned = 0.0
+        InputConstants.grabOrReleaseMouse(minecraft.window, GLFW.GLFW_CURSOR_DISABLED, mouse.xpos(), mouse.ypos())
+    }
+
+    /** Shows the cursor again where it was when turning started. */
+    private fun stopTurning() {
+        val (x, y) = turnFrom ?: return
+        turnFrom = null
+        InputConstants.grabOrReleaseMouse(minecraft.window, GLFW.GLFW_CURSOR_NORMAL, x, y)
+    }
+
+    override fun mouseDragged(event: MouseButtonEvent, dragX: Double, dragY: Double): Boolean {
+        if (turnFrom != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            // Back to screen pixels, then turned as much as the same move would in the world.
+            val window = minecraft.window
+            val dx = dragX * window.screenWidth / window.guiScaledWidth
+            val dy = dragY * window.screenHeight / window.guiScaledHeight
+            turned += kotlin.math.abs(dx) + kotlin.math.abs(dy)
+            val options = minecraft.options
+            val s = options.sensitivity().get() * 0.6 + 0.2
+            val k = s * s * s * 8.0
+            minecraft.player?.turn(
+                if (options.invertMouseX().get()) -dx * k else dx * k,
+                if (options.invertMouseY().get()) -dy * k else dy * k,
+            )
+            return true
+        }
+        return super.mouseDragged(event, dragX, dragY)
+    }
+
+    override fun mouseReleased(event: MouseButtonEvent): Boolean {
+        if (turnFrom != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+            val (x, y) = turnFrom!!
+            stopTurning()
+            // A right click that did not turn the view still does what it does on the screen,
+            // such as putting back the picked cards.
+            val t = table
+            if (turned < CLICK_SLOP && t != null && !inLobby(t)) {
+                val window = minecraft.window
+                panel?.mouseClicked(t, x * window.guiScaledWidth / window.screenWidth, y * window.guiScaledHeight / window.screenHeight, event.button())
+            }
+            return true
+        }
+        return super.mouseReleased(event)
+    }
+
+    override fun removed() {
+        stopTurning()
+        TablePointer.forget()
+        super.removed()
     }
 
     override fun keyPressed(event: KeyEvent): Boolean {
         val t = table
         if (t != null && !inLobby(t) && panel?.keyPressed(t, event.key()) == true) return true
         if (event.key() == GLFW.GLFW_KEY_TAB) {
+            stopTurning()
             ClientConfig.immersive = !ClientConfig.immersive
             ClientConfig.save()
             rebuildWidgets()
@@ -304,6 +394,9 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
         /** Left edge of the top-right buttons, the rule book's included. */
         private const val CORNER = 98
+
+        /** How far, in screen pixels, the mouse may move during a right click before it turns the view instead. */
+        private const val CLICK_SLOP = 6.0
 
         fun open(pos: BlockPos) {
             val mc = net.minecraft.client.Minecraft.getInstance()

@@ -62,7 +62,10 @@ object UnoUi : GameUi {
                 else -> List(view.handCounts[seat]) { CardArt.back() to -1 }
             }
             val watched = revealed != null && seat != view.seat
-            layHand(cards, side, hand, standing = !view.finished, bothSides = watched, fromX = pileX, fromZ = pileZ)
+            layHand(
+                cards, side, hand, standing = !view.finished, bothSides = watched, fromX = pileX, fromZ = pileZ,
+                mine = seat == view.seat && !view.finished,
+            )
         }
 
         // The top of the discard pile, each card a little turned, as if tossed there.
@@ -102,6 +105,7 @@ object UnoUi : GameUi {
         bothSides: Boolean,
         fromX: Float,
         fromZ: Float,
+        mine: Boolean,
     ) {
         if (hand.isEmpty()) return
         val upX = -side.stepX.toFloat()
@@ -122,7 +126,7 @@ object UnoUi : GameUi {
                 layer = if (standing) 0 else i,
                 tilt = if (standing) HAND_TILT else 0f,
                 fromX = fromX, fromZ = fromZ, key = key,
-                backSprite = if (bothSides && standing) sprite else -1,
+                backSprite = if (bothSides && standing) sprite else -1, mine = mine,
             )
         }
     }
