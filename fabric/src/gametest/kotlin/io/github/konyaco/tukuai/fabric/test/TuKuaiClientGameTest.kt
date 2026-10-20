@@ -4,6 +4,7 @@ import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.ReplayScreen
+import io.github.konyaco.tukuai.client.RulesScreen
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
@@ -34,6 +35,7 @@ import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.Vec3
+import org.lwjgl.glfw.GLFW
 
 /**
  * Plays one round at a card table in a real client: sits down, fills the table with
@@ -92,9 +94,12 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             context.waitTicks(5)
             shot(context, "1-world-lobby")
 
+            // A newcomer's lobby points to the rule book until it has been opened once.
+            context.runOnClient<RuntimeException> { ClientConfig.guideSeen = false }
             context.setScreen { TableScreen(table) }
             context.waitTicks(10)
             shot(context, "2-screen-lobby")
+            readRules(context, "doudizhu", "patterns")
 
             // Cards are dealt from a deck on the empty side of the table.
             context.setScreen { null }
@@ -202,6 +207,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.setScreen { TableScreen(table) }
         context.waitTicks(10)
         shot(context, "12-uno-lobby")
+        readRules(context, "uno", "actions")
 
         context.setScreen { null }
         act(server, table, TableOp.START)
@@ -241,6 +247,31 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         }
         context.waitTicks(5)
         shot(context, "19-uno-replay")
+    }
+
+    /**
+     * Opens the rule book from the table screen and takes pictures of the table's own rules
+     * and of [section], then of the same page on the smallest GUI scale, and closes it again.
+     */
+    private fun readRules(context: ClientGameTestContext, game: String, section: String) {
+        context.runOnClient<RuntimeException> { (it.screen as TableScreen).openRules() }
+        context.waitFor({ it.screen is RulesScreen }, 20)
+        context.waitTicks(5)
+        check(context.computeOnClient<Boolean, RuntimeException> { ClientConfig.guideSeen }) { "Opening the rule book was not remembered" }
+        shot(context, "rules-$game-table")
+        context.runOnClient<RuntimeException> { (it.screen as RulesScreen).showSection(section) }
+        context.waitTicks(5)
+        shot(context, "rules-$game-$section")
+        context.input.pressKey(GLFW.GLFW_KEY_END)
+        context.waitTicks(5)
+        shot(context, "rules-$game-$section-end")
+        context.runOnClient<RuntimeException> { it.options.guiScale().set(4); it.resizeGui() }
+        context.waitTicks(5)
+        shot(context, "rules-$game-$section-small")
+        context.runOnClient<RuntimeException> { it.options.guiScale().set(0); it.resizeGui() }
+        context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
+        context.waitFor({ it.screen is TableScreen }, 20)
+        context.waitTicks(5)
     }
 
     /**

@@ -49,6 +49,12 @@ interface GameDefinition<R : Any, S : Any, A : Any, V : Any> {
     fun result(state: S): GameResult?
 
     fun createBot(level: BotLevel, seed: Long): Bot<V, A>
+
+    /**
+     * The rule book for players new to the game. Given [rules], it starts with a section
+     * on those rules in particular ([GuideSection.TABLE]).
+     */
+    fun guide(rules: R?): List<GuideSection> = emptyList()
 }
 
 data class RulesPreset<R>(val id: String, val rules: R)
@@ -98,6 +104,14 @@ fun Replay.rebuildAny(stepCount: Int = steps.size): MatchHandle {
 fun GameDefinition<*, *, *, *>.seatCount(presetId: String): Int {
     val game = this as GameDefinition<Any, Any, Any, Any>
     return game.seatCount((game.presets.firstOrNull { it.id == presetId } ?: game.presets.first()).rules)
+}
+
+/** The rule book of any registered game, starting with one preset's rules when [presetId] is given. */
+@Suppress("UNCHECKED_CAST")
+fun GameDefinition<*, *, *, *>.guide(presetId: String?): List<GuideSection> {
+    val game = this as GameDefinition<Any, Any, Any, Any>
+    val rules = presetId?.let { id -> (game.presets.firstOrNull { it.id == id } ?: game.presets.first()).rules }
+    return game.guide(rules)
 }
 
 /** The id of the preset whose rules encode to [rules], or null if the rules were customised. */
