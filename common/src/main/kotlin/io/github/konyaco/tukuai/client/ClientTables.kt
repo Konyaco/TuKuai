@@ -68,6 +68,7 @@ object ClientTables {
     fun all(): Collection<ClientTable> = tables.values
 
     fun receive(pos: BlockPos, data: ByteArray) {
+        forgetOldLevel()
         val snapshot = try {
             TableSnapshot.decode(data)
         } catch (e: Exception) {
@@ -81,6 +82,19 @@ object ClientTables {
         if (screen is TableScreen && screen.pos == table.pos) screen.onTableChanged(table)
     }
 
+    /**
+     * Tables belong to the level they were sent in, so a new level (joining a server,
+     * changing dimension) starts with none. Checked as tables arrive too: the server sends
+     * them straight after a player joins, often before the client's next tick.
+     */
+    private fun forgetOldLevel() {
+        val current = Minecraft.getInstance().level
+        if (current !== level) {
+            level = current
+            tables.clear()
+        }
+    }
+
     /** Plays a sound at a table for this player only; everyone near it gets the same update and plays it too. */
     fun playAt(pos: BlockPos, sound: SoundEvent, volume: Float, pitch: Float) {
         Minecraft.getInstance().level?.playLocalSound(pos, sound, SoundSource.BLOCKS, volume, pitch, false)
@@ -90,12 +104,8 @@ object ClientTables {
 
     fun tick() {
         ticks++
-        val mc = Minecraft.getInstance()
-        if (mc.level !== level) {
-            level = mc.level
-            tables.clear()
-        }
-        val player = mc.player ?: return
+        forgetOldLevel()
+        val player = Minecraft.getInstance().player ?: return
         if (ticks % 40 == 0L) {
             tables.keys.removeIf { net.minecraft.world.phys.Vec3.atCenterOf(it).distanceToSqr(player.position()) > FORGET_RANGE * FORGET_RANGE }
         }

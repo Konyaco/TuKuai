@@ -30,3 +30,16 @@ fabricApi {
         eula = true
     }
 }
+
+// Two clients at one table on a dedicated server, see MultiplayerGameTest. It runs the
+// client game test with only that test switched on: ./gradlew :fabric:runMultiplayerTest
+tasks.register('runMultiplayerTest') {
+    group = 'fabric'
+    description = 'Plays a round with two clients connected to one dedicated server.'
+    dependsOn 'runClientGameTest'
+}
+gradle.taskGraph.whenReady { graph ->
+    if (graph.hasTask(':fabric:runMultiplayerTest')) {
+        tasks.named('runClientGameTest') { environment 'TUKUAI_MULTIPLAYER', '1' }
+    }
+}

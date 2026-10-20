@@ -47,7 +47,7 @@ class SpectateGameTest : FabricClientGameTest {
     }
 
     override fun runTest(context: ClientGameTestContext) {
-        if (System.getenv("TUKUAI_SHOWCASE") != null) return
+        if (System.getenv("TUKUAI_SHOWCASE") != null || System.getenv("TUKUAI_MULTIPLAYER") != null) return
         context.worldBuilder().create().use { world ->
             val server = world.server
             val tables = server.computeOnServer<List<BlockPos>, RuntimeException> { s -> buildScene(s) }
