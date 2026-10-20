@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameRegistry
+import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.Occupant
@@ -9,6 +10,7 @@ import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
+import net.minecraft.client.gui.components.Tooltip
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.input.MouseButtonEvent
@@ -40,10 +42,19 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     }
 
     fun onTableChanged(updated: ClientTable) {
+        update(updated)
+        rebuildWidgets()
+    }
+
+    private fun update(updated: ClientTable) {
         val before = table?.snapshot?.status
         table = updated
         if (updated.snapshot.status == TableStatus.PLAYING || before != updated.snapshot.status) showLobby = false
-        rebuildWidgets()
+    }
+
+    /** Opens the rule book on this table's game; closing it comes back here. */
+    fun openRules() {
+        RulesScreen.open(this, table, table?.snapshot?.gameId ?: DouDizhu.id)
     }
 
     override fun refresh() = rebuildWidgets()
@@ -64,8 +75,14 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         t == null || t.snapshot.status == TableStatus.LOBBY || (t.snapshot.status == TableStatus.FINISHED && showLobby) || t.view == null
 
     override fun init() {
+        // Updates that came while another screen (the rule book) was open.
+        ClientTables[pos]?.takeIf { it !== table }?.let(::update)
         val t = table
-        // Top-right controls, shown in every state.
+        // Top-right controls, shown in every state. The rule book's button sits beside the
+        // first one: the players' boxes on the right leave no room for a fourth row.
+        val help = Component.literal("?")
+        button(if (ClientConfig.guideSeen) help else help.withColor(YELLOW and 0xFFFFFF), width - CORNER, 4, 20) { openRules() }
+            .setTooltip(Tooltip.create(Component.translatable("tukuai.guide.open")))
         button(Component.translatable(if (ClientConfig.immersive) "tukuai.table.mode.immersive" else "tukuai.table.mode.full"), width - 74, 4, 70) {
             ClientConfig.immersive = !ClientConfig.immersive
             ClientConfig.save()
@@ -96,14 +113,17 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     private val lobbyWidth = 300
 
     /** Centred, but pushed left on narrow screens so the panel stays clear of the top-right buttons. */
-    private fun lobbyLeft() = maxOf(8, minOf((width - lobbyWidth) / 2, width - 76 - 8 - lobbyWidth))
+    private fun lobbyLeft() = maxOf(8, minOf((width - lobbyWidth) / 2, width - CORNER - 2 - 8 - lobbyWidth))
 
     /** Centred, but below the buttons in the top right corner on a screen too narrow to keep clear of them. */
     private fun lobbyTop(t: ClientTable): Int {
-        val centred = (height - (SEATS_Y + 46 + t.snapshot.seats.size * 24)) / 2
-        val underButtons = lobbyLeft() + lobbyWidth + 8 > width - 76
+        val centred = (height - (SEATS_Y + 46 + t.snapshot.seats.size * 24 + hintHeight(t))) / 2
+        val underButtons = lobbyLeft() + lobbyWidth + 8 > width - CORNER - 2
         return if (underButtons) maxOf(centred, 56) else centred
     }
+
+    /** Until the player has opened the rule book, a line at the bottom of the lobby points to it. */
+    private fun hintHeight(t: ClientTable) = if (!ClientConfig.guideSeen && t.snapshot.status != TableStatus.PLAYING) 12 else 0
 
     private fun initLobby(t: ClientTable) {
         val s = t.snapshot
@@ -121,10 +141,12 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             send(TableOp.TIMER, timers[(timers.indexOf(s.turnSeconds) + 1).mod(timers.size)])
         }
         val presets = game?.presets?.map { it.id } ?: listOf(s.presetId)
-        button(Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), left, top + 40, lobbyWidth, canEdit) {
+        button(Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), left, top + 40, lobbyWidth - 24, canEdit) {
             val next = presets[(presets.indexOf(s.presetId) + 1).mod(presets.size)]
             send(TableOp.PRESET, text = next)
         }
+        button(Component.literal("?"), left + lobbyWidth - 20, top + 40, 20) { openRules() }
+            .setTooltip(Tooltip.create(Component.translatable("tukuai.guide.open")))
 
         s.seats.forEachIndexed { i, seat ->
             val y = top + SEATS_Y + i * 24
@@ -168,8 +190,11 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val s = t.snapshot
         val left = lobbyLeft()
         val top = lobbyTop(t)
-        val panelBottom = top + SEATS_Y + s.seats.size * 24 + 32
+        val panelBottom = top + SEATS_Y + s.seats.size * 24 + 32 + hintHeight(t)
         g.fill(left - 8, top - 8, left + lobbyWidth + 8, panelBottom, 0xB0000000.toInt())
+        if (hintHeight(t) > 0) {
+            g.text(font, Component.translatable("tukuai.guide.first_time"), left, panelBottom - 14, YELLOW, false)
+        }
         g.text(font, Component.translatable("tukuai.table.title"), left, top, WHITE, true)
         if (s.rounds > 0) {
             val text = Component.translatable("tukuai.table.played", s.rounds)
@@ -254,6 +279,9 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
         /** Where the rows of seats start in the lobby, below the game and rules buttons. */
         private const val SEATS_Y = 68
+
+        /** Left edge of the top-right buttons, the rule book's included. */
+        private const val CORNER = 98
 
         fun open(pos: BlockPos) {
             val mc = net.minecraft.client.Minecraft.getInstance()

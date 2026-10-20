@@ -13,6 +13,9 @@ object ClientConfig {
     var immersive = false
     var botLevel = BotLevel.NORMAL
 
+    /** Whether this player has opened the rule book; until then the lobby points them to it. */
+    var guideSeen = false
+
     init {
         load()
     }
@@ -28,6 +31,7 @@ object ClientConfig {
             cardBack = p.getProperty("cardBack")?.toIntOrNull()?.takeIf { it in 0 until CardArt.BACK_COUNT } ?: 0
             immersive = p.getProperty("immersive") == "true"
             botLevel = BotLevel.entries.firstOrNull { it.name == p.getProperty("botLevel") } ?: BotLevel.NORMAL
+            guideSeen = p.getProperty("guideSeen") == "true"
         } catch (e: Exception) {
             TuKuai.LOGGER.warn("Could not read the TuKuai client settings", e)
         }
@@ -41,6 +45,7 @@ object ClientConfig {
             p.setProperty("cardBack", cardBack.toString())
             p.setProperty("immersive", immersive.toString())
             p.setProperty("botLevel", botLevel.name)
+            p.setProperty("guideSeen", guideSeen.toString())
             Files.newBufferedWriter(f).use { p.store(it, "TuKuai client settings") }
         } catch (e: Exception) {
             TuKuai.LOGGER.warn("Could not save the TuKuai client settings", e)

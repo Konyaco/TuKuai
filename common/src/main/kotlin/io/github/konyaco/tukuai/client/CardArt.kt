@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.uno.UnoCard
 import io.github.konyaco.tukuai.engine.uno.UnoColor
 import io.github.konyaco.tukuai.engine.uno.UnoDeck
+import io.github.konyaco.tukuai.engine.uno.UnoFace
 import io.github.konyaco.tukuai.engine.uno.UnoKind
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.renderer.RenderPipelines
@@ -58,6 +59,9 @@ object CardArt {
         val four = if (face.kind == UnoKind.WILD_DRAW_FOUR) 1 else 0
         return UNO_FIRST + UnoDeck.FACES.size + four * UnoColor.entries.size + named.ordinal
     }
+
+    /** An UNO face as printed, for pictures that show a kind of card rather than one from a game. */
+    fun unoFace(face: UnoFace): Int = UNO_FIRST + UnoDeck.indexOf(face)
 
     fun u(sprite: Int): Int = (sprite % COLUMNS) * WIDTH
 

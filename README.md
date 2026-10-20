@@ -101,6 +101,8 @@ Every finished game is saved. Step through it, see everyone's cards, and watch i
   </tr>
 </table>
 
+New to a game? The **?** button at the table opens a rule book, with pictures of every Dou Dizhu pattern and every UNO action card, and a page on the rules of the table you're at.
+
 It speaks English, Simplified Chinese, Traditional Chinese, Japanese and Korean, and follows your game language.
 
 ## How to play

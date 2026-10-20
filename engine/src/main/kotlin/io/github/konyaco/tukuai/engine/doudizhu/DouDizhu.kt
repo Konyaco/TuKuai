@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.engine.core.Bot
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameDefinition
 import io.github.konyaco.tukuai.engine.core.GameResult
+import io.github.konyaco.tukuai.engine.core.GuideSection
 import io.github.konyaco.tukuai.engine.core.IllegalActionException
 import io.github.konyaco.tukuai.engine.core.RulesPreset
 import io.github.konyaco.tukuai.engine.core.Seat
@@ -273,4 +274,6 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
         DdzView.of(state, seat).copy(revealedHands = state.hands, kitty = state.kitty)
 
     override fun createBot(level: BotLevel, seed: Long): Bot<DdzView, DdzAction> = DdzBot(level, seed)
+
+    override fun guide(rules: DdzRules?): List<GuideSection> = DdzGuide.sections(rules)
 }

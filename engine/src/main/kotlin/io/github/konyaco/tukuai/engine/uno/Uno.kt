@@ -4,6 +4,7 @@ import io.github.konyaco.tukuai.engine.core.Bot
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameDefinition
 import io.github.konyaco.tukuai.engine.core.GameResult
+import io.github.konyaco.tukuai.engine.core.GuideSection
 import io.github.konyaco.tukuai.engine.core.IllegalActionException
 import io.github.konyaco.tukuai.engine.core.RulesPreset
 import io.github.konyaco.tukuai.engine.core.Seat
@@ -272,6 +273,8 @@ object Uno : GameDefinition<UnoRules, UnoState, UnoAction, UnoView> {
     override fun openView(state: UnoState, seat: Seat?): UnoView = UnoView.of(state, seat).copy(revealedHands = state.hands)
 
     override fun createBot(level: BotLevel, seed: Long): Bot<UnoView, UnoAction> = UnoBot(level, seed)
+
+    override fun guide(rules: UnoRules?): List<GuideSection> = UnoGuide.sections(rules)
 
     private fun <T> List<T>.replace(index: Int, value: T): List<T> = mapIndexed { i, old -> if (i == index) value else old }
 }
