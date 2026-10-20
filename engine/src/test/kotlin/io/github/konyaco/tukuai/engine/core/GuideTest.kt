@@ -7,6 +7,11 @@ import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.engine.doudizhu.Patterns
 import io.github.konyaco.tukuai.engine.doudizhu.BiddingMode
 import io.github.konyaco.tukuai.engine.doudizhu.DealMode
+import io.github.konyaco.tukuai.engine.paodekuai.PaoDeKuai
+import io.github.konyaco.tukuai.engine.paodekuai.PdkGuide
+import io.github.konyaco.tukuai.engine.paodekuai.PdkPatternType
+import io.github.konyaco.tukuai.engine.paodekuai.PdkPatterns
+import io.github.konyaco.tukuai.engine.paodekuai.PdkRules
 import io.github.konyaco.tukuai.engine.uno.Uno
 import io.github.konyaco.tukuai.engine.uno.UnoDeck
 import io.github.konyaco.tukuai.engine.uno.UnoFace
@@ -19,7 +24,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GuideTest {
-    private val games = listOf(DouDizhu, Uno)
+    private val games = listOf(DouDizhu, Uno, PaoDeKuai)
 
     /** The English language file, read with a regex since the engine has no JSON library. */
     private val english: Map<String, String> by lazy {
@@ -164,4 +169,53 @@ class GuideTest {
     }
 
     private fun card(face: UnoFace) = UnoDeck.ALL.first { it.face == face }
+
+    @Test
+    fun `every Pao De Kuai rule changes what the table section says`() {
+        assertEquals(4, fieldCount(PdkRules::class.java), "PdkRules changed; describe the new rule in PdkGuide.table")
+        val base = PdkRules.SIXTEEN
+        val changed = listOf(
+            base.copy(handSize = 15),
+            base.copy(mustBeat = false),
+            base.copy(fourWithThree = false),
+            base.copy(bombPoints = 5),
+            base.copy(bombPoints = 0),
+        )
+        val before = keysOfTable(PdkGuide.sections(base))
+        for (rules in changed) assertNotEquals(before, keysOfTable(PdkGuide.sections(rules)), "$rules reads like the 16-card rules")
+    }
+
+    @Test
+    fun `Pao De Kuai examples read as what they show, with cards from its deck`() {
+        val rules = PdkRules.SIXTEEN
+        for ((type, cards) in PdkGuide.PATTERNS) {
+            assertEquals(type, PdkPatterns.classify(cards, rules, lastCards = false).firstOrNull()?.type, "$cards should read as $type")
+        }
+        assertEquals(PdkPatternType.entries.toSet(), PdkGuide.PATTERNS.map { it.first }.toSet())
+        for ((name, cards) in PdkGuide.LAST_HANDS) {
+            assertTrue(PdkPatterns.classify(cards, rules, lastCards = false).isEmpty(), "$name is only for the last cards")
+            assertTrue(PdkPatterns.classify(cards, rules, lastCards = true).isNotEmpty(), "$name goes out as the last cards")
+        }
+        val deck = PaoDeKuai.deck(rules).toSet()
+        for (block in PaoDeKuai.guide(null).flatMap { it.blocks }.filterIsInstance<GuideBlock.Example>()) {
+            val cards = block.groups.flatten()
+            assertTrue(deck.containsAll(cards), "${block.text} shows a card that isn't in the deck: $cards")
+            for (group in block.groups) assertEquals(group.size, group.toSet().size, "${block.text} uses one card twice")
+        }
+    }
+
+    @Test
+    fun `Pao De Kuai examples of beating a play are right`() {
+        val rules = PdkRules.SIXTEEN
+        val examples = PaoDeKuai.guide(null).flatMap { it.blocks }.filterIsInstance<GuideBlock.Example>().filter { it.follows != null }
+        assertTrue(examples.isNotEmpty())
+        for (example in examples) {
+            for ((first, then) in example.groups.zipWithNext()) {
+                val lead = PdkPatterns.readingFor(first.map { it as PlayingCard }, null, rules, lastCards = false)
+                assertTrue(lead != null, "${example.text}: $first is not a play")
+                val beats = PdkPatterns.readingFor(then.map { it as PlayingCard }, lead, rules, lastCards = false) != null
+                assertEquals(example.follows, beats, "${example.text}: $then on $first")
+            }
+        }
+    }
 }
