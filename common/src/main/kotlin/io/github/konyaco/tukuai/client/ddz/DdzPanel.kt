@@ -270,8 +270,9 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         // With the world in view, the table's own hands stand in the middle of the screen, so
         // the boxes shrink to the edges and keep everything they show in their own column.
         val compact = ClientConfig.immersive && screen.interactive
-        val boxW = if (compact) 76 else 96
-        val x = if (onLeft) 8 else width - 8 - boxW
+        val boxW = if (compact) 74 else 96
+        val margin = if (compact) 4 else 8
+        val x = if (onLeft) margin else width - margin - boxW
         val y = 70
         val acting = view.turn == seat && table.snapshot.status == TableStatus.PLAYING
         g.fill(x - 2, y - 2, x + boxW + 2, y + 54, if (acting) 0x90806020.toInt() else 0x70000000)
