@@ -6,6 +6,7 @@ import com.mojang.math.Axis
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.client.TablePointer
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
@@ -27,8 +28,6 @@ import net.minecraft.util.FormattedCharSequence
 import net.minecraft.world.item.DyeColor
 import net.minecraft.world.phys.Vec3
 import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * Draws the dyed cloth, the cards and the display in the middle of a card table. It is
@@ -75,7 +74,8 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
             side
         }
         val now = ClientTables.ticks + partialTick.toDouble()
-        state.cards = motions.getOrPut(table.blockPos) { CardMotion() }.cards(client.scene(sides), now)
+        val cards = motions.getOrPut(table.blockPos) { CardMotion() }.cards(client.scene(sides), now)
+        state.cards = TablePointer.dress(table.blockPos, cards)
         val snapshot = client.snapshot
         val lines = if (snapshot.status == TableStatus.LOBBY || client.view == null) {
             listOf(TableScreen.gameName(snapshot.gameId), TableScreen.presetName(snapshot.gameId, snapshot.presetId))
@@ -161,35 +161,28 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
 
     /**
      * A card is a thin box: its face on the front, the chosen back behind, paper on the
-     * four edges. (r, u, n) are the card's right, up and outward directions.
+     * four edges. (r, u, n) are the card's right, up and outward directions. A card with an
+     * [TableCard.outline] gets a lit frame around its face, a little larger than the card.
      */
     private fun drawCard(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, card: TableCard, back: Int) {
-        val halfW = CARD_WIDTH * card.scale / 2
-        val halfH = CARD_WIDTH * card.scale * CardArt.HEIGHT / CardArt.WIDTH / 2
-        val halfT = CARD_THICKNESS * card.scale / 2
-        val tilt = Math.toRadians(card.tilt.toDouble())
-        val sin = sin(tilt).toFloat()
-        val cos = cos(tilt).toFloat()
-        // Right of the card as seen by someone reading it: the "up" direction turned clockwise.
-        val r = floatArrayOf(-card.upZ, 0f, card.upX)
-        val u = floatArrayOf(card.upX * cos, sin, card.upZ * cos)
-        val n = floatArrayOf(-card.upX * sin, cos, -card.upZ * sin)
-        // Card positions are measured from the middle of the table. A standing card rests on
-        // its bottom edge; flat ones lift a little over the cards before them in their row.
-        val c = floatArrayOf(
-            card.x + 0.5f,
-            1f + sin * halfH + cos * halfT + card.lift + if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f,
-            card.z + 0.5f,
-        )
+        val f = CardFrame.of(card)
+        val c = f.c
+        val r = f.r
+        val u = f.u
+        val n = f.n
         val neg = { v: FloatArray -> floatArrayOf(-v[0], -v[1], -v[2]) }
         val face = sprite(card.sprite)
         val backUv = sprite(if (card.backSprite >= 0) card.backSprite else back)
-        side(buffer, pose, light, c, n, halfT, r, halfW, u, halfH, face)
-        side(buffer, pose, light, c, neg(n), halfT, neg(r), halfW, u, halfH, backUv)
-        side(buffer, pose, light, c, r, halfW, neg(n), halfT, u, halfH, EDGE)
-        side(buffer, pose, light, c, neg(r), halfW, n, halfT, u, halfH, EDGE)
-        side(buffer, pose, light, c, u, halfH, r, halfW, neg(n), halfT, EDGE)
-        side(buffer, pose, light, c, neg(u), halfH, r, halfW, n, halfT, EDGE)
+        side(buffer, pose, light, c, n, f.halfT, r, f.halfW, u, f.halfH, face, card.tint)
+        side(buffer, pose, light, c, neg(n), f.halfT, neg(r), f.halfW, u, f.halfH, backUv)
+        side(buffer, pose, light, c, r, f.halfW, neg(n), f.halfT, u, f.halfH, EDGE)
+        side(buffer, pose, light, c, neg(r), f.halfW, n, f.halfT, u, f.halfH, EDGE)
+        side(buffer, pose, light, c, u, f.halfH, r, f.halfW, neg(n), f.halfT, EDGE)
+        side(buffer, pose, light, c, neg(u), f.halfH, r, f.halfW, n, f.halfT, EDGE)
+        if (card.outline != 0) {
+            // Just behind the face, so only the rim that sticks out past the card shows.
+            side(buffer, pose, FULL_BRIGHT, c, n, f.halfT * 0.5f, r, f.halfW + OUTLINE, u, f.halfH + OUTLINE, EDGE, card.outline)
+        }
     }
 
     /** u0, v0, u1, v1 of a card in the atlas. */
@@ -244,14 +237,11 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
             return channel(16) or channel(8) or channel(0)
         }
 
-        /** Width of a card on the table at scale 1, in blocks. */
-        private const val CARD_WIDTH = 0.3f
-
         /** Thickness of a card at scale 1, in blocks. */
-        const val CARD_THICKNESS = 0.008f
+        const val CARD_THICKNESS = CardFrame.CARD_THICKNESS
 
-        /** How much higher each flat card in a row sits than the one before it. */
-        private const val LAYER_LIFT = 0.002f
+        /** How far the frame around an outlined card reaches past its edges, in blocks. */
+        private const val OUTLINE = 0.008f
 
         /** The paper patch: one spot of plain colour, for card edges and anything tinted. */
         private val EDGE = floatArrayOf(

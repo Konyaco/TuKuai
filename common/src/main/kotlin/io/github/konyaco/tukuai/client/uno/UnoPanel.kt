@@ -4,6 +4,8 @@ import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.PanelHost
+import io.github.konyaco.tukuai.client.PlayingCardHand
+import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.engine.uno.UnoAction
@@ -26,7 +28,8 @@ import org.lwjgl.glfw.GLFW
 /**
  * The UNO part of the table screen: your hand along the bottom, the other players around
  * the edges in the order they sit (the next seat number is on your right), and the discard
- * and draw piles in the middle. Click a card that fits to play it.
+ * and draw piles in the middle. Click a card that fits to play it, in the hand or, in the
+ * immersive view, on the table.
  */
 class UnoPanel(private val screen: PanelHost) : GamePanel {
     /** A wild card waiting for its colour to be picked. */
@@ -52,7 +55,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
 
     private fun handY() = height - CardArt.HEIGHT - 8
 
-    private fun buttonY() = handY() - 14 - 22
+    private fun buttonY() = if (screen.inWorld) height - PlayingCardHand.BOTTOM_BUTTONS else handY() - 14 - 22
 
     override fun controlsY(): Int = buttonY()
 
@@ -145,18 +148,35 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
             screen.refresh()
             return true
         }
-        val card = cardAt(view, x, y) ?: return false
-        if (!view.playable(card) || table.snapshot.status != TableStatus.PLAYING) return true
+        pick(table, view, cardAt(view, x, y) ?: return false)
+        return true
+    }
+
+    override fun clickTableCard(table: ClientTable, card: TableCard): Boolean {
+        if (!screen.interactive) return false
+        val view = table.view as? UnoView ?: return false
+        pick(table, view, view.hand.firstOrNull { it.id == card.key } ?: return false)
+        return true
+    }
+
+    override fun isRaised(table: ClientTable, card: TableCard): Boolean {
+        val view = table.view as? UnoView ?: return false
+        return view.isMyTurn && view.hand.firstOrNull { it.id == card.key }?.let { raised(view, it) } == true
+    }
+
+    /** Plays [card], or for a wild card asks for its colour first; a card that does not fit does nothing. */
+    private fun pick(table: ClientTable, view: UnoView, card: UnoCard) {
+        if (!view.playable(card) || table.snapshot.status != TableStatus.PLAYING) return
         if (card.face.isWild) {
             choosing = card
             screen.refresh()
         } else {
             play(view, card)
         }
-        return true
     }
 
     private fun cardAt(view: UnoView, mx: Double, my: Double): UnoCard? {
+        if (screen.inWorld) return null
         val hand = sortedHand(view)
         val n = hand.size
         val step = handStep(n)
@@ -352,7 +372,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
 
     private fun renderHand(g: GuiGraphicsExtractor, view: UnoView, mouseX: Int, mouseY: Int) {
         val hand = sortedHand(view)
-        if (hand.isEmpty()) return
+        if (hand.isEmpty() || screen.inWorld) return
         val step = handStep(hand.size)
         val x0 = handX(hand.size)
         val hovered = cardAt(view, mouseX.toDouble(), mouseY.toDouble())
