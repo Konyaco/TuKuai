@@ -15,19 +15,28 @@ import net.minecraft.resources.Identifier
 /**
  * The card atlas `textures/gui/cards.png`, made by `tools/gen_textures.py`: 32×44 cards
  * in rows of 14. Faces 0..53 follow [Decks.STANDARD_54], then come the card backs,
- * and two 16×16 hats sit below them. The UNO cards start on row 6, see [uno]. Right of
- * the cards are a patch of plain paper for the edges of cards on the table and a 16×16
- * tile of pale cloth for the table top.
+ * and two 16×16 hats sit below them. The UNO cards start on row 6, see [uno], and the
+ * other face styles on row 11, see [face]. Right of the cards are a patch of plain paper
+ * for the edges of cards on the table and a 16×16 tile of pale cloth for the table top.
  */
 object CardArt {
     val ATLAS: Identifier = TuKuai.id("textures/gui/cards.png")
     const val WIDTH = 32
     const val HEIGHT = 44
     const val TEXTURE_WIDTH = 512
-    const val TEXTURE_HEIGHT = 512
+    const val TEXTURE_HEIGHT = 1024
     private const val COLUMNS = 14
     private const val FIRST_BACK = 54
     const val BACK_COUNT = 4
+
+    /**
+     * The looks a player can pick for playing card faces, see [ClientConfig.cardFace]: the
+     * classic faces, large corners that stay readable in a fanned hand, and four colours.
+     */
+    val FACE_STYLES: List<String> = listOf("classic", "large", "four_color")
+
+    /** Where the faces in the styles after the classic one start, 54 each. */
+    private const val STYLE_FIRST = 11 * COLUMNS
 
     /** The 54 UNO faces in [UnoDeck.FACES] order, then the two wild cards with each colour named. */
     private const val UNO_FIRST = 6 * COLUMNS
@@ -46,7 +55,12 @@ object CardArt {
 
     private val faceIndex: Map<PlayingCard, Int> = Decks.STANDARD_54.withIndex().associate { it.value to it.index }
 
-    fun face(card: PlayingCard): Int = faceIndex.getValue(card)
+    /** A playing card in the face style this player picked. */
+    fun face(card: PlayingCard): Int {
+        val style = ClientConfig.cardFace.coerceIn(0, FACE_STYLES.size - 1)
+        val index = faceIndex.getValue(card)
+        return if (style == 0) index else STYLE_FIRST + (style - 1) * Decks.STANDARD_54.size + index
+    }
 
     fun back(): Int = FIRST_BACK + ClientConfig.cardBack.coerceIn(0, BACK_COUNT - 1)
 
