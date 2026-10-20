@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.client.render
 
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.content.CardTableBlock
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
@@ -62,7 +63,7 @@ class CardFrame(
             // A card picked from a hand slides up along its own face.
             val c = floatArrayOf(
                 card.x + 0.5f + u[0] * rise,
-                1f + sin * halfH + cos * halfT + card.lift + (if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f) + u[1] * rise,
+                CardTableBlock.TOP_HEIGHT + sin * halfH + cos * halfT + card.lift + (if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f) + u[1] * rise,
                 card.z + 0.5f + u[2] * rise,
             )
             return CardFrame(c, r, u, n, halfW, halfH, halfT)

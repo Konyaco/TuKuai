@@ -16,13 +16,12 @@
       ],
       "to": [
         16,
-        16,
+        14,
         16
       ],
       "faces": {
         "up": {
-          "texture": "#top",
-          "cullface": "up"
+          "texture": "#top"
         },
         "down": {
           "texture": "#bottom"
