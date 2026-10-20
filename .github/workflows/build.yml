@@ -94,8 +94,21 @@ jobs:
       - name: Run client game tests
         run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric:runClientGameTest --no-daemon --stacktrace
 
+      # The two-player test runs in the same run folder, which Loom clears first.
+      - name: Keep the game test's screenshots
+        if: always()
+        run: |
+          mkdir -p "${RUNNER_TEMP}/screenshots"
+          find fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
+
       - name: Run the two-player game test
         run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric:runMultiplayerTest --no-daemon --stacktrace
+
+      - name: Keep the two-player test's screenshots
+        if: always()
+        run: |
+          mkdir -p "${RUNNER_TEMP}/screenshots"
+          find fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
 
       - name: Start NeoForge client
         run: xvfb-run -a -s "-screen 0 1280x720x24" .github/scripts/client-smoke.sh
@@ -103,7 +116,7 @@ jobs:
       - name: Print screenshots
         if: always()
         run: |
-          find fabric -path '*screenshots*' -name '*tukuai-*.png' | sort | while read -r f; do
+          find "${RUNNER_TEMP}/screenshots" -name '*tukuai-*.png' | sort | while read -r f; do
             echo "BEGIN_SCREENSHOT $(basename "$f")"
             base64 -w 0 "$f"
             echo
@@ -117,9 +130,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           shots="${RUNNER_TEMP}/screenshots"
-          mkdir -p "${shots}"
-          find fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${shots}/" \;
-          [ -n "$(ls -A "${shots}")" ] || exit 0
+          [ -n "$(ls -A "${shots}" 2>/dev/null)" ] || exit 0
           cd "${shots}"
           git init -q -b ci-screenshots
           git add .
