@@ -1,0 +1,7 @@
+{
+  "parent": "tukuai:block/stool_frame",
+  "textures": {
+    "wood": "minecraft:block/mangrove_planks",
+    "leg": "minecraft:block/stripped_mangrove_log"
+  }
+}

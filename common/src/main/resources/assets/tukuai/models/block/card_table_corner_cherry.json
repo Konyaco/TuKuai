@@ -1,0 +1,10 @@
+{
+  "parent": "tukuai:block/card_table_corner",
+  "textures": {
+    "particle": "tukuai:block/card_table_side_cherry",
+    "top": "minecraft:block/cherry_planks",
+    "side": "tukuai:block/card_table_side_cherry",
+    "bottom": "minecraft:block/cherry_planks",
+    "leg": "minecraft:block/stripped_cherry_log"
+  }
+}

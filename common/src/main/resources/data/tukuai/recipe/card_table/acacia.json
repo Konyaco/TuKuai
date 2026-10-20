@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "tukuai:card_table",
+  "key": {
+    "W": "#minecraft:wool",
+    "P": "minecraft:acacia_planks",
+    "L": "#minecraft:logs"
+  },
+  "pattern": [
+    "WWW",
+    "PPP",
+    "L L"
+  ],
+  "result": {
+    "count": 1,
+    "id": "tukuai:card_table",
+    "components": {
+      "minecraft:block_state": {
+        "wood": "acacia"
+      }
+    }
+  }
+}

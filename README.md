@@ -71,7 +71,7 @@ When someone is down to one card, their box and the table show a red warning, an
 
 ### Out in the world
 
-The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and pick a card back with the button in the top right of the screen. Stools come in all 16 colors.
+The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and pick a card back with the button in the top right of the screen. Tables and stools come in every kind of wood, from oak to warped, and stool cushions in all 16 colors.
 
 <table>
   <tr>
@@ -113,13 +113,13 @@ It speaks English, Simplified Chinese, Traditional Chinese, Japanese and Korean,
 
 ## How to play
 
-1. **Craft a card table.** Top row: 3 wool of any color. Middle row: 3 planks of any wood. Bottom row: a log of any kind in each corner. In creative it's in the Functional Blocks tab.
+1. **Craft a card table.** Top row: 3 wool of any color. Middle row: 3 planks of one kind of wood; the table's frame and legs come out in that wood. Bottom row: a log of any kind in each corner. In creative it's in the Functional Blocks tab.
 2. **Place it and right-click it.** The table spreads out 3x3 from the block you clicked, so leave room in front and to both sides. Click "Sit here" to take a seat, "Add computer" on an empty seat, or "Fill with computers" for all of them.
 3. **Pick a game.** "Game" switches between Dou Dizhu, UNO and Pao De Kuai. Choose the rules and the turn timer, then click "Start".
 
 Tables placed by older versions (one block big) grow into 3x3 tables by themselves. If there isn't room, they drop as an item instead.
 
-**Stools.** Craft one from a wool, a wooden slab and a stick, stacked top to bottom. The wool sets the cushion color, and you can re-dye it later. Put a stool just outside the middle of a side that has a seat (three sides for Dou Dizhu and Pao De Kuai, all four for 4-player UNO), and right-clicking it sits you in that seat. A stool that isn't next to a table is still a perfectly good stool.
+**Stools.** Craft one from a wool, a wooden slab and a stick, stacked top to bottom. The wool sets the cushion color, which you can re-dye later, and the slab sets the wood. Put a stool just outside the middle of a side that has a seat (three sides for Dou Dizhu and Pao De Kuai, all four for 4-player UNO), and right-clicking it sits you in that seat. A stool that isn't next to a table is still a perfectly good stool.
 
 ### Controls
 

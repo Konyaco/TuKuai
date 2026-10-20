@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "tukuai:stool",
+  "key": {
+    "W": "minecraft:light_gray_wool",
+    "S": "minecraft:pale_oak_slab",
+    "T": "minecraft:stick"
+  },
+  "pattern": [
+    "W",
+    "S",
+    "T"
+  ],
+  "result": {
+    "count": 1,
+    "id": "tukuai:stool",
+    "components": {
+      "minecraft:block_state": {
+        "color": "light_gray",
+        "wood": "pale_oak"
+      }
+    }
+  }
+}

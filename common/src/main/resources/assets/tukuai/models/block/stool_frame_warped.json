@@ -1,0 +1,7 @@
+{
+  "parent": "tukuai:block/stool_frame",
+  "textures": {
+    "wood": "minecraft:block/warped_planks",
+    "leg": "minecraft:block/stripped_warped_stem"
+  }
+}

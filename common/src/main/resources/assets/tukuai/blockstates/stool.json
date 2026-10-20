@@ -1,52 +1,228 @@
 {
-  "variants": {
-    "color=white": {
-      "model": "tukuai:block/stool_white"
+  "multipart": [
+    {
+      "when": {
+        "wood": "oak"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_oak"
+      }
     },
-    "color=orange": {
-      "model": "tukuai:block/stool_orange"
+    {
+      "when": {
+        "wood": "spruce"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_spruce"
+      }
     },
-    "color=magenta": {
-      "model": "tukuai:block/stool_magenta"
+    {
+      "when": {
+        "wood": "birch"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_birch"
+      }
     },
-    "color=light_blue": {
-      "model": "tukuai:block/stool_light_blue"
+    {
+      "when": {
+        "wood": "jungle"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_jungle"
+      }
     },
-    "color=yellow": {
-      "model": "tukuai:block/stool_yellow"
+    {
+      "when": {
+        "wood": "acacia"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_acacia"
+      }
     },
-    "color=lime": {
-      "model": "tukuai:block/stool_lime"
+    {
+      "when": {
+        "wood": "dark_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_dark_oak"
+      }
     },
-    "color=pink": {
-      "model": "tukuai:block/stool_pink"
+    {
+      "when": {
+        "wood": "mangrove"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_mangrove"
+      }
     },
-    "color=gray": {
-      "model": "tukuai:block/stool_gray"
+    {
+      "when": {
+        "wood": "cherry"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_cherry"
+      }
     },
-    "color=light_gray": {
-      "model": "tukuai:block/stool_light_gray"
+    {
+      "when": {
+        "wood": "pale_oak"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_pale_oak"
+      }
     },
-    "color=cyan": {
-      "model": "tukuai:block/stool_cyan"
+    {
+      "when": {
+        "wood": "bamboo"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_bamboo"
+      }
     },
-    "color=purple": {
-      "model": "tukuai:block/stool_purple"
+    {
+      "when": {
+        "wood": "crimson"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_crimson"
+      }
     },
-    "color=blue": {
-      "model": "tukuai:block/stool_blue"
+    {
+      "when": {
+        "wood": "warped"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_frame_warped"
+      }
     },
-    "color=brown": {
-      "model": "tukuai:block/stool_brown"
+    {
+      "when": {
+        "color": "white"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_white"
+      }
     },
-    "color=green": {
-      "model": "tukuai:block/stool_green"
+    {
+      "when": {
+        "color": "orange"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_orange"
+      }
     },
-    "color=red": {
-      "model": "tukuai:block/stool_red"
+    {
+      "when": {
+        "color": "magenta"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_magenta"
+      }
     },
-    "color=black": {
-      "model": "tukuai:block/stool_black"
+    {
+      "when": {
+        "color": "light_blue"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_light_blue"
+      }
+    },
+    {
+      "when": {
+        "color": "yellow"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_yellow"
+      }
+    },
+    {
+      "when": {
+        "color": "lime"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_lime"
+      }
+    },
+    {
+      "when": {
+        "color": "pink"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_pink"
+      }
+    },
+    {
+      "when": {
+        "color": "gray"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_gray"
+      }
+    },
+    {
+      "when": {
+        "color": "light_gray"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_light_gray"
+      }
+    },
+    {
+      "when": {
+        "color": "cyan"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_cyan"
+      }
+    },
+    {
+      "when": {
+        "color": "purple"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_purple"
+      }
+    },
+    {
+      "when": {
+        "color": "blue"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_blue"
+      }
+    },
+    {
+      "when": {
+        "color": "brown"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_brown"
+      }
+    },
+    {
+      "when": {
+        "color": "green"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_green"
+      }
+    },
+    {
+      "when": {
+        "color": "red"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_red"
+      }
+    },
+    {
+      "when": {
+        "color": "black"
+      },
+      "apply": {
+        "model": "tukuai:block/stool_cushion_black"
+      }
     }
-  }
+  ]
 }

@@ -466,6 +466,37 @@ def table_textures():
     return top, side
 
 
+# The average colour of each wood's vanilla planks; the oak table side is recoloured by
+# how far each wood is from oak, so every wood keeps the same grain. Keep in step with gen_wood.py.
+PLANK_COLORS = {
+    "oak": (162, 131, 79),
+    "spruce": (115, 85, 49),
+    "birch": (192, 175, 121),
+    "jungle": (160, 115, 81),
+    "acacia": (168, 90, 50),
+    "dark_oak": (67, 43, 20),
+    "mangrove": (118, 54, 49),
+    "cherry": (227, 179, 173),
+    "pale_oak": (228, 218, 216),
+    "bamboo": (193, 173, 80),
+    "crimson": (101, 49, 71),
+    "warped": (43, 105, 99),
+}
+
+
+def recolored(side, wood):
+    """The oak side of the table in another wood's colour."""
+    oak = PLANK_COLORS["oak"]
+    target = PLANK_COLORS[wood]
+    out = Image.new("RGBA", side.size)
+    for y in range(side.height):
+        for x in range(side.width):
+            r, g, b, a = side.getpixel((x, y))
+            c = tuple(min(255, round(v * t / o)) for v, t, o in zip((r, g, b), target, oak))
+            out.putpixel((x, y), c + (a,))
+    return out
+
+
 def main():
     os.makedirs(f"{OUT}/gui", exist_ok=True)
     os.makedirs(f"{OUT}/block", exist_ok=True)
@@ -473,6 +504,9 @@ def main():
     top, side = table_textures()
     top.save(f"{OUT}/block/card_table_top.png")
     side.save(f"{OUT}/block/card_table_side.png")
+    for wood in PLANK_COLORS:
+        if wood != "oak":
+            recolored(side, wood).save(f"{OUT}/block/card_table_side_{wood}.png")
 
 
 if __name__ == "__main__":

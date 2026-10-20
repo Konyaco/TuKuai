@@ -28,19 +28,19 @@ import net.minecraft.world.phys.shapes.Shapes
 import net.minecraft.world.phys.shapes.VoxelShape
 
 /**
- * A wooden stool with a wool cushion. Right-click to sit on it. A stool just outside the
+ * A wooden stool with a wool cushion, in the wood of the slab it was made with. Right-click to sit on it. A stool just outside the
  * middle of a card table's edge is that side's seat: sitting on it takes the seat and
  * opens the table. Right-click with a dye to change the cushion.
  */
 class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
     init {
-        registerDefaultState(stateDefinition.any().setValue(COLOR, DyeColor.RED))
+        registerDefaultState(stateDefinition.any().setValue(COLOR, DyeColor.RED).setValue(WOOD, Wood.OAK))
     }
 
     override fun codec(): MapCodec<out Block> = CODEC
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
-        builder.add(COLOR)
+        builder.add(COLOR, WOOD)
     }
 
     override fun getShape(state: BlockState, level: BlockGetter, pos: BlockPos, context: CollisionContext): VoxelShape = SHAPE
@@ -91,6 +91,8 @@ class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
 
     companion object {
         val COLOR: EnumProperty<DyeColor> = EnumProperty.create("color", DyeColor::class.java)
+
+        val WOOD = Wood.PROPERTY
 
         val CODEC: MapCodec<StoolBlock> = Block.simpleCodec(::StoolBlock)
 
