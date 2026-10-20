@@ -251,7 +251,8 @@ class TuKuaiClientGameTest : FabricClientGameTest {
 
     /**
      * Opens the rule book from the table screen and takes pictures of the table's own rules
-     * and of [section], then of the same page on the smallest GUI scale, and closes it again.
+     * and of [section], scrolled to the top and to the end, and closes it again. The test
+     * window is small enough that this is already the largest GUI scale it allows.
      */
     private fun readRules(context: ClientGameTestContext, game: String, section: String) {
         context.runOnClient<RuntimeException> { (it.screen as TableScreen).openRules() }
@@ -265,10 +266,6 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.input.pressKey(GLFW.GLFW_KEY_END)
         context.waitTicks(5)
         shot(context, "rules-$game-$section-end")
-        context.runOnClient<RuntimeException> { it.options.guiScale().set(4); it.resizeGui() }
-        context.waitTicks(5)
-        shot(context, "rules-$game-$section-small")
-        context.runOnClient<RuntimeException> { it.options.guiScale().set(0); it.resizeGui() }
         context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
         context.waitFor({ it.screen is TableScreen }, 20)
         context.waitTicks(5)

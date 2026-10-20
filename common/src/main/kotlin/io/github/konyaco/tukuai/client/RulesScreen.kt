@@ -129,7 +129,15 @@ class RulesScreen(
             val examples = s.blocks.filterIsInstance<GuideBlock.Example>()
             // One card size for the whole page, so the examples line up.
             val scale = if (examples.all { cardsWidth(it, 1f) <= w }) 1f else 0.75f
-            for (block in s.blocks) pieces += piece(block, w, scale)
+            // When every named example is a card or two, as with the UNO action cards, the
+            // cards go in a column on the left with their text beside them instead of below.
+            val named = examples.filter { it.name != null }
+            val beside = if (named.isNotEmpty() && named.all { cardsWidth(it, scale) <= w / 4 }) {
+                named.maxOf { cardsWidth(it, scale) } + 14
+            } else {
+                null
+            }
+            for (block in s.blocks) pieces += piece(block, w, scale, beside)
             if (s.id == GuideSection.TABLE) table()?.let { t -> pieces += timer(t, w) }
         }
         page = pieces
@@ -148,10 +156,10 @@ class RulesScreen(
         return bullet(text, w)
     }
 
-    private fun piece(block: GuideBlock, w: Int, scale: Float): Piece = when (block) {
+    private fun piece(block: GuideBlock, w: Int, scale: Float, beside: Int?): Piece = when (block) {
         is GuideBlock.Text -> paragraph(translate(block.key, block.args), w, 0, 6)
         is GuideBlock.Point -> bullet(translate(block.key, block.args), w)
-        is GuideBlock.Example -> example(block, w, scale)
+        is GuideBlock.Example -> if (beside != null && block.name != null) exampleBeside(block, w, scale, beside) else example(block, w, scale)
     }
 
     private fun translate(key: String, args: List<Int>): Component = Component.translatable(key, *args.toTypedArray())
@@ -173,12 +181,27 @@ class RulesScreen(
         lines.forEachIndexed { i, line -> g.text(font, line, x, y + i * LINE, TableScreen.WHITE, false) }
     }
 
-    private fun example(block: GuideBlock.Example, w: Int, scale: Float): Piece {
+    private fun caption(block: GuideBlock.Example): Component {
         val caption = Component.empty()
         block.name?.let { caption.append(Component.translatable(it).withColor(YELLOW_RGB)) }
         if (block.name != null && block.text != null) caption.append("  ")
         block.text?.let { caption.append(Component.translatable(it)) }
-        val lines = if (block.name == null && block.text == null) emptyList() else font.split(caption, w)
+        return caption
+    }
+
+    /** Cards on the left, [column] wide, and the text beside them, centred against the cards. */
+    private fun exampleBeside(block: GuideBlock.Example, w: Int, scale: Float, column: Int): Piece {
+        val lines = font.split(caption(block), w - column)
+        val cardHeight = (CardArt.HEIGHT * scale).toInt()
+        val textHeight = lines.size * LINE
+        return Piece(maxOf(cardHeight, textHeight) + 8) { g, x, y ->
+            drawCards(g, block, x + 4, y, column - 4, scale)
+            drawLines(g, lines, x + column, y + ((cardHeight - textHeight) / 2).coerceAtLeast(0))
+        }
+    }
+
+    private fun example(block: GuideBlock.Example, w: Int, scale: Float): Piece {
+        val lines = if (block.name == null && block.text == null) emptyList() else font.split(caption(block), w)
         val cardHeight = (CardArt.HEIGHT * scale).toInt()
         val textHeight = lines.size * LINE + if (lines.isEmpty()) 0 else 3
         return Piece(textHeight + cardHeight + 10) { g, x, y ->
@@ -240,10 +263,10 @@ class RulesScreen(
         }
         val top = viewTop()
         val bottom = viewBottom()
-        g.enableScissor(left - 6, top - 2, right, bottom)
+        g.enableScissor(left - 6, top, right, bottom)
         var y = top - scroll
         for (piece in page) {
-            if (y + piece.height > top - 2 && y < bottom) piece.draw(g, left, y)
+            if (y + piece.height > top && y < bottom) piece.draw(g, left, y)
             y += piece.height
         }
         g.disableScissor()
