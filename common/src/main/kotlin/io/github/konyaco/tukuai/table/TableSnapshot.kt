@@ -68,6 +68,10 @@ data class TableSnapshot(
     /** Ticks left before the computer plays for the seat to act, or -1 when nobody is timed. */
     val timerTicks: Int,
     val view: ByteArray?,
+    /** Whether players who are not in the game may see every hand. */
+    val spectators: Boolean = true,
+    /** The seat of the player who may change [spectators], or null when anyone may. */
+    val host: Seat? = null,
 ) {
     fun encode(): ByteArray = CODEC.encode(this)
 
@@ -76,7 +80,7 @@ data class TableSnapshot(
     override fun hashCode(): Int = encode().contentHashCode()
 
     companion object {
-        private const val VERSION = 2
+        private const val VERSION = 3
 
         fun decode(data: ByteArray): TableSnapshot = CODEC.decode(data)
 
@@ -93,6 +97,7 @@ data class TableSnapshot(
                 }
                 writer.int(value.you ?: -1).ints(value.tally).int(value.rounds).int(value.status.ordinal)
                     .int(value.step).int(value.timerTicks).nullable(value.view) { bytes(it) }
+                    .bool(value.spectators).int(value.host ?: -1)
             }
 
             override fun read(reader: WireReader): TableSnapshot {
@@ -118,6 +123,8 @@ data class TableSnapshot(
                     step = reader.int(),
                     timerTicks = reader.int(),
                     view = reader.nullable { bytes() },
+                    spectators = reader.bool(),
+                    host = reader.int().takeIf { it >= 0 },
                 )
             }
         }
@@ -154,4 +161,7 @@ enum class TableOp {
 
     /** Switch to the game with the id `text`, with its first rule preset. */
     GAME,
+
+    /** `a` = 1 lets players who are not in the game see every hand, 0 hides them. Only the host may. */
+    SPECTATE,
 }

@@ -60,7 +60,9 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
 
     private fun handX(n: Int): Int = (width - (CardArt.WIDTH + handStep(n) * (n - 1))) / 2
 
-    private fun sortedHand(view: UnoView): List<UnoCard> = UnoUi.sorted(view.hand)
+    /** Your own hand, or for a watcher who may see every hand, that of seat 0 at the bottom. */
+    private fun sortedHand(view: UnoView): List<UnoCard> =
+        UnoUi.sorted(if (view.seat == null) view.revealedHands.getOrNull(0).orEmpty() else view.hand)
 
     /** Top of the discard pile; the draw pile sits to its left. */
     private fun centerY() = 74
@@ -218,6 +220,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         if (!screen.interactive) return
         val round = s.rounds + if (s.status == TableStatus.PLAYING) 1 else 0
         g.text(font, Component.translatable("tukuai.table.rounds", round), 6, 17, TableScreen.GRAY, true)
+        table.watchingLine()?.let { g.text(font, it, 6, 28, if (s.spectators) TableScreen.YELLOW else TableScreen.GRAY, true) }
     }
 
     private enum class Place { LEFT, TOP, RIGHT }
@@ -281,7 +284,12 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
             }
             val top = if (place == Place.TOP) y + 4 else y + 44
             cards.forEachIndexed { i, card -> CardArt.draw(g, CardArt.uno(card), left + i * step, top, 0.5f) }
-            return
+            if (view.finished || recent == null) return
+            // A watcher sees hands while play goes on; across the table the hand takes the right of the box.
+            if (place == Place.TOP) {
+                renderEvent(g, view, recent, x - 8, y + 4, Align.RIGHT)
+                return
+            }
         }
         if (recent == null) return
         when (place) {
@@ -313,16 +321,18 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
     private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: UnoView, me: Seat, recent: UnoEvent?) {
         val y = buttonY() + 4
         val x = 8
-        val label = if (table.snapshot.you == null) Component.translatable("tukuai.table.watching") else seatLabel(table, me)
+        // A watcher who sees every hand watches from seat 0; one who does not just watches.
+        val seen = table.snapshot.you != null || view.revealedHands.isNotEmpty()
+        val label = if (!seen) Component.translatable("tukuai.table.watching") else seatLabel(table, me)
         g.text(font, label, x, y, TableScreen.WHITE, true)
-        if (me in view.unoCalled && table.snapshot.you != null) {
+        if (me in view.unoCalled && seen) {
             g.text(font, Component.translatable("tukuai.uno.call"), x + font.width(label) + 6, y, TableScreen.RED, true)
         }
         // On the far side of the buttons, clear of the piles. Your own plays already show on the discard pile.
         if (recent != null && recent.kind != UnoEventKind.PLAY && !view.finished) {
             renderEvent(g, view, recent, width - 8, y - 10, Align.RIGHT)
         }
-        if (view.turn == me && table.snapshot.status == TableStatus.PLAYING && table.snapshot.you != null) {
+        if (view.turn == me && table.snapshot.status == TableStatus.PLAYING && seen) {
             renderTimer(g, table, x, y + 12, alignRight = false)
         }
     }

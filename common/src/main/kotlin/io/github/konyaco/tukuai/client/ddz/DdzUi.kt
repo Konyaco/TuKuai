@@ -33,7 +33,8 @@ object DdzUi : GameUi {
      * everyone else sees the backs; once the game is over the hands lie face up. Each
      * seat's latest play lies nearer the middle, and the landlord's three cards sit on
      * the empty fourth side. Hands and the landlord's cards are dealt from a deck on that
-     * fourth side; a play comes from its player's hand.
+     * fourth side; a play comes from its player's hand. A watcher who may see every hand
+     * sees the standing hands face out on both sides.
      */
     override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
         val view = table.view as? DdzView ?: return emptyList()
@@ -53,6 +54,7 @@ object DdzUi : GameUi {
             fromX: Float,
             fromZ: Float,
             standing: Boolean = false,
+            bothSides: Boolean = false,
         ) {
             if (sprites.isEmpty()) return
             // The player on this side faces the middle; cards run left to right as they see them.
@@ -73,6 +75,7 @@ object DdzUi : GameUi {
                         cx + rightX * offset + side.stepX * nearer,
                         cz + rightZ * offset + side.stepZ * nearer,
                         upX, upZ, sprite, scale, tilt = HAND_TILT, fromX = fromX, fromZ = fromZ,
+                        backSprite = if (bothSides) sprite else -1,
                     )
                 } else {
                     cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, i, fromX = fromX, fromZ = fromZ)
@@ -86,11 +89,12 @@ object DdzUi : GameUi {
             val side = sides.getOrNull(seat) ?: continue
             val revealed = view.revealedHands.getOrNull(seat)
             val hand = when {
-                finished && revealed != null -> faces(revealed)
-                seat == view.seat -> faces(view.hand)
+                seat == view.seat && !finished -> faces(view.hand)
+                revealed != null -> faces(revealed)
                 else -> List(view.handCounts[seat]) { CardArt.back() }
             }
-            row(side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ, standing = !finished)
+            val watched = revealed != null && seat != view.seat
+            row(side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ, standing = !finished, bothSides = watched)
             val play = recent[seat]
             if (play != null && play.kind == DdzEventKind.PLAY) {
                 row(side, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE, side.stepX * HAND_DISTANCE, side.stepZ * HAND_DISTANCE)

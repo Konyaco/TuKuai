@@ -97,6 +97,11 @@ data class TableCard(
      * seen from the back.
      */
     val key: Int = -1,
+    /**
+     * What the back of the card shows: -1 for the back the player picked, or a sprite such
+     * as the face again, for a standing hand a watcher should read from either side.
+     */
+    val backSprite: Int = -1,
 )
 
 object GameUis {

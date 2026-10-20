@@ -32,7 +32,8 @@ object UnoUi : GameUi {
 
     /**
      * Each seat's hand stands along its edge of the table, facing its owner; once the hand
-     * is over they lie face up. The discard pile lies on top of the display in the middle,
+     * is over they lie face up. A watcher who may see every hand sees the standing hands
+     * face out on both sides. The discard pile lies on top of the display in the middle,
      * so every seat can see it, and the draw pile sits in the corner to the right of seat 0.
      */
     override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
@@ -56,11 +57,12 @@ object UnoUi : GameUi {
             val side = sides.getOrNull(seat) ?: continue
             val revealed = view.revealedHands.getOrNull(seat)
             val hand: List<Pair<Int, Int>> = when {
+                seat == view.seat && !view.finished -> sorted(view.hand).map { CardArt.uno(it) to it.id }
                 revealed != null -> sorted(revealed).map { CardArt.uno(it) to it.id }
-                seat == view.seat -> sorted(view.hand).map { CardArt.uno(it) to it.id }
                 else -> List(view.handCounts[seat]) { CardArt.back() to -1 }
             }
-            layHand(cards, side, hand, standing = revealed == null, fromX = pileX, fromZ = pileZ)
+            val watched = revealed != null && seat != view.seat
+            layHand(cards, side, hand, standing = !view.finished, bothSides = watched, fromX = pileX, fromZ = pileZ)
         }
 
         // The top of the discard pile, each card a little turned, as if tossed there.
@@ -92,7 +94,15 @@ object UnoUi : GameUi {
         return cards
     }
 
-    private fun layHand(cards: MutableList<TableCard>, side: Direction, hand: List<Pair<Int, Int>>, standing: Boolean, fromX: Float, fromZ: Float) {
+    private fun layHand(
+        cards: MutableList<TableCard>,
+        side: Direction,
+        hand: List<Pair<Int, Int>>,
+        standing: Boolean,
+        bothSides: Boolean,
+        fromX: Float,
+        fromZ: Float,
+    ) {
         if (hand.isEmpty()) return
         val upX = -side.stepX.toFloat()
         val upZ = -side.stepZ.toFloat()
@@ -112,6 +122,7 @@ object UnoUi : GameUi {
                 layer = if (standing) 0 else i,
                 tilt = if (standing) HAND_TILT else 0f,
                 fromX = fromX, fromZ = fromZ, key = key,
+                backSprite = if (bothSides && standing) sprite else -1,
             )
         }
     }
