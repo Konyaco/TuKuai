@@ -11,6 +11,9 @@ import io.github.konyaco.tukuai.content.SeatEntity
 import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
+import io.github.konyaco.tukuai.engine.paodekuai.PdkAction
+import io.github.konyaco.tukuai.engine.paodekuai.PdkCodecs
+import io.github.konyaco.tukuai.engine.paodekuai.PdkView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.ReplayStore
@@ -247,6 +250,96 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         }
         context.waitTicks(5)
         shot(context, "19-uno-replay")
+
+        playPaoDeKuai(context, server, table)
+    }
+
+    /**
+     * Switches the table to Pao De Kuai, which drops back to three seats, and plays a hand of
+     * it: the lobby, the rule book, our turn with a hint picked, the world view, and the end.
+     */
+    private fun playPaoDeKuai(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        act(server, table, TableOp.GAME, text = "paodekuai")
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "paodekuai" && it.seats.size == 3 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "20-pdk-lobby")
+        readRules(context, "paodekuai", "patterns")
+        context.runOnClient<RuntimeException> { (it.screen as TableScreen).openRules() }
+        context.waitFor({ it.screen is RulesScreen }, 20)
+        context.runOnClient<RuntimeException> { (it.screen as RulesScreen).showSection("last") }
+        context.waitTicks(5)
+        shot(context, "rules-paodekuai-last")
+        context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
+        context.waitFor({ it.screen is TableScreen }, 20)
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "paodekuai" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.input.lookAt(table)
+        context.waitTicks(12)
+        shot(context, "21-pdk-world-dealing")
+
+        // Our turn, with the hint's cards picked out. Turns where nothing beats the table are passed.
+        context.setScreen { TableScreen(table) }
+        var passes = 0
+        while (true) {
+            context.waitFor({ (ClientTables[table]?.view as? PdkView)?.isMyTurn == true }, 1200)
+            val canPlay = context.computeOnClient<Boolean, RuntimeException> {
+                (ClientTables[table]?.view as? PdkView)?.turnRules()?.plays?.isNotEmpty() == true
+            }
+            if (canPlay) break
+            check(++passes < 30) { "Never had anything to play" }
+            act(server, table, TableOp.ACT, data = PdkCodecs.ACTION.encode(PdkAction.Pass))
+            context.waitFor({ (ClientTables[table]?.view as? PdkView)?.isMyTurn != true }, 100)
+        }
+        context.waitTicks(10)
+        context.input.pressKey(GLFW.GLFW_KEY_H)
+        context.waitTicks(5)
+        shot(context, "22-pdk-screen-turn")
+
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = true
+            (it.screen as? TableScreen)?.refresh()
+        }
+        context.waitTicks(5)
+        shot(context, "23-pdk-screen-immersive")
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = false
+            (it.screen as? TableScreen)?.refresh()
+        }
+
+        act(server, table, TableOp.AUTO, 1)
+        context.waitTicks(200)
+        shot(context, "24-pdk-screen-midgame")
+        context.setScreen { null }
+        context.waitTicks(5)
+        shot(context, "25-pdk-world-midgame")
+
+        var waited = 0
+        while (status(server, table) != TableStatus.FINISHED) {
+            check(waited < 6000) { "The Pao De Kuai hand did not finish" }
+            context.waitTicks(100)
+            waited += 100
+        }
+        context.waitTicks(20)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "26-pdk-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "27-pdk-world-result")
+
+        act(server, table, TableOp.REPLAY)
+        context.waitFor({ it.screen is ReplayScreen }, 100)
+        context.runOnClient<RuntimeException> {
+            val replay = it.screen as ReplayScreen
+            replay.pause()
+            replay.seek(replay.total / 2)
+        }
+        context.waitTicks(5)
+        shot(context, "28-pdk-replay")
     }
 
     /**
@@ -348,11 +441,11 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         level.getEntitiesOfClass(ItemEntity::class.java, AABB(around).inflate(2.5)) { it.item.`is`(TuKuaiContent.CARD_TABLE_ITEM) }
             .sumOf { it.item.count }
 
-    private fun act(server: TestServerContext, pos: BlockPos, op: TableOp, a: Int = 0, b: Int = 0, text: String = "") {
+    private fun act(server: TestServerContext, pos: BlockPos, op: TableOp, a: Int = 0, b: Int = 0, text: String = "", data: ByteArray = ByteArray(0)) {
         server.runOnServer<RuntimeException> { s ->
             val player = s.playerList.players.first()
             val table = s.overworld().getBlockEntity(pos) as CardTableBlockEntity
-            table.handle(player, TableActionPayload(pos, op, a, b, text))
+            table.handle(player, TableActionPayload(pos, op, a, b, text, data))
         }
     }
 

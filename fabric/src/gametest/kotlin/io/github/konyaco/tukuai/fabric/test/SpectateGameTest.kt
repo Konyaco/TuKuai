@@ -9,6 +9,7 @@ import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
+import io.github.konyaco.tukuai.engine.paodekuai.PdkView
 import io.github.konyaco.tukuai.engine.uno.UnoView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
@@ -27,9 +28,9 @@ import net.minecraft.world.item.DyeColor
 import net.minecraft.world.level.block.Blocks
 
 /**
- * Watching other players' games. Another player (a fake one on the server) sits at three
+ * Watching other players' games. Another player (a fake one on the server) sits at four
  * tables and starts a game at each with computers, while the test's own player looks on:
- * at two tables they see every hand, at the third the host has hidden them. At a fourth
+ * at three tables they see every hand, at the fourth the host has hidden them. At a fifth
  * table the test's player plays themself, stands up and walks off, and must still see
  * only their own hand.
  */
@@ -40,6 +41,7 @@ class SpectateGameTest : FabricClientGameTest {
         val OPEN_UNO = 4 to -5
         val CLOSED = -4 to 5
         val OWN = 4 to 5
+        val OPEN_PDK = 0 to -5
 
         val HOST = GameProfile(UUID.fromString("6b1d3c2e-2f0a-4a51-9c39-3a5d2b7e9f10"), "Mika")
     }
@@ -50,6 +52,7 @@ class SpectateGameTest : FabricClientGameTest {
             val server = world.server
             val tables = server.computeOnServer<List<BlockPos>, RuntimeException> { s -> buildScene(s) }
             val (openDdz, openUno, closed, own) = tables
+            val openPdk = tables[4]
             context.waitTicks(40)
             world.clientLevel.waitForChunksRender()
             context.runOnClient<RuntimeException> { ClientConfig.immersive = false }
@@ -78,6 +81,14 @@ class SpectateGameTest : FabricClientGameTest {
             val uno = ClientTables[openUno]!!.view as UnoView
             check(uno.seat == null && uno.revealedHands.size == 4) { "A watcher did not see every UNO hand: $uno" }
 
+            hostAct(server, openPdk, TableOp.GAME, text = "paodekuai")
+            hostAct(server, openPdk, TableOp.SIT, 0)
+            hostAct(server, openPdk, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
+            hostAct(server, openPdk, TableOp.START)
+            context.waitFor({ ClientTables[openPdk]?.snapshot?.let { it.gameId == "paodekuai" && it.status == TableStatus.PLAYING } == true }, 200)
+            val pdk = ClientTables[openPdk]!!.view as PdkView
+            check(pdk.seat == null && pdk.hand.isEmpty() && pdk.revealedHands.size == 3) { "A watcher did not see every Pao De Kuai hand: $pdk" }
+
             // The host hides the hands at the third table before starting.
             hostAct(server, closed, TableOp.SIT, 0)
             hostAct(server, closed, TableOp.SPECTATE, 0)
@@ -101,6 +112,13 @@ class SpectateGameTest : FabricClientGameTest {
             context.setScreen { TableScreen(openUno) }
             context.waitTicks(10)
             shot(context, "spectate-uno-screen")
+            context.setScreen { null }
+
+            lookFrom(context, server, openPdk, Direction.SOUTH)
+            worldShot(context, server, openPdk, "spectate-pdk-world")
+            context.setScreen { TableScreen(openPdk) }
+            context.waitTicks(10)
+            shot(context, "spectate-pdk-screen")
             context.setScreen { null }
 
             lookFrom(context, server, closed, Direction.WEST)
@@ -164,7 +182,7 @@ class SpectateGameTest : FabricClientGameTest {
         server.runOnServer<RuntimeException> { s -> s.commands.performPrefixedCommand(s.createCommandSourceStack(), command) }
     }
 
-    /** A flat floor around the player with four tables on it. */
+    /** A flat floor around the player with five tables on it. */
     private fun buildScene(server: MinecraftServer): List<BlockPos> {
         val player = server.playerList.players.first()
         val level = server.overworld()
@@ -174,7 +192,7 @@ class SpectateGameTest : FabricClientGameTest {
             level.setBlockAndUpdate(base.offset(x, -1, z), Blocks.SPRUCE_PLANKS.defaultBlockState())
         }
         player.teleportTo(base.x + 0.5, base.y.toDouble(), base.z + 0.5)
-        val tables = listOf(OPEN_DDZ, OPEN_UNO, CLOSED, OWN).map { (x, z) -> base.offset(x, 0, z) }
+        val tables = listOf(OPEN_DDZ, OPEN_UNO, CLOSED, OWN, OPEN_PDK).map { (x, z) -> base.offset(x, 0, z) }
         for (table in tables) {
             for (part in 0 until CardTableBlock.PARTS) {
                 level.setBlockAndUpdate(

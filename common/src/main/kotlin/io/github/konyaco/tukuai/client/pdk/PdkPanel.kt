@@ -249,29 +249,32 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
         val winner = PanelText.seatLabel(table, settlement.winner)
         val color = if (me == null) TableScreen.WHITE else if (me == settlement.winner) TableScreen.GREEN else TableScreen.RED
         g.centeredText(font, Component.translatable("tukuai.pdk.won", winner), width / 2, top + 6, color)
+        // Each seat on two lines: name and points, then what they paid for.
         for (seat in 0 until PaoDeKuai.SEATS) {
-            val y = top + 22 + seat * 12
-            g.text(font, font.plainSubstrByWidth(PanelText.seatLabel(table, seat).string, 68), x + 8, y, if (seat == me) TableScreen.YELLOW else TableScreen.WHITE, false)
+            val y = top + 22 + seat * ROW
+            val points = settlement.scores.getOrElse(seat) { 0 }
+            val text = Component.literal(if (points > 0) "+$points" else points.toString())
+            val nameColor = if (seat == me) TableScreen.YELLOW else TableScreen.WHITE
+            g.text(font, font.plainSubstrByWidth(PanelText.seatLabel(table, seat).string, w - 40), x + 8, y, nameColor, false)
+            g.text(font, text, x + w - 8 - font.width(text), y, if (points >= 0) TableScreen.GREEN else TableScreen.RED, false)
             val detail = Component.empty()
             if (seat != settlement.winner) {
                 detail.append(Component.translatable("tukuai.pdk.result.left", settlement.cardsLeft[seat]))
                 if (settlement.shutOut[seat]) detail.append(" ").append(Component.translatable("tukuai.pdk.result.shut_out"))
             }
             if (settlement.bombs[seat] > 0) {
-                if (seat != settlement.winner) detail.append("  ")
+                if (seat != settlement.winner) detail.append("   ")
                 detail.append(Component.translatable("tukuai.pdk.bombs", settlement.bombs[seat]))
             }
-            g.text(font, detail, x + 80, y, TableScreen.GRAY, false)
-            val points = settlement.scores.getOrElse(seat) { 0 }
-            val text = Component.literal(if (points > 0) "+$points" else points.toString())
-            g.text(font, text, x + w - 8 - font.width(text), y, if (points >= 0) TableScreen.GREEN else TableScreen.RED, false)
+            g.text(font, detail, x + 16, y + 10, TableScreen.GRAY, false)
         }
     }
 
     companion object {
         /** The result box sits at the top, clear of both players' boxes. */
         private const val RESULT_TOP = 4
-        private const val RESULT_HEIGHT = 86
+        private const val ROW = 22
+        private const val RESULT_HEIGHT = 22 + 3 * ROW + 28
 
         /** Each seat's latest play or pass in the current round; the seat to act shows nothing. */
         fun recentActions(view: PdkView): Map<Seat, PdkEvent> {
