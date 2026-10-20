@@ -241,7 +241,11 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         if (!screen.interactive) return
         val round = s.rounds + if (s.status == TableStatus.PLAYING) 1 else 0
         g.text(font, Component.translatable("tukuai.table.rounds", round), 6, 17, TableScreen.GRAY, true)
-        table.watchingLine()?.let { g.text(font, it, 6, 28, if (s.spectators) TableScreen.YELLOW else TableScreen.GRAY, true) }
+        // Wrapped to stay clear of what sits in the middle at the top.
+        val watching = table.watchingLine() ?: return
+        font.split(watching, width / 2 - 60).forEachIndexed { i, line ->
+            g.text(font, line, 6, 28 + i * 10, if (s.spectators) TableScreen.YELLOW else TableScreen.GRAY, true)
+        }
     }
 
     private fun renderTop(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView) {
