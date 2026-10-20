@@ -27,6 +27,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
+import net.minecraft.util.FormattedCharSequence
 import org.lwjgl.glfw.GLFW
 
 /**
@@ -228,19 +229,31 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
         val acting = view.turn == seat && live(table) && (view.phase == GdPhase.PLAYING || view.phase == GdPhase.RETURN)
         g.fill(x - 2, y - 2, x + boxW + 2, y + BOX_H, teamTint(me, seat, acting))
         g.fill(x - 2, y - 2, x + boxW + 2, y - 1, if (Guandan.team(seat) == Guandan.team(me)) 0xFF000000.toInt() or OURS_RGB else 0xFF000000.toInt() or THEIRS_RGB)
-        val partnerTag = if (Guandan.team(seat) == Guandan.team(me) && table.snapshot.you != null) Component.translatable("tukuai.guandan.partner") else null
-        val nameRoom = boxW - (partnerTag?.let { font.width(it) + 4 } ?: 0)
-        g.text(font, font.plainSubstrByWidth(PanelText.seatLabel(table, seat).string, nameRoom), x, y + 2, TableScreen.WHITE, true)
+        val name = PanelText.seatLabel(table, seat).string
+        g.text(font, font.plainSubstrByWidth(name, boxW), x, y + 2, TableScreen.WHITE, true)
 
         val count = view.handCounts[seat]
         val place1 = view.order.indexOf(seat)
-        if (place1 >= 0) {
-            g.text(font, Component.translatable("tukuai.guandan.place.${place1 + 1}"), x, y + 18, TableScreen.YELLOW, true)
+        val countRight = if (place1 >= 0) {
+            val text = Component.translatable("tukuai.guandan.place.${place1 + 1}")
+            g.text(font, text, x, y + 18, TableScreen.YELLOW, true)
+            font.width(text)
         } else {
+            val text = Component.literal("× $count")
             CardArt.draw(g, CardArt.back(), x, y + 13, 0.5f)
-            g.text(font, Component.literal("× $count"), x + 20, y + 18, if (count <= 5) TableScreen.RED else TableScreen.YELLOW, true)
+            g.text(font, text, x + 20, y + 18, if (count <= 5) TableScreen.RED else TableScreen.YELLOW, true)
+            20 + font.width(text)
         }
-        if (partnerTag != null) g.text(font, partnerTag, x + boxW - font.width(partnerTag), y + 2, OURS_TEXT, true)
+        // The partner tag goes beside the name, or beside the count when the name needs the
+        // whole line. In the narrow immersive box it may fit nowhere; the team tint says it then.
+        if (Guandan.team(seat) == Guandan.team(me) && table.snapshot.you != null) {
+            val tag = Component.translatable("tukuai.guandan.partner")
+            val tagW = font.width(tag)
+            when {
+                font.width(name) + 4 + tagW <= boxW -> g.text(font, tag, x + boxW - tagW, y + 2, OURS_TEXT, true)
+                countRight + 4 + tagW <= boxW -> g.text(font, tag, x + boxW - tagW, y + 18, OURS_TEXT, true)
+            }
+        }
         if (acting) PanelText.timer(g, table, x + boxW - 4, y + 28, alignRight = true)
 
         // Their whole hand once it is shown, below the box (or beside it, across the table).
@@ -305,10 +318,15 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
         }
     }
 
-    /** Tributes before the first play of a round: who paid whom which card, and what came back. */
+    /**
+     * Tributes before the first play of a round: who paid whom which card, and what came back.
+     * They move up when two of them would reach the note over the buttons.
+     */
     private fun renderTributes(g: GuiGraphicsExtractor, table: ClientTable, view: GdView) {
         if (view.log.any { it.kind == GdEventKind.PLAY }) return
-        var y = TRIBUTE_Y
+        val noteTop = noteLines(table, view).takeIf { it.isNotEmpty() }?.let { noteY(it.size, 0) } ?: (buttonY() - 2)
+        val height = view.tributes.size * TRIBUTE_ROW
+        var y = minOf(TRIBUTE_Y, noteTop - 2 - height).coerceAtLeast(TOP_BOX_Y + BOX_H + 2)
         val noTribute = view.log.firstOrNull { it.kind == GdEventKind.NO_TRIBUTE }
         if (noTribute != null) {
             g.centeredText(font, Component.translatable("tukuai.guandan.no_tribute"), width / 2, y, TableScreen.GRAY)
@@ -326,24 +344,29 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
                 g.text(font, text, x + w + 4 + CardArt.WIDTH / 2 + 6, y + 6, TableScreen.GRAY, true)
                 CardArt.drawCard(g, back, x + w + 4 + CardArt.WIDTH / 2 + 10 + font.width(text), y, 0.5f)
             }
-            y += CardArt.HEIGHT / 2 + 2
+            y += TRIBUTE_ROW
         }
     }
 
-    /** One line over the buttons for what this turn asks of you. */
-    private fun renderNote(g: GuiGraphicsExtractor, table: ClientTable, view: GdView) {
-        if (!live(table)) return
+    /** The note over the buttons for what this turn asks of you, wrapped to the panel. */
+    private fun noteLines(table: ClientTable, view: GdView): List<FormattedCharSequence> {
+        if (!live(table)) return emptyList()
         val note: Component = when {
             view.owedReturn != null -> Component.translatable("tukuai.guandan.note.give_back", GdUi.name(table, view.owedReturn!!.from))
             view.phase == GdPhase.RETURN -> Component.translatable("tukuai.guandan.giving_back", GdUi.name(table, view.turn))
             view.isMyTurn && view.log.lastOrNull()?.kind == GdEventKind.PARTNER_LEADS -> Component.translatable("tukuai.guandan.note.partner_leads")
             view.isMyTurn && view.toBeat != null && view.turnRules()?.plays?.isEmpty() == true -> Component.translatable("tukuai.guandan.note.nothing")
-            else -> return
+            else -> return emptyList()
         }
-        val lines = font.split(note, width - 40)
-        lines.forEachIndexed { i, line ->
-            g.centeredText(font, line, width / 2, buttonY() - 12 - (lines.size - 1 - i) * 10, TableScreen.YELLOW)
-        }
+        return font.split(note, width - 40)
+    }
+
+    /** Where line [i] of a note [lines] long goes; the last one sits just over the buttons. */
+    private fun noteY(lines: Int, i: Int): Int = buttonY() - 12 - (lines - 1 - i) * 10
+
+    private fun renderNote(g: GuiGraphicsExtractor, table: ClientTable, view: GdView) {
+        val lines = noteLines(table, view)
+        lines.forEachIndexed { i, line -> g.centeredText(font, line, width / 2, noteY(lines.size, i), TableScreen.YELLOW) }
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -388,6 +411,7 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
         private const val SIDE_BOX_Y = 66
         private const val BOX_H = 36
         private const val TRIBUTE_Y = 84
+        private const val TRIBUTE_ROW = CardArt.HEIGHT / 2 + 2
         private const val RESULT_TOP = 4
         private const val ROW = 12
 
