@@ -48,7 +48,14 @@ data class SeatInfo(
     /** For a human: how many games of this table's game they have played and won, anywhere in this world. */
     val games: Int = 0,
     val wins: Int = 0,
+    /** Wants the next game to start; it starts once every player at the table does. */
+    val ready: Boolean = false,
+    /** Wants to end the match now; it ends once every player at the table does. */
+    val endVote: Boolean = false,
 )
+
+/** One line of a game's leaderboard: a player's record in this world. */
+data class LeaderEntry(val name: String, val games: Int, val wins: Int, val points: Int)
 
 /**
  * Everything one player needs to draw a table, sent whenever it changes. [view] is the
@@ -72,7 +79,17 @@ data class TableSnapshot(
     val spectators: Boolean = true,
     /** The seat of the player who may change [spectators], or null when anyone may. */
     val host: Seat? = null,
+    /** How many games make a match; after that the points are settled. 0 for no limit. */
+    val matchRounds: Int = 0,
+    /** The match is over, by reaching [matchRounds] or because everyone agreed to stop; [tally] is final. */
+    val matchOver: Boolean = false,
+    /** The players with the most points at this game in this world, best first; sent only between games. */
+    val leaderboard: List<LeaderEntry> = emptyList(),
 ) {
+    /** The people at the table who are here and playing for themselves; they decide together when to start or stop. */
+    val voters: List<Seat>
+        get() = seats.indices.filter { seats[it].occupant is Occupant.Human && seats[it].present && !seats[it].auto }
+
     fun encode(): ByteArray = CODEC.encode(this)
 
     override fun equals(other: Any?): Boolean = other is TableSnapshot && encode().contentEquals(other.encode())
@@ -80,7 +97,7 @@ data class TableSnapshot(
     override fun hashCode(): Int = encode().contentHashCode()
 
     companion object {
-        private const val VERSION = 3
+        private const val VERSION = 4
 
         fun decode(data: ByteArray): TableSnapshot = CODEC.decode(data)
 
@@ -93,11 +110,12 @@ data class TableSnapshot(
                         is Occupant.Human -> int(1).long(o.uuid.mostSignificantBits).long(o.uuid.leastSignificantBits).string(o.name)
                         is Occupant.Computer -> int(2).int(o.level.ordinal)
                     }
-                    bool(seat.present).bool(seat.auto).int(seat.games).int(seat.wins)
+                    bool(seat.present).bool(seat.auto).int(seat.games).int(seat.wins).bool(seat.ready).bool(seat.endVote)
                 }
                 writer.int(value.you ?: -1).ints(value.tally).int(value.rounds).int(value.status.ordinal)
                     .int(value.step).int(value.timerTicks).nullable(value.view) { bytes(it) }
-                    .bool(value.spectators).int(value.host ?: -1)
+                    .bool(value.spectators).int(value.host ?: -1).int(value.matchRounds).bool(value.matchOver)
+                writer.list(value.leaderboard) { string(it.name).int(it.games).int(it.wins).int(it.points) }
             }
 
             override fun read(reader: WireReader): TableSnapshot {
@@ -114,7 +132,7 @@ data class TableSnapshot(
                             2 -> Occupant.Computer(BotLevel.entries[int()])
                             else -> null
                         }
-                        SeatInfo(occupant, bool(), bool(), int(), int())
+                        SeatInfo(occupant, bool(), bool(), int(), int(), bool(), bool())
                     },
                     you = reader.int().takeIf { it >= 0 },
                     tally = reader.ints(),
@@ -125,6 +143,9 @@ data class TableSnapshot(
                     view = reader.nullable { bytes() },
                     spectators = reader.bool(),
                     host = reader.int().takeIf { it >= 0 },
+                    matchRounds = reader.int(),
+                    matchOver = reader.bool(),
+                    leaderboard = reader.list { LeaderEntry(string(), int(), int(), int()) },
                 )
             }
         }
@@ -148,6 +169,10 @@ enum class TableOp {
 
     /** Set the turn time limit to `a` seconds; 0 turns it off. */
     TIMER,
+    /**
+     * Ready for the next game. It starts once every player at the table is ready; a player
+     * alone with computers starts it straight away. After a finished match it starts a new one.
+     */
     START,
 
     /** A move for your seat, encoded by the game. */
@@ -164,4 +189,16 @@ enum class TableOp {
 
     /** `a` = 1 lets players who are not in the game see every hand, 0 hides them. Only the host may. */
     SPECTATE,
+
+    /** No longer ready, see [START]. */
+    UNREADY,
+
+    /** Agree to end the match now. It ends once every player at the table agrees; a game being played is dropped. */
+    END,
+
+    /** Turn down ending the match, which clears everyone's agreement. */
+    KEEP,
+
+    /** Set how many games make a match to `a`; 0 means no limit. */
+    ROUNDS,
 }
