@@ -5,10 +5,6 @@
 </p>
 
 <p align="center">
-  在 Minecraft 裡擺一張牌桌，找朋友或幾個電腦，坐下來打鬥地主、跑得快、摜蛋，或是玩 UNO 和土土牌。
-</p>
-
-<p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="最新版本"></a>
   <img src="https://img.shields.io/badge/Minecraft-26.1.2-62B47A" alt="Minecraft 26.1.2">
@@ -16,220 +12,128 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 授權"></a>
 </p>
 
-![書房裡的兩張牌桌：左邊在打鬥地主，右邊幾個村民在玩 UNO](docs/images/hero.webp)
+土塊棋牌室在 Minecraft 中加入可以合成和擺放的牌桌，供玩家與朋友或電腦一同打牌。
 
-土塊棋牌室加了一張能合成、能擺放的牌桌。幾個人坐一桌，空位讓電腦補上，就能開打。牌是真的擺在桌上的，路過的人都看得到。目前有鬥地主、UNO、跑得快、摜蛋和土土牌，之後還會加入其他棋牌遊戲。
+![書房裡的兩張牌桌：左邊在打鬥地主，右邊幾個村民圍著 UNO 牌桌](docs/images/hero.webp)
 
-只用遊戲內積分，不涉及真實金錢。輸了頂多輸點面子。
+## 特色
 
-## 下載
+- **立體牌桌**：牌擺在世界中的桌面上。手牌立起朝向自己，出過的牌放在桌子中央，旁人也看得到。
+- **多人連線與電腦補位**：空位可由電腦補上，分簡單、普通、困難三檔；玩家離開或斷線時由電腦代打。
+- **回放與戰績**：每局自動保存回放，可從任意座位的視角重看；牌桌記錄每位玩家的戰績。
+- **外觀自訂**：牌桌和凳子有多種木材可選，桌布和坐墊可以染色，牌背和牌面有多種樣式。
+- **沉浸視角**：介面不遮擋世界，直接點選桌上的牌出牌。
 
-到 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下載對應載入器的 jar。需要 Minecraft 26.1.2，另外還要裝：
+## 遊戲
 
-| 載入器 | 還需要 |
+<table>
+  <tr>
+    <td width="55%"><img src="docs/images/zh-TW/ddz-table.webp" alt="鬥地主"></td>
+    <td><b>鬥地主</b><br>三人遊戲，一名地主對兩名農民。規則可選經典叫分、搶地主和不洗牌。</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/zh-TW/uno-table.webp" alt="UNO"></td>
+    <td><b>UNO</b><br>2 至 4 人。可選經典規則或罰牌可疊加的規則。</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/zh-TW/pdk-table.webp" alt="跑得快"></td>
+    <td><b>跑得快</b><br>三人各自為戰，先出完手牌者獲勝。可選每人 16 張或 15 張，以及是否有大必壓。</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/zh-TW/gd-table.webp" alt="摜蛋"></td>
+    <td><b>摜蛋</b><br>四人分兩隊，使用兩副牌。可選只打一局，或連續打到 A。</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/zh-TW/tutu-table.webp" alt="土土牌"></td>
+    <td><b>土土牌</b><br>本模組原創的出牌遊戲，玩法與 UNO 相近，功能牌取材自 Minecraft，例如會在桌上冒煙的 TNT。2 至 8 人，6 人和 8 人需使用大方桌。</td>
+  </tr>
+</table>
+
+規則說明見遊戲內的規則書：點擊牌桌介面上的 **?** 按鈕即可開啟。
+
+## 開始遊玩
+
+### 下載
+
+從 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下載對應載入器的 jar。需要 Minecraft 26.1.2，以及：
+
+| 載入器 | 前置模組 |
 | --- | --- |
 | NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 或更新 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 或更新 |
 
-## 能做什麼
-
-### 鬥地主
-
-三種規則可選：「經典叫分」「搶地主」和「不洗牌」（炸彈更多）。
+### 合成
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/zh-TW/ddz-table.webp" alt="牌桌視角的鬥地主"></td>
-    <td width="50%"><img src="docs/images/zh-TW/ddz-immersive.webp" alt="沉浸視角的鬥地主"></td>
-  </tr>
-  <tr>
-    <td align="center">牌桌視角：整個畫面就是牌桌。</td>
-    <td align="center">沉浸視角：不擋住世界，抬頭就是真實的牌桌。按 Tab 切換。</td>
+    <td width="33%" align="center"><img src="docs/images/craft-card-table.webp" alt="牌桌的合成表"><br><b>牌桌</b><br>羊毛顏色不限，木材決定桌子的木頭種類。</td>
+    <td width="33%" align="center"><img src="docs/images/craft-big-card-table.webp" alt="大方桌的合成表"><br><b>大方桌</b><br>由一張牌桌擴展而成，最多坐 8 人。</td>
+    <td width="33%" align="center"><img src="docs/images/craft-stool.webp" alt="凳子的合成表"><br><b>凳子</b><br>羊毛決定坐墊顏色，半磚決定木頭種類。</td>
   </tr>
 </table>
 
-### UNO
+創造模式下，三者都在「功能方塊」物品欄中。
 
-2 到 4 人，四種規則：4 人經典、4 人罰牌可疊加（+2 能接 +2，+4 能接 +2 或 +4），以及 3 人、2 人經典。
+### 上手
 
-<table>
-  <tr>
-    <td width="50%"><img src="docs/images/zh-TW/uno-table.webp" alt="牌桌視角的 UNO"></td>
-    <td width="50%"><img src="docs/images/uno-seated.webp" alt="和三個村民圍坐在 UNO 牌桌邊"></td>
-  </tr>
-  <tr>
-    <td align="center">能出的牌會抬起來，點一下就出。</td>
-    <td align="center">關掉介面，人還坐在桌邊。</td>
-  </tr>
-</table>
+1. **放下牌桌**。牌桌佔 3×3 格，會從點擊的方塊向前展開，前方和左右需留出空地。
+2. **右鍵開啟牌桌**，點「坐這裡」入座，空位可點「加電腦」補上。
+3. **選擇遊戲和規則**，點「開始」。
 
-### 跑得快
+凳子放在牌桌有座位一側的外邊正中，右鍵凳子即可坐到對應座位。大方桌佔 5×5 格，每邊兩個座位，最多坐 8 人。
 
-三個人各打各的，看誰先把手上的牌出完。拿到黑桃 3 的人先出。三種規則：每人 16 張、每人 15 張，以及 16 張但隨時可以不出。另外兩種規則有大必壓：壓得過就必須出。
+介面支援簡體中文、繁體中文、英文、日文和韓文，隨遊戲語言切換。
 
-有人只剩一張牌時，他的資訊框和桌上都會亮出紅色的報單提示；他的上家出單張，只能出自己最大的那張。
+<details>
+<summary><b>伺服器設定</b></summary>
 
-### 摜蛋
-
-四個人分兩隊，對家是隊友，兩副牌每人 27 張。出牌和鬥地主差不多：順子正好五張，連對正好三對，鋼板正好兩個三張；炸彈有四到十張的、同花順和四大天王。你們隊有人頭遊就贏下這一局，按對家的名次升一到三級。下一局打贏家的級，那一級的兩張紅心可以當任何牌用（逢人配）。兩種規則：打一局，或是打到 A（級數和進貢一局接一局地算下去）。
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/images/zh-TW/gd-table.webp" alt="牌桌視角下的摜蛋"></td>
-    <td width="50%">隊友的資訊框是藍色的，對手是紅色的；正在打幾、兩隊各打到幾，都顯示在畫面上方。</td>
-  </tr>
-</table>
-
-### 土土牌
-
-土塊棋牌室自己的出牌遊戲，玩法和 UNO 差不多：跟上一張同色、同數字或同圖案就能出，先出完的贏。特殊牌都是 MC 裡的東西：雪球凍住下家，三叉戟讓出牌方向反過來，鏟子讓下家摸 2 張，閃電讓下家一直摸到同色的牌為止。萬能牌更熱鬧：生怪蛋出的那一刻隨機孵出一張牌，TNT 點燃後不知道哪一輪會炸到誰（被炸的摸 4 張），仙人掌會插進摸牌堆，誰摸到誰多摸 3 張。燃燒的 TNT 會真的立在桌上冒煙，牌堆裡的仙人掌大家都看得到。
-
-摸牌堆不會洗回來，摸完這一手就結束，手裡牌最少的人贏。剩下的牌每張 10 分。六種規則：4 人經典、4 人熱鬧（特殊牌更多）、3 人和 2 人經典，以及坐大方桌的 6 人和 8 人熱鬧。
-
-### 在世界裡看得到
-
-牌桌佔 3x3 格。每個人的手牌立在桌上朝向自己，別人只看得到牌背；剛出的牌和底牌擺在中間。桌上的牌有厚度。用染料右鍵牌桌換桌布顏色，介面右上角的 ☰ 選單裡換牌背和牌面：經典、角上大字（手牌擠在一起也看得清楚），或是四色（方塊藍、梅花綠）。牌桌和凳子有各種木頭可選，從橡木到扭曲木都有；凳子還有 16 種坐墊顏色。
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/images/zh-TW/seated.webp" alt="坐在鬥地主牌桌邊看到的樣子"></td>
-    <td width="50%"><img src="docs/images/villagers.webp" alt="圍在 UNO 牌桌邊的村民"></td>
-  </tr>
-  <tr>
-    <td align="center">自己的手牌立著朝向自己。</td>
-    <td align="center">村民只是擺著好看的。真正在打牌的電腦是隱形的，說不上是禮貌還是嚇人。</td>
-  </tr>
-</table>
-
-### 電腦補位，斷線不卡局
-
-空位可以讓電腦補上。電腦有簡單、普通、困難三檔，困難會先在心裡把牌局推演很多遍再出牌。
-
-有人走開或斷線，電腦先替他打；連續逾時兩次會自動託管，回來點「取消託管」就能接著打。
-
-### 回放和戰績
-
-每局打完自動存檔。可以一步步重看，能看到所有人的牌，也能換成任何一家的視角。牌桌還會記下每個人的戰績。
-
-<table>
-  <tr>
-    <td width="33%"><img src="docs/images/zh-TW/result.webp" alt="一局的結算"></td>
-    <td width="33%"><img src="docs/images/zh-TW/replay.webp" alt="看回放"></td>
-    <td width="33%"><img src="docs/images/zh-TW/lobby.webp" alt="顯示戰績的座位和規則畫面"></td>
-  </tr>
-  <tr>
-    <td align="center">結算</td>
-    <td align="center">回放，所有人的牌都看得到</td>
-    <td align="center">座位和規則畫面顯示戰績</td>
-  </tr>
-</table>
-
-不會玩？牌桌上的 **?** 按鈕打開規則書：鬥地主、跑得快和摜蛋的每種牌型、UNO 和土土牌的每張功能牌都配了圖，還有一頁專講這張桌子目前的規則。
-
-介面支援簡體中文、繁體中文、英文、日文、韓文，跟著遊戲的語言設定走。
-
-## 怎麼玩
-
-1. **合成牌桌**：第一排放 3 塊任意顏色的羊毛，第二排放 3 塊同一種木材，木材是什麼木頭，桌子的邊框和桌腳就是什麼木頭，第三排左右兩格各放 1 塊任意原木。創造模式在「功能方塊」欄裡。
-2. **放下，右鍵打開**。牌桌佔 3x3 格，從你點的那一格往前鋪開，所以前方和左右要留出空地。點「坐這裡」入座，空位點「加電腦」，或者直接點「空位都補電腦」。
-3. **選遊戲**：點「遊戲」在鬥地主、UNO、跑得快、摜蛋和土土牌之間切換，選好規則和出牌時限，點「開始」。
-
-舊版本放的一格牌桌會自動長成 3x3，周圍沒空地的話會變回物品掉在地上。
-
-**凳子**：用一塊羊毛、一個木半磚和一根木棒從上到下直著合成，羊毛的顏色就是坐墊的顏色，之後也能用染料右鍵換色；半磚是什麼木頭，凳子就是什麼木頭。在牌桌有座位的邊外面（鬥地主和跑得快三條邊，4 人 UNO、土土牌和摜蛋四條邊）、正對中間的位置放上凳子，右鍵凳子就是坐到那一邊的座位上。不靠著牌桌的凳子也能直接坐，凳子本來就是拿來坐的。
-
-**大方桌**：第一排放 3 塊羊毛，第二排是木板、牌桌、木板，第三排左右兩格各放 1 塊原木。大方桌佔 5×5 格，最多坐八個人，每邊兩個座位，凳子放在桌邊外面中間那格的左右兩邊；四人以下的玩法在大方桌上每邊坐一個人，凳子放在正中。土土牌的 6 人、8 人規則只能在大方桌上選。
-
-### 操作
-
-沉浸視角下，按住右鍵拖動可以轉頭看四周；選牌、出牌直接點桌上的牌，螢幕底下不再擺一排手牌。右鍵不拖動時，還是下面表裡右鍵的作用。
-
-鬥地主：
-
-| 操作 | 作用 |
-| --- | --- |
-| 左鍵點牌 | 選取或取消這張牌 |
-| 在牌上拖曳 | 一次選取或取消劃過的牌 |
-| 右鍵 | 清空選取 |
-| 空白鍵 / Enter | 出選取的牌；沒選牌時就是「不出」 |
-| H | 提示，多按幾次換一種出法 |
-| Tab | 切換牌桌 / 沉浸視角 |
-
-UNO：能出的牌會抬起來，點一下就出；萬用牌出之前要選顏色。
-
-| 操作 | 作用 |
-| --- | --- |
-| 左鍵點牌 | 出這張牌 |
-| 右鍵 | 取消選顏色 |
-| D | 摸牌（被罰時一次摸完） |
-| 空白鍵 / Enter | 摸到能出的牌但想留著 |
-| U | 剩兩張時喊 UNO，再出牌；忘了喊會罰摸 2 張 |
-| Tab | 切換牌桌 / 沉浸視角 |
-
-UNO 的幾處簡化：翻開的第一張一定是數字牌；+4 只能在手裡沒有目前顏色時出（不用質疑）；喊 UNO 要在出倒數第二張牌時一起喊，沒喊就直接罰。誰先出完誰贏，其他人按手裡剩下的牌給分：數字牌按點數，功能牌 20 分，萬用牌 50 分。
-
-土土牌：和 UNO 一樣，能出的牌會抬起來，點一下就出；TNT 和仙人掌出之前要選顏色。不用喊 UNO。D 摸牌，空白鍵 / Enter 留下剛摸到的牌。
-
-跑得快：
-
-| 操作 | 作用 |
-| --- | --- |
-| 左鍵點牌 | 選取或取消這張牌 |
-| 在牌上拖曳 | 一次選取或取消劃過的牌 |
-| 右鍵 | 清空選取 |
-| 空白鍵 / Enter | 出選取的牌；沒選牌時就是「不出」（規則允許時） |
-| H | 提示，多按幾次換一種出法 |
-| Tab | 切換牌桌 / 沉浸視角 |
-
-壓得過又必須壓時，「不出」按鈕是灰的。先出完的人贏，另外兩人手上每剩一張賠 1 分，只剩一張的不賠，一張都沒出過的加倍。贏下一輪的炸彈向其他每人各收 10 分。
-
-摜蛋：
-
-| 操作 | 作用 |
-| --- | --- |
-| 左鍵點牌 | 選取或取消這張牌 |
-| 在牌上拖曳 | 一次選取或取消劃過的牌 |
-| 右鍵 | 清空選取 |
-| 空白鍵 / Enter | 出選取的牌；沒選牌時就是「不出」 |
-| H | 提示，多按幾次換一種出法 |
-| Tab | 切換牌桌 / 沉浸視角 |
-
-手牌多時分兩排顯示，紅心級牌帶金色邊框。打到 A 時輪到你還貢，就選一張 10 或更小的牌，點「還貢」；每局結束後由頭遊點「下一局」發牌。
-
-### 回放
-
-- 一局結束後，結算框裡點「看回放」。
-- `/tukuai replays` 列出最近的對局，點名字就能打開；`/tukuai replay <名字>` 按名字打開。
-- 回放裡空白鍵暫停或繼續，左右方向鍵前後一步，Home / End 跳到開頭或結尾，Tab 換視角。
-
-回放檔案存在存檔目錄的 `tukuai/replays` 裡。
-
-### 一場對局
-
-一場預設 8 局（大廳裡可以改成 4、12、16 局或不限）。左上角的小框顯示現在是第幾局和每個人的總分。打完最後一局點「總排名」看名次，下一局重新開一場、從零算起。桌上不只一個人時，所有人都點了「再來一局」才會開始，誰也不會錯過結算。想提前結束，點右上角 ☰ 選單裡的「結束對局」：桌上所有人都同意才會結束，正在打的這一局作廢，按打完的局結算。
-
-### 戰績
-
-- `/tukuai stats` 看自己打了多少局、贏了多少、積分多少；`/tukuai stats <玩家名稱>` 看別人的。
-- `/tukuai top` 看積分排行前十；大廳裡的「排行榜」看這張桌子所玩遊戲的排行。
-
-戰績存在存檔目錄的 `tukuai/stats.json` 裡，只算真人，電腦不記。
-
-## 伺服器設定
-
-第一次開服（或進單人存檔）後會產生 `config/tukuai-server.properties`，改完後 `/reload` 或重新啟動生效：
+首次開服（或進入單人存檔）後會產生 `config/tukuai-server.properties`，修改後執行 `/reload` 或重新啟動生效。
 
 | 設定 | 預設 | 作用 |
 | --- | --- | --- |
-| `allowBots` | `true` | 是否允許電腦玩家入座 |
-| `botDelaySeconds` | `1.1` | 電腦出牌前平均等幾秒 |
+| `allowBots` | `true` | 是否允許電腦入座 |
+| `botDelaySeconds` | `1.1` | 電腦出牌前的平均等待秒數 |
 | `saveReplays` | `true` | 是否保存回放 |
-| `maxReplays` | `500` | 最多留多少局回放，多了先刪最舊的；`0` 表示不限 |
+| `maxReplays` | `500` | 回放保留上限，超出時刪除最舊的；`0` 表示不限 |
 | `keepStats` | `true` | 是否記錄戰績 |
 
-## 開發
+</details>
 
-編譯、程式結構、加新遊戲和測試的說明，請看 [English README 的 For developers](README.md#for-developers) 或 [简体中文 README 的「开发」](README.zh-CN.md#开发)。
+<details>
+<summary><b>開發</b></summary>
+
+需要 JDK 25。
+
+```sh
+./gradlew build                 # 編譯、測試，並打包兩個載入器的 jar
+./gradlew :fabric:runClient     # 用 Fabric 啟動遊戲
+./gradlew :neoforge:runClient   # 用 NeoForge 啟動遊戲
+```
+
+| 目錄 | 內容 |
+| --- | --- |
+| `engine` | 規則、電腦和回放，純 Kotlin，不依賴 Minecraft |
+| `common` | 兩個載入器共用的 Minecraft 程式碼和資源 |
+| `fabric`、`neoforge` | 各載入器的進入點和註冊 |
+
+加入新遊戲：
+
+1. 在 `engine` 中實作 `GameDefinition`，並在 `TuKuai.init()` 中註冊到 `GameRegistry`。
+2. 在 `common/.../client` 中實作 `GameUi`，並在 `TuKuaiClient.init()` 中註冊到 `GameUis`。
+3. 在每個語言檔中加入 `tukuai.game.<id>` 和各規則的名稱。
+
+測試：
+
+```sh
+./gradlew :engine:test                  # 規則與電腦的單元測試
+./gradlew :fabric:runClientGameTest     # 啟動遊戲實際打幾局並截圖
+./gradlew :fabric:runMultiplayerTest    # 專用伺服器加兩個用戶端的連線測試
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest   # 拍攝本文的截圖
+```
+
+提交訊息格式為 `[type](scope) Title`。依賴版本見 `gradle.properties`。
+
+</details>
 
 ## 授權
 
