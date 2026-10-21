@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
+import io.github.konyaco.tukuai.client.gd.GdUi
 import io.github.konyaco.tukuai.client.render.CardFrame
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.StoolBlock
@@ -18,6 +19,10 @@ import io.github.konyaco.tukuai.engine.doudizhu.DdzCodecs
 import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
 import io.github.konyaco.tukuai.engine.doudizhu.Patterns
+import io.github.konyaco.tukuai.engine.guandan.GdAction
+import io.github.konyaco.tukuai.engine.guandan.GdCodecs
+import io.github.konyaco.tukuai.engine.guandan.GdPhase
+import io.github.konyaco.tukuai.engine.guandan.GdView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.TableOp
@@ -40,13 +45,19 @@ import kotlin.math.abs
 /**
  * The immersive view with a real mouse: dragging with the right button turns the head,
  * and Dou Dizhu cards are picked by clicking them on the table, then played with the
- * play button.
+ * play button. Then a Guandan turn, whose cards are picked by sweeping over them on the
+ * table, two copies of a card being told apart.
  */
 class ImmersiveInputGameTest : FabricClientGameTest {
     override fun runTest(context: ClientGameTestContext) {
         if (System.getenv("TUKUAI_SHOWCASE") != null || System.getenv("TUKUAI_MULTIPLAYER") != null) return
         // TUKUAI_ONLY=<name> runs just one of the tests, to try it quickly.
         if (System.getenv("TUKUAI_ONLY")?.let { it != "immersive" } == true) return
+        playDouDizhu(context)
+        playGuandan(context)
+    }
+
+    private fun playDouDizhu(context: ClientGameTestContext) {
         context.worldBuilder().create().use { world ->
             val server = world.server
             val table = server.computeOnServer<BlockPos, RuntimeException> { s -> buildScene(s) }
@@ -153,8 +164,11 @@ class ImmersiveInputGameTest : FabricClientGameTest {
     }
 
     /** Where on the screen, in window pixels, the visible part of [card] in our standing hand is. */
-    private fun screenPoint(mc: Minecraft, table: BlockPos, card: PlayingCard): Pair<Double, Double> {
-        val shown = handCard(table, card) ?: error("$card is not in our hand on the table")
+    private fun screenPoint(mc: Minecraft, table: BlockPos, card: PlayingCard): Pair<Double, Double> =
+        screenPoint(mc, table, handCard(table, card) ?: error("$card is not in our hand on the table"))
+
+    private fun screenPoint(mc: Minecraft, table: BlockPos, shown: TableCard): Pair<Double, Double> {
+        val card = shown.sprite
         val f = CardFrame.of(shown, 0f)
         // Each card covers the one on its left but for a strip along that one's left edge.
         val along = -f.halfW + 0.03f
@@ -176,8 +190,117 @@ class ImmersiveInputGameTest : FabricClientGameTest {
     /** The side of the table each seat sits at, as the renderer has it. */
     private fun sides(table: BlockPos): List<Direction> = ClientTables[table]!!.seatPlaces().map { it.side }
 
+    /**
+     * Guandan in the immersive view: a play of two or three cards picked by pressing on the
+     * first of them on the table and sweeping to the last, then played with the play button.
+     */
+    private fun playGuandan(context: ClientGameTestContext) {
+        context.worldBuilder().create().use { world ->
+            val server = world.server
+            val table = server.computeOnServer<BlockPos, RuntimeException> { s -> buildScene(s, seats = 4) }
+            context.waitTicks(40)
+            world.clientLevel.waitForChunksRender()
+
+            act(server, table, TableOp.TIMER, 0)
+            act(server, table, TableOp.GAME, text = "guandan")
+            act(server, table, TableOp.SIT, 0)
+            act(server, table, TableOp.ADD_BOT, -1, BotLevel.EASY.ordinal)
+            context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "guandan" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+            context.runOnClient<RuntimeException> { ClientConfig.immersive = true }
+            act(server, table, TableOp.START)
+            context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
+            context.setScreen { TableScreen(table) }
+
+            // Pass until there is a pair or three of a kind to play, lying side by side in the hand.
+            var tries = 0
+            var run: List<Int>
+            while (true) {
+                check(++tries < 40) { "Never got a Guandan turn with a pair to play" }
+                context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { it.isMyTurn && it.phase == GdPhase.PLAYING } == true }, 2400)
+                val view = ClientTables[table]!!.view as GdView
+                val turn = view.turnRules()!!
+                val hand = GdUi.sorted(view, view.hand)
+                run = turn.plays.filter { it.cards.size in 2..3 && !it.pattern.isBomb }
+                    .map { play -> places(hand, play.cards) }
+                    .filter { it.last() - it.first() == it.size - 1 }
+                    .minByOrNull { it.size } ?: emptyList()
+                if (run.isNotEmpty()) break
+                // Without a pair to lead, lead the smallest single instead.
+                val action = if (turn.canPass) GdAction.Pass else GdAction.PlayCards(turn.plays.minBy { it.cards.size }.cards)
+                val step = ClientTables[table]!!.snapshot.step
+                act(server, table, TableOp.ACT, data = GdCodecs.ACTION.encode(action))
+                context.waitFor({ (ClientTables[table]?.snapshot?.step ?: step) != step }, 100)
+            }
+
+            val side = context.computeOnClient<Direction, RuntimeException> { sides(table).first() }
+            val look = Vec3(table.x + 0.5 + side.stepX * 1.05, table.y + CardTableBlock.TOP_HEIGHT + 0.2, table.z + 0.5 + side.stepZ * 1.05)
+            context.runOnClient<RuntimeException> { it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, look) }
+            context.waitTicks(10)
+            shot(context, "gd-immersive-hand")
+
+            val view = ClientTables[table]!!.view as GdView
+            val hand = GdUi.sorted(view, view.hand)
+            val keys = GdUi.keys(hand)
+            val play = run.map { hand[it] }
+            TuKuai.LOGGER.info("Sweeping over {} on the table", play)
+            fun point(i: Int) = context.computeOnClient<Pair<Double, Double>, RuntimeException> { mc ->
+                screenPoint(mc, table, myCards(table).first { it.key == keys[i] })
+            }
+            val (x0, y0) = point(run.first())
+            val (x1, y1) = point(run.last())
+            context.input.setCursorPos(x0, y0)
+            context.waitTicks(3)
+            context.input.holdMouse(GLFW.GLFW_MOUSE_BUTTON_LEFT)
+            context.waitTicks(2)
+            for (k in 1..4) {
+                context.input.setCursorPos(x0 + (x1 - x0) * k / 4, y0 + (y1 - y0) * k / 4)
+                context.waitTicks(2)
+            }
+            context.input.releaseMouse(GLFW.GLFW_MOUSE_BUTTON_LEFT)
+            context.waitTicks(10)
+            val raised = context.computeOnClient<List<Int>, RuntimeException> {
+                val screen = it.screen as TableScreen
+                val client = ClientTables[table]!!
+                hand.indices.filter { i -> myCards(table).firstOrNull { c -> c.key == keys[i] }?.let { c -> screen.isRaised(client, c) } == true }
+            }
+            check(raised == run) { "Sweeping over $run on the table picked $raised" }
+            shot(context, "gd-immersive-picked")
+
+            pressButton(context, "tukuai.ddz.play")
+            context.waitFor({ (ClientTables[table]?.view as? GdView)?.hand?.size == hand.size - play.size }, 100)
+            context.waitTicks(15)
+            shot(context, "gd-immersive-played")
+            context.setScreen { null }
+            context.runOnClient<RuntimeException> { ClientConfig.immersive = false }
+        }
+    }
+
+    /** Where in [hand] the [cards] are, each copy of a card at its own place, in hand order. */
+    private fun places(hand: List<PlayingCard>, cards: List<PlayingCard>): List<Int> {
+        val used = HashSet<Int>()
+        return cards.map { card -> hand.indices.first { it !in used && hand[it] == card }.also { used += it } }.sorted()
+    }
+
+    /** Clicks the table screen's button with the label [key]; it must be on. */
+    private fun pressButton(context: ClientGameTestContext, key: String) {
+        val (bx, by) = context.computeOnClient<Pair<Double, Double>, RuntimeException> { mc ->
+            val button = (mc.screen as TableScreen).children().filterIsInstance<Button>().first { b ->
+                (b.message.contents as? TranslatableContents)?.key == key
+            }
+            check(button.active) { "The $key button is off" }
+            val window = mc.window
+            (button.x + button.width / 2.0) * window.screenWidth / window.guiScaledWidth to
+                (button.y + button.height / 2.0) * window.screenHeight / window.guiScaledHeight
+        }
+        context.input.setCursorPos(bx, by)
+        context.waitTicks(2)
+        context.input.pressMouse(GLFW.GLFW_MOUSE_BUTTON_LEFT)
+    }
+
+    private fun myCards(table: BlockPos): List<TableCard> = ClientTables[table]!!.let { it.scene(it.seatPlaces()) }.filter { it.mine }
+
     /** A 3x3 table north of the player with a stool on each seat side, in daylight. */
-    private fun buildScene(server: MinecraftServer): BlockPos {
+    private fun buildScene(server: MinecraftServer, seats: Int = 3): BlockPos {
         val player = server.playerList.players.first()
         val level = server.overworld()
         server.commands.performPrefixedCommand(server.createCommandSourceStack(), "time set noon")
@@ -194,7 +317,7 @@ class ImmersiveInputGameTest : FabricClientGameTest {
                 TuKuaiContent.CARD_TABLE.defaultBlockState().setValue(CardTableBlock.FACING, Direction.SOUTH).setValue(CardTableBlock.PART, part),
             )
         }
-        for (side in listOf(Direction.SOUTH, Direction.EAST, Direction.NORTH)) {
+        for (side in listOf(Direction.SOUTH, Direction.EAST, Direction.NORTH, Direction.WEST).take(seats)) {
             level.setBlockAndUpdate(table.relative(side, StoolBlock.TABLE_DISTANCE), TuKuaiContent.STOOL.defaultBlockState())
         }
         return table

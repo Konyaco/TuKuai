@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PanelText
+import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -33,7 +34,8 @@ import org.lwjgl.glfw.GLFW
 /**
  * The Guandan part of the table screen: your hand along the bottom, in two rows when it
  * is long, your partner across the top and the other team on either side. Seat boxes are
- * tinted by team, and the level being played sits at the top in the middle.
+ * tinted by team, and the level being played sits at the top in the middle. In the
+ * immersive view your hand is picked on the table instead, and the buttons sit low.
  */
 class GdPanel(private val screen: PanelHost) : GamePanel {
     private val picker = GdHand(screen)
@@ -120,6 +122,17 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
         if (view.seat == null) return false
         return picker.click(x, y, button)
     }
+
+    override fun clickTableCard(table: ClientTable, card: TableCard): Boolean {
+        if (!screen.interactive) return false
+        val view = table.view as? GdView ?: return false
+        if (view.seat == null) return false
+        return picker.clickTableCard(card)
+    }
+
+    override fun dragTableCard(table: ClientTable, card: TableCard) = picker.dragTableCard(card)
+
+    override fun isRaised(table: ClientTable, card: TableCard): Boolean = picker.isRaised(card)
 
     override fun mouseDragged(table: ClientTable, x: Double, y: Double): Boolean = picker.drag(x)
 
