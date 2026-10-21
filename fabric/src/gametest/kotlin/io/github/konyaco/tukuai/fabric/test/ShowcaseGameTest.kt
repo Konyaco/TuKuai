@@ -13,6 +13,8 @@ import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
 import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdView
+import io.github.konyaco.tukuai.engine.paodekuai.PdkView
+import io.github.konyaco.tukuai.engine.tutu.TutuView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.TableOp
@@ -23,15 +25,23 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.core.BlockPos
+import net.minecraft.client.gui.screens.inventory.CraftingScreen
 import net.minecraft.core.Direction
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.SimpleMenuProvider
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.npc.villager.Villager
 import net.minecraft.world.entity.npc.villager.VillagerProfession
 import net.minecraft.world.entity.npc.villager.VillagerType
+import net.minecraft.world.inventory.ContainerLevelAccess
+import net.minecraft.world.inventory.CraftingMenu
 import net.minecraft.world.item.DyeColor
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.RotatedPillarBlock
 import net.minecraft.world.level.block.state.BlockState
@@ -43,8 +53,10 @@ import org.lwjgl.glfw.GLFW
  * The pictures land in `fabric/build/run/clientGameTest/screenshots`.
  *
  * Two tables in a small card room: Dou Dizhu on the left with stools, UNO on the right,
- * where the villagers have taken the seats. Guandan is played for a while at the Dou
- * Dizhu table, between its replay and the walk over to UNO.
+ * where the villagers have taken the seats. Guandan and Run Fast are played for a while at
+ * the Dou Dizhu table, between its replay and the walk over to UNO, and Tutu Cards at the
+ * UNO table after UNO. The first language also takes the crafting recipes, which have no
+ * words in them once cut down.
  */
 class ShowcaseGameTest : FabricClientGameTest {
     private companion object {
@@ -63,7 +75,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         context.input.resizeWindow(1280, 720)
         for (lang in languages) {
             setLanguage(context, lang)
-            context.worldBuilder().create().use { world -> shoot(context, world, lang) }
+            context.worldBuilder().create().use { world -> shoot(context, world, lang, crafting = lang == languages.first()) }
         }
         context.runOnClient<RuntimeException> { it.options.hideGui = false }
         setLanguage(context, "en_us")
@@ -80,7 +92,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         context.waitTicks(10)
     }
 
-    private fun shoot(context: ClientGameTestContext, world: TestSingleplayerContext, lang: String) {
+    private fun shoot(context: ClientGameTestContext, world: TestSingleplayerContext, lang: String, crafting: Boolean) {
         val server = world.server
         val (ddz, uno) = server.computeOnServer<Pair<BlockPos, BlockPos>, RuntimeException> { s -> buildRoom(s) }
         command(server, "time set 6000")
@@ -154,7 +166,22 @@ class ShowcaseGameTest : FabricClientGameTest {
         playUntilBeating(context, server, ddz) { myGdTurn(ddz)?.let { it.toBeat != null } }
         shot("gd-table")
         context.setScreen { null }
-        // Alone with computers, ending the match is our call; then back to Dou Dizhu.
+        // Alone with computers, ending the match is our call.
+        act(server, ddz, TableOp.END)
+        context.waitFor({ ClientTables[ddz]?.snapshot?.status != TableStatus.PLAYING }, 100)
+
+        // Run Fast, back to three seats, until we have a play to beat; then back to Dou Dizhu.
+        act(server, ddz, TableOp.GAME, text = "paodekuai")
+        context.waitFor({ ClientTables[ddz]?.snapshot?.let { it.gameId == "paodekuai" && it.seats.size == 3 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        act(server, ddz, TableOp.START)
+        context.waitFor({ ClientTables[ddz]?.snapshot?.let { it.gameId == "paodekuai" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.setScreen { TableScreen(ddz) }
+        act(server, ddz, TableOp.AUTO, 1)
+        context.waitTicks(160)
+        act(server, ddz, TableOp.AUTO, 0)
+        playUntilBeating(context, server, ddz) { myPdkTurn(ddz)?.let { it.toBeat != null && it.turnRules()?.plays?.isNotEmpty() == true } }
+        shot("pdk-table")
+        context.setScreen { null }
         act(server, ddz, TableOp.END)
         context.waitFor({ ClientTables[ddz]?.snapshot?.status != TableStatus.PLAYING }, 100)
         act(server, ddz, TableOp.GAME, text = "doudizhu")
@@ -179,6 +206,49 @@ class ShowcaseGameTest : FabricClientGameTest {
         context.input.lookAt(180f, 8f)
         context.waitTicks(10)
         shot("uno-seated")
+
+        // Tutu Cards at the UNO table, with the party deck, until a TNT is burning on it.
+        act(server, uno, TableOp.END)
+        context.waitFor({ ClientTables[uno]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        act(server, uno, TableOp.GAME, text = "tutu")
+        act(server, uno, TableOp.PRESET, text = "party")
+        act(server, uno, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
+        context.waitFor({ ClientTables[uno]?.snapshot?.let { it.gameId == "tutu" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(uno) }
+        // The computer plays for us until it is our turn with TNT burning; it waits a moment
+        // before it plays, long enough to take back control.
+        fun burning() = (ClientTables[uno]?.view as? TutuView)?.let { it.isMyTurn && it.bombs > 0 } == true
+        hands@ for (hand in 0 until 10) {
+            act(server, uno, TableOp.START)
+            context.waitFor({ (ClientTables[uno]?.view as? TutuView)?.finished == false }, 200)
+            while (true) {
+                act(server, uno, TableOp.AUTO, 1)
+                context.waitFor({ (ClientTables[uno]?.view as? TutuView)?.finished == true || burning() }, 6000)
+                if (context.computeOnClient<Boolean, RuntimeException> { (ClientTables[uno]?.view as? TutuView)?.finished == true }) break
+                act(server, uno, TableOp.AUTO, 0)
+                context.waitTicks(5)
+                if (context.computeOnClient<Boolean, RuntimeException> { burning() }) break@hands
+            }
+        }
+        act(server, uno, TableOp.AUTO, 0)
+        context.input.setCursorPos(0.0, 0.0)
+        context.waitTicks(10)
+        shot("tutu-table")
+        setImmersive(context, true)
+        context.input.lookAt(180f, 30f)
+        context.waitTicks(10)
+        shot("tutu-immersive")
+        setImmersive(context, false)
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot("tutu-seated")
+        // Back to UNO for the wide shots.
+        act(server, uno, TableOp.END)
+        context.waitFor({ ClientTables[uno]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        act(server, uno, TableOp.GAME, text = "uno")
+        context.waitFor({ ClientTables[uno]?.snapshot?.let { it.gameId == "uno" && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        act(server, uno, TableOp.START)
+        context.waitFor({ ClientTables[uno]?.snapshot?.let { it.gameId == "uno" && it.status == TableStatus.PLAYING } == true }, 200)
 
         // Hand both tables over to the computers and take the wide shots.
         act(server, uno, TableOp.AUTO, 1)
@@ -206,6 +276,59 @@ class ShowcaseGameTest : FabricClientGameTest {
             shot(name)
         }
         command(server, "gamemode creative @a")
+        if (crafting) craftingShots(context, server, ::shot)
+    }
+
+    /**
+     * The crafting grid with each recipe laid out in it, at a large GUI scale so it can be
+     * cut down to the grid and the result. Each is crafted with oak, and the table with
+     * green wool to match the cloth it comes with.
+     */
+    private fun craftingShots(context: ClientGameTestContext, server: TestServerContext, shot: (String) -> Unit) {
+        val wool = Items.GREEN_WOOL
+        val planks = Items.OAK_PLANKS
+        val log = Items.OAK_LOG
+        val recipes = listOf(
+            "card-table" to listOf(wool, wool, wool, planks, planks, planks, log, Items.AIR, log),
+            "big-card-table" to listOf(wool, wool, wool, planks, TuKuaiContent.CARD_TABLE_ITEM, planks, log, Items.AIR, log),
+            "stool" to listOf(Items.AIR, Items.RED_WOOL, Items.AIR, Items.AIR, Items.OAK_SLAB, Items.AIR, Items.AIR, Items.STICK, Items.AIR),
+        )
+        teleport(server, 0.5, 0.0, 0.5, null, 0.5, 1.0, -2.5)
+        val bench = server.computeOnServer<BlockPos, RuntimeException> { s ->
+            start!!.offset(0, 0, 2).also { s.overworld().setBlockAndUpdate(it, Blocks.CRAFTING_TABLE.defaultBlockState()) }
+        }
+        context.runOnClient<RuntimeException> {
+            it.options.guiScale().set(4)
+            it.resizeGui()
+        }
+        for ((name, grid) in recipes) {
+            server.runOnServer<RuntimeException> { s -> craft(s, bench, grid) }
+            context.waitFor({ (it.screen as? CraftingScreen)?.menu?.getSlot(0)?.hasItem() == true }, 100)
+            context.input.setCursorPos(0.0, 0.0)
+            context.waitTicks(10)
+            shot("craft-$name")
+        }
+        server.runOnServer<RuntimeException> { s ->
+            val player = s.playerList.players.first()
+            player.closeContainer()
+            player.inventory.clearContent()
+        }
+        context.runOnClient<RuntimeException> {
+            it.options.guiScale().set(0)
+            it.resizeGui()
+        }
+    }
+
+    /** Opens a crafting table at [bench] for the player, with [grid] laid out in it row by row. */
+    private fun craft(server: MinecraftServer, bench: BlockPos, grid: List<Item>) {
+        val player = server.playerList.players.first()
+        if (player.containerMenu !is CraftingMenu) {
+            val access = ContainerLevelAccess.create(server.overworld(), bench)
+            player.openMenu(SimpleMenuProvider({ id, inventory, _ -> CraftingMenu(id, inventory, access) }, Component.translatable("container.crafting")))
+        }
+        val menu = player.containerMenu as CraftingMenu
+        grid.forEachIndexed { i, item -> menu.getSlot(1 + i).set(ItemStack(item)) }
+        menu.broadcastChanges()
     }
 
     /**
@@ -231,6 +354,9 @@ class ShowcaseGameTest : FabricClientGameTest {
         }
         context.waitTicks(10)
     }
+
+    private fun myPdkTurn(table: BlockPos): PdkView? =
+        (ClientTables[table]?.view as? PdkView)?.takeIf { it.isMyTurn }
 
     private fun myGdTurn(table: BlockPos): GdView? =
         (ClientTables[table]?.view as? GdView)?.takeIf { it.isMyTurn && it.phase == GdPhase.PLAYING }
