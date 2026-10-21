@@ -187,6 +187,7 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
      * [TableCard.outline] gets a lit frame around its face, a little larger than the card.
      */
     private fun drawCard(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, card: TableCard, back: Int) {
+        if (card.cube) return drawCube(buffer, pose, light, card)
         val f = CardFrame.of(card)
         val c = f.c
         val r = f.r
@@ -205,6 +206,25 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
             // Just behind the face, so only the rim that sticks out past the card shows.
             side(buffer, pose, FULL_BRIGHT, c, n, f.halfT * 0.5f, r, f.halfW + OUTLINE, u, f.halfH + OUTLINE, EDGE, card.outline)
         }
+    }
+
+    /** A little block standing on the table, see [TableCard.cube]. */
+    private fun drawCube(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, card: TableCard) {
+        val half = CardFrame.CARD_WIDTH * card.scale / 2
+        val c = floatArrayOf(card.x + 0.5f, TOP + card.lift + half, card.z + 0.5f)
+        val sideUv = square(card.sprite)
+        for ((nx, nz) in listOf(card.upX to card.upZ, -card.upZ to card.upX, -card.upX to -card.upZ, card.upZ to -card.upX)) {
+            // a × up = normal, so each side faces out with its texture upright.
+            side(buffer, pose, light, c, floatArrayOf(nx, 0f, nz), half, floatArrayOf(nz, 0f, -nx), half, UP, half, sideUv, card.tint)
+        }
+        side(buffer, pose, light, c, UP, half, EAST, half, NORTH, half, square(card.backSprite), card.tint)
+    }
+
+    /** u0, v0, u1, v1 of the square top of a card's cell in the atlas. */
+    private fun square(sprite: Int): FloatArray {
+        val u0 = CardArt.u(sprite).toFloat() / CardArt.TEXTURE_WIDTH
+        val v0 = CardArt.v(sprite).toFloat() / CardArt.TEXTURE_HEIGHT
+        return floatArrayOf(u0, v0, u0 + CardArt.WIDTH.toFloat() / CardArt.TEXTURE_WIDTH, v0 + CardArt.WIDTH.toFloat() / CardArt.TEXTURE_HEIGHT)
     }
 
     /** u0, v0, u1, v1 of a card in the atlas. */

@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  A card table for Minecraft. Pull up a stool, deal in your friends or a few computer players, and play Dou Dizhu, UNO, Pao De Kuai or Guandan without leaving your world.
+  A card table for Minecraft. Pull up a stool, deal in your friends or a few computer players, and play Dou Dizhu, UNO, Pao De Kuai, Guandan or Tutu Cards without leaving your world.
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 ![Two card tables in a small library: Dou Dizhu on the left, villagers playing UNO on the right](docs/images/hero.webp)
 
-TuKuai (土块棋牌室, "Dirt Block Parlor") adds a card table you can craft and place. Sit at it with other players, fill the empty seats with computers, and play. The cards are really on the table, so anyone walking past can watch. Dou Dizhu, UNO, Pao De Kuai and Guandan for now, more games later.
+TuKuai (土块棋牌室, "Dirt Block Parlor") adds a card table you can craft and place. Sit at it with other players, fill the empty seats with computers, and play. The cards are really on the table, so anyone walking past can watch. Dou Dizhu, UNO, Pao De Kuai, Guandan and Tutu Cards for now, more games later.
 
 It only uses in-game points. Nobody loses real money here, only their dignity.
 
@@ -80,6 +80,12 @@ Four players in two teams, partners across the table, with two decks: 27 cards e
   </tr>
 </table>
 
+### Tutu Cards
+
+TuKuai's own shedding game, played much like UNO: match the last card by colour, number or picture, and the first to run out of cards wins. The specials are Minecraft things. A snowball freezes the next player, a trident turns play around, a shovel makes the next player draw 2, and lightning makes them draw until they find its colour. The wild cards are where it gets lively: a spawn egg hatches into a random card as you play it, lit TNT blows up on someone's turn, nobody knows whose (they draw 4), and a cactus planted in the draw pile costs whoever draws it 3 more cards. Burning TNT really stands on the table, smoking, and everyone can see where the cacti are in the pile.
+
+The draw pile is never reshuffled: when it runs out the hand ends and the fewest cards win. Every card left is worth 10 points. Four rule sets: classic for 4, party for 4 (more specials), and classic for 3 and for 2.
+
 ### Out in the world
 
 The table takes up 3x3 blocks. Each hand stands on it facing its owner, so everyone else sees the backs, and the last cards played and the landlord's cards lie in the middle. The cards have a bit of thickness to them. Right-click the table with a dye to change the cloth, and open the ☰ menu in the top right of the screen to pick a card back and the card faces: classic, large corners that are easier to read in a squeezed hand, or four colors (diamonds blue, clubs green). Tables and stools come in every kind of wood, from oak to warped, and stool cushions in all 16 colors.
@@ -118,7 +124,7 @@ Every finished game is saved. Step through it, see everyone's cards, and watch i
   </tr>
 </table>
 
-New to a game? The **?** button at the table opens a rule book, with pictures of every Dou Dizhu, Pao De Kuai and Guandan pattern and every UNO action card, and a page on the rules of the table you're at.
+New to a game? The **?** button at the table opens a rule book, with pictures of every Dou Dizhu, Pao De Kuai and Guandan pattern and every UNO and Tutu special card, and a page on the rules of the table you're at.
 
 It speaks English, Simplified Chinese, Traditional Chinese, Japanese and Korean, and follows your game language.
 
@@ -126,11 +132,11 @@ It speaks English, Simplified Chinese, Traditional Chinese, Japanese and Korean,
 
 1. **Craft a card table.** Top row: 3 wool of any color. Middle row: 3 planks of one kind of wood; the table's frame and legs come out in that wood. Bottom row: a log of any kind in each corner. In creative it's in the Functional Blocks tab.
 2. **Place it and right-click it.** The table spreads out 3x3 from the block you clicked, so leave room in front and to both sides. Click "Sit here" to take a seat, "Add computer" on an empty seat, or "Fill with computers" for all of them.
-3. **Pick a game.** "Game" switches between Dou Dizhu, UNO, Pao De Kuai and Guandan. Choose the rules and the turn timer, then click "Start".
+3. **Pick a game.** "Game" switches between Dou Dizhu, UNO, Pao De Kuai, Guandan and Tutu Cards. Choose the rules and the turn timer, then click "Start".
 
 Tables placed by older versions (one block big) grow into 3x3 tables by themselves. If there isn't room, they drop as an item instead.
 
-**Stools.** Craft one from a wool, a wooden slab and a stick, stacked top to bottom. The wool sets the cushion color, which you can re-dye later, and the slab sets the wood. Put a stool just outside the middle of a side that has a seat (three sides for Dou Dizhu and Pao De Kuai, all four for 4-player UNO and Guandan), and right-clicking it sits you in that seat. A stool that isn't next to a table is still a perfectly good stool.
+**Stools.** Craft one from a wool, a wooden slab and a stick, stacked top to bottom. The wool sets the cushion color, which you can re-dye later, and the slab sets the wood. Put a stool just outside the middle of a side that has a seat (three sides for Dou Dizhu and Pao De Kuai, all four for 4-player UNO, Tutu Cards and Guandan), and right-clicking it sits you in that seat. A stool that isn't next to a table is still a perfectly good stool.
 
 ### Controls
 
@@ -159,6 +165,8 @@ UNO. Playable cards are raised; click one to play it. Wild cards ask for a color
 | Tab | Switch between the table view and the world view |
 
 A few UNO simplifications: the first card turned up is always a number card. +4 can only be played when you have nothing of the current color, so there's no challenging it. UNO has to be called as you play your second-to-last card; miss it and the penalty is immediate. First to empty their hand wins, and everyone else pays what's left in theirs: face value for numbers, 20 for action cards, 50 for wilds.
+
+Tutu Cards play like UNO: playable cards are raised, click one to play it, and TNT and cacti ask for a color first. There's no UNO to call. D draws, and Space / Enter keeps the playable card you just drew.
 
 Pao De Kuai:
 

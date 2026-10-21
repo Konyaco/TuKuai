@@ -106,6 +106,7 @@ object ClientTables {
         ticks++
         forgetOldLevel()
         val player = Minecraft.getInstance().player ?: return
+        for (table in tables.values) table.ui?.tick(table)
         if (ticks % 40 == 0L) {
             tables.keys.removeIf { net.minecraft.world.phys.Vec3.atCenterOf(it).distanceToSqr(player.position()) > FORGET_RANGE * FORGET_RANGE }
         }

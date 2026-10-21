@@ -13,6 +13,12 @@ import io.github.konyaco.tukuai.engine.paodekuai.PdkGuide
 import io.github.konyaco.tukuai.engine.paodekuai.PdkPatternType
 import io.github.konyaco.tukuai.engine.paodekuai.PdkPatterns
 import io.github.konyaco.tukuai.engine.paodekuai.PdkRules
+import io.github.konyaco.tukuai.engine.tutu.Tutu
+import io.github.konyaco.tukuai.engine.tutu.TutuColor
+import io.github.konyaco.tukuai.engine.tutu.TutuDeck
+import io.github.konyaco.tukuai.engine.tutu.TutuFace
+import io.github.konyaco.tukuai.engine.tutu.TutuGuide
+import io.github.konyaco.tukuai.engine.tutu.TutuRules
 import io.github.konyaco.tukuai.engine.uno.Uno
 import io.github.konyaco.tukuai.engine.uno.UnoDeck
 import io.github.konyaco.tukuai.engine.uno.UnoFace
@@ -25,7 +31,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GuideTest {
-    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan)
+    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu)
 
     /** The English language file, read with a regex since the engine has no JSON library. */
     private val english: Map<String, String> by lazy {
@@ -170,6 +176,29 @@ class GuideTest {
     }
 
     private fun card(face: UnoFace) = UnoDeck.ALL.first { it.face == face }
+
+    @Test
+    fun `every Tutu rule changes what the table section says`() {
+        assertEquals(3, fieldCount(TutuRules::class.java), "TutuRules changed; describe the new rule in TutuGuide.table")
+        val base = TutuRules.CLASSIC
+        val changed = listOf(base.copy(players = 2), base.copy(handSize = 5), base.copy(party = true))
+        val before = keysOfTable(TutuGuide.sections(base))
+        for (rules in changed) assertNotEquals(before, keysOfTable(TutuGuide.sections(rules)), "$rules reads like the classic rules")
+    }
+
+    @Test
+    fun `Tutu examples of what goes on what are right`() {
+        val examples = Tutu.guide(null).flatMap { it.blocks }.filterIsInstance<GuideBlock.Example>().filter { it.follows != null }
+        assertTrue(examples.isNotEmpty())
+        for (example in examples) {
+            for ((first, then) in example.groups.zipWithNext()) {
+                val top = first.single() as TutuFace
+                val card = TutuDeck.ALL.first { it.face == then.single() }
+                val ok = Tutu.playable(listOf(card), top, top.color ?: TutuColor.YELLOW, null, card)
+                assertEquals(example.follows, ok, "${example.text}: ${card.face} on $top")
+            }
+        }
+    }
 
     @Test
     fun `every Pao De Kuai rule changes what the table section says`() {

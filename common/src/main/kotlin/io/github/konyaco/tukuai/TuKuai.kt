@@ -4,6 +4,7 @@ import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.engine.guandan.Guandan
 import io.github.konyaco.tukuai.engine.paodekuai.PaoDeKuai
+import io.github.konyaco.tukuai.engine.tutu.Tutu
 import io.github.konyaco.tukuai.engine.uno.Uno
 import net.minecraft.resources.Identifier
 import org.slf4j.Logger
@@ -18,6 +19,6 @@ object TuKuai {
 
     /** Runs once on both sides when the mod loads, before any world opens. */
     fun init() {
-        for (game in listOf(DouDizhu, Uno, PaoDeKuai, Guandan)) if (GameRegistry[game.id] == null) GameRegistry.register(game)
+        for (game in listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu)) if (GameRegistry[game.id] == null) GameRegistry.register(game)
     }
 }
