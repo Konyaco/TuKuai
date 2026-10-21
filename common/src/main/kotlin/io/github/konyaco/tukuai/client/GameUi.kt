@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client
 
+import io.github.konyaco.tukuai.content.TableSeats
 import io.github.konyaco.tukuai.table.TableOp
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
@@ -19,9 +20,9 @@ interface GameUi {
 
     /**
      * Cards to lay on the table top, seen by everyone near the table.
-     * [sides] gives the side of the table each seat sits on.
+     * [seats] gives where at the table each seat sits.
      */
-    fun scene(table: ClientTable, sides: List<Direction>): List<TableCard>
+    fun scene(table: ClientTable, seats: List<SeatPlace>): List<TableCard>
 
     /** One or two short lines for the display in the middle of the table while a game is on. */
     fun displayLines(table: ClientTable): List<Component> = emptyList()
@@ -152,6 +153,26 @@ data class TableCard(
      */
     val cube: Boolean = false,
 )
+
+/**
+ * Where a seat is at the table, for laying out its cards: the [side] of the table it is on,
+ * and how far its cards move from where they would lie in front of the middle of that side
+ * at a 3x3 table, in blocks. At a 3x3 table that is nothing; at a 5x5 one each hand moves
+ * out to the edge, and along it when two seats share a side.
+ */
+data class SeatPlace(val side: Direction, val shiftX: Float = 0f, val shiftZ: Float = 0f) {
+    companion object {
+        fun of(facing: Direction, radius: Int, count: Int): List<SeatPlace> =
+            TableSeats.spots(facing, radius, count).map { spot ->
+                val out = radius - 1
+                SeatPlace(
+                    spot.side,
+                    (spot.side.stepX * out + spot.right.stepX * spot.along).toFloat(),
+                    (spot.side.stepZ * out + spot.right.stepZ * spot.along).toFloat(),
+                )
+            }
+    }
+}
 
 object GameUis {
     private val uis = HashMap<String, GameUi>()

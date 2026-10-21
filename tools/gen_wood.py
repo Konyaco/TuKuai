@@ -35,12 +35,28 @@ COLORS = [
     "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black",
 ]
 
+def table_parts(radius):
+    """Which model each part of a table uses, and how far it turns: the 3x3 table, or the 5x5 one with radius 2."""
+    parts = []
+    for dz in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            if abs(dx) == radius and abs(dz) == radius:
+                parts.append(("corner", {(-1, -1): 0, (1, -1): 90, (1, 1): 180, (-1, 1): 270}[(dx // radius, dz // radius)]))
+            elif dz == -radius:
+                parts.append(("edge", 0))
+            elif dx == radius:
+                parts.append(("edge", 90))
+            elif dz == radius:
+                parts.append(("edge", 180))
+            elif dx == -radius:
+                parts.append(("edge", 270))
+            else:
+                parts.append(("center", 0))
+    return parts
+
+
 # Which model each of the nine table parts uses, and how far it turns.
-PARTS = [
-    ("corner", 0), ("edge", 0), ("corner", 90),
-    ("edge", 270), ("center", 0), ("edge", 90),
-    ("corner", 270), ("edge", 180), ("corner", 180),
-]
+PARTS = table_parts(1)
 
 
 def write(path, value):
@@ -84,6 +100,17 @@ def tables():
     write(f"{ASSETS}/blockstates/card_table.json", {"multipart": parts})
     write(f"{ASSETS}/items/card_table.json", {"model": select("wood", [(w, f"tukuai:block/card_table_{w}") for w, _ in WOODS], "tukuai:block/card_table_oak")})
 
+    # The big table is built from the same parts, five by five.
+    big = []
+    for wood, _ in WOODS:
+        for part, (shape, turn) in enumerate(table_parts(2)):
+            model = {"model": f"tukuai:block/card_table_{shape}_{wood}"}
+            if turn:
+                model["y"] = turn
+            big.append({"when": {"part": str(part), "wood": wood}, "apply": model})
+    write(f"{ASSETS}/blockstates/big_card_table.json", {"multipart": big})
+    write(f"{ASSETS}/items/big_card_table.json", {"model": select("wood", [(w, f"tukuai:block/card_table_{w}") for w, _ in WOODS], "tukuai:block/card_table_oak")})
+
     for wood, _ in WOODS:
         write(f"{DATA}/recipe/card_table/{wood}.json", {
             "type": "minecraft:crafting_shaped",
@@ -92,6 +119,15 @@ def tables():
             "key": {"W": "#minecraft:wool", "P": f"minecraft:{wood}_planks", "L": "#minecraft:logs"},
             "pattern": ["WWW", "PPP", "L L"],
             "result": {"count": 1, "id": "tukuai:card_table", "components": {"minecraft:block_state": {"wood": wood}}},
+        })
+        # A big table is a card table of any wood with more cloth and planks around it.
+        write(f"{DATA}/recipe/big_card_table/{wood}.json", {
+            "type": "minecraft:crafting_shaped",
+            "category": "misc",
+            "group": "tukuai:big_card_table",
+            "key": {"W": "#minecraft:wool", "P": f"minecraft:{wood}_planks", "T": "tukuai:card_table", "L": "#minecraft:logs"},
+            "pattern": ["WWW", "PTP", "L L"],
+            "result": {"count": 1, "id": "tukuai:big_card_table", "components": {"minecraft:block_state": {"wood": wood}}},
         })
 
 

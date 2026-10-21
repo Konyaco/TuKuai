@@ -13,7 +13,7 @@ import io.github.konyaco.tukuai.engine.tutu.bot.TutuBot
 import kotlin.random.Random
 
 /**
- * Tutu cards (土土牌) for 2 to 4 players: a shedding game in the family of Crazy Eights,
+ * Tutu cards (土土牌) for 2 to 8 players: a shedding game in the family of Crazy Eights,
  * with Minecraft things for its specials. Match the top card by colour, number or symbol;
  * the first to empty their hand wins. Snowballs freeze, tridents turn play around, shovels
  * dig up two cards and lightning makes the next player draw until it finds its colour.

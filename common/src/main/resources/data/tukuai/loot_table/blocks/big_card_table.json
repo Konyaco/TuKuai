@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "tukuai:big_card_table",
+          "functions": [
+            {
+              "function": "minecraft:copy_state",
+              "block": "tukuai:big_card_table",
+              "properties": [
+                "wood"
+              ]
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "tukuai:big_card_table",
+          "properties": {
+            "part": "12"
+          }
+        },
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "tukuai:blocks/big_card_table"
+}

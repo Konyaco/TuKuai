@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.engine.card.Rank
 import io.github.konyaco.tukuai.engine.card.Suit
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameRegistry
+import io.github.konyaco.tukuai.engine.core.seatCount
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.platform.Services
@@ -227,9 +228,21 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     /** Centred, but below the buttons in the top right corner on a screen too narrow to keep clear of them. */
     private fun lobbyTop(t: ClientTable): Int {
-        val centred = (height - (SEATS_Y + 46 + t.snapshot.seats.size * 24 + hintHeight(t))) / 2
+        val centred = (height - (SEATS_Y + 46 + seatRows(t) * 24 + hintHeight(t))) / 2
         val underButtons = lobbyLeft() + lobbyWidth + 8 > width - CORNER - 2
         return if (underButtons) maxOf(centred, 56) else centred
+    }
+
+    /** More than four seats go in two columns, each seat in a narrower cell. */
+    private fun twoColumns(t: ClientTable) = t.snapshot.seats.size > 4
+
+    private fun seatRows(t: ClientTable) = if (twoColumns(t)) (t.snapshot.seats.size + 1) / 2 else t.snapshot.seats.size
+
+    /** Top left corner of seat [i]'s row in the lobby. */
+    private fun seatCell(t: ClientTable, i: Int, left: Int, top: Int): Pair<Int, Int> {
+        if (!twoColumns(t)) return left to top + SEATS_Y + i * 24
+        val rows = seatRows(t)
+        return left + (i / rows) * (lobbyWidth / 2 + 4) to top + SEATS_Y + (i % rows) * 24
     }
 
     /** Until the player has opened the rule book, a line at the bottom of the lobby points to it. */
@@ -249,7 +262,8 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         button(Component.translatable("tukuai.table.game", gameName(s.gameId)), left, top + 16, 148, canEdit && games.size > 1) {
             send(TableOp.GAME, text = games[(games.indexOf(s.gameId) + 1).mod(games.size)])
         }
-        val presets = game?.presets?.map { it.id } ?: listOf(s.presetId)
+        // Only rules this table has room for; eight players need a big table.
+        val presets = game?.presets?.map { it.id }?.filter { game.seatCount(it) <= t.maxSeats }?.ifEmpty { null } ?: listOf(s.presetId)
         button(Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), left + 152, top + 16, 148, canEdit) {
             send(TableOp.PRESET, text = presets[(presets.indexOf(s.presetId) + 1).mod(presets.size)])
         }
@@ -262,26 +276,30 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.match.tip")))
         spectateButton(s, left + 203, top + 40, 97, canEdit)
 
+        val narrow = twoColumns(t)
         s.seats.forEachIndexed { i, seat ->
-            val y = top + SEATS_Y + i * 24
-            val x = left + 150
+            val (cellX, y) = seatCell(t, i, left, top)
+            // In two columns the buttons share the right half of a cell half as wide.
+            val x = if (narrow) cellX + 74 else left + 150
+            val w = if (narrow) 36 else 70
+            val botW = if (narrow) 36 else 76
             when (seat.occupant) {
                 null -> {
-                    button(Component.translatable("tukuai.table.sit"), x, y, 70, canEdit) { send(TableOp.SIT, i) }
-                    button(Component.translatable("tukuai.table.add_bot"), x + 74, y, 76, canEdit) {
+                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
+                    button(Component.translatable("tukuai.table.add_bot"), x + w + 4, y, botW, canEdit) {
                         send(TableOp.ADD_BOT, i, ClientConfig.botLevel.ordinal)
                     }
                 }
-                is Occupant.Computer -> button(Component.translatable("tukuai.table.remove_bot"), x, y, 70, canEdit) {
+                is Occupant.Computer -> button(Component.translatable("tukuai.table.remove_bot"), x, y, if (narrow) 76 else 70, canEdit) {
                     send(TableOp.REMOVE_BOT, i)
                 }
                 is Occupant.Human -> if (s.you == i) {
-                    button(Component.translatable("tukuai.table.stand"), x, y, 70) { send(TableOp.STAND) }
+                    button(Component.translatable("tukuai.table.stand"), x, y, if (narrow) 76 else 70) { send(TableOp.STAND) }
                 }
             }
         }
 
-        val bottom = top + SEATS_Y + s.seats.size * 24 + 6
+        val bottom = top + SEATS_Y + seatRows(t) * 24 + 6
         button(botLevelText(ClientConfig.botLevel), left, bottom, 96) {
             ClientConfig.botLevel = BotLevel.entries[(ClientConfig.botLevel.ordinal + 1) % BotLevel.entries.size]
             ClientConfig.save()
@@ -314,7 +332,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val s = t.snapshot
         val left = lobbyLeft()
         val top = lobbyTop(t)
-        val panelBottom = top + SEATS_Y + s.seats.size * 24 + 32 + hintHeight(t)
+        val panelBottom = top + SEATS_Y + seatRows(t) * 24 + 32 + hintHeight(t)
         panelBox(g, left - 8, top - 8, left + lobbyWidth + 8, panelBottom)
         if (hintHeight(t) > 0) {
             g.text(font, Component.translatable("tukuai.guide.first_time"), left, panelBottom - 14, YELLOW, false)
@@ -327,27 +345,33 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         // A thin line between the rules and the seats.
         g.fill(left, top + SEATS_Y - 7, left + lobbyWidth, top + SEATS_Y - 6, DIVIDER)
         val voters = s.voters
+        val narrow = twoColumns(t)
         s.seats.forEachIndexed { i, seat ->
-            val y = top + SEATS_Y + i * 24
-            val name = seatName(seat.occupant)
+            val (cellX, y) = seatCell(t, i, left, top)
             val color = when {
                 seat.occupant == null -> GRAY
                 s.you == i -> YELLOW
                 else -> WHITE
             }
-            g.text(font, Component.translatable("tukuai.table.seat", i + 1), left, y + 6, GRAY, false)
+            // In two columns the seat is just its number, and the name gets what room is left before the buttons.
+            val label = if (narrow) Component.literal("${i + 1}") else Component.translatable("tukuai.table.seat", i + 1)
+            g.text(font, label, cellX, y + 6, GRAY, false)
             // A player who has played before gets their record under the name.
             val nameY = if (seat.games > 0) y + 1 else y + 6
-            val nameX = left + 40
+            val nameX = if (narrow) cellX + 10 else left + 40
+            val pointsText = if (s.rounds > 0) Scoreboard.signed(s.tally.getOrNull(i) ?: 0) else ""
+            val nameEnd = if (narrow) cellX + 72 - (if (pointsText.isEmpty()) 0 else font.width(pointsText) + 3) else Int.MAX_VALUE
+            val name = if (narrow) Component.literal(font.plainSubstrByWidth(seatName(seat.occupant).string, nameEnd - nameX)) else seatName(seat.occupant)
             g.text(font, name, nameX, nameY, color, false)
             if (seat.games > 0) {
                 g.text(font, Component.translatable("tukuai.table.record", seat.games, seat.wins), nameX, y + 12, GRAY, false)
             }
             if (s.rounds > 0) {
                 val points = s.tally.getOrNull(i) ?: 0
-                val p = Scoreboard.signed(points)
-                g.text(font, p, left + 146 - font.width(p), y + 6, Scoreboard.pointsColor(points), false)
+                val right = if (narrow) cellX + 72 else left + 146
+                g.text(font, pointsText, right - font.width(pointsText), y + 6, Scoreboard.pointsColor(points), false)
             }
+            if (narrow) return@forEachIndexed
             var tagX = nameX + font.width(name) + 4
             if (seat.occupant is Occupant.Human && !seat.present) {
                 val away = Component.translatable("tukuai.table.away")

@@ -35,6 +35,8 @@ class TuKuaiFabric : ModInitializer {
 
         Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE)
         Registry.register(BuiltInRegistries.ITEM, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE_ITEM)
+        Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("big_card_table"), TuKuaiContent.BIG_CARD_TABLE)
+        Registry.register(BuiltInRegistries.ITEM, TuKuai.id("big_card_table"), TuKuaiContent.BIG_CARD_TABLE_ITEM)
         Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("stool"), TuKuaiContent.STOOL)
         Registry.register(BuiltInRegistries.ITEM, TuKuai.id("stool"), TuKuaiContent.STOOL_ITEM)
         Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE_ENTITY)
@@ -55,8 +57,8 @@ class TuKuaiFabric : ModInitializer {
 }
 
 object FabricPlatform : Platform {
-    override fun <T : BlockEntity> blockEntityType(factory: (BlockPos, BlockState) -> T, block: Block): BlockEntityType<T> =
-        FabricBlockEntityTypeBuilder.create(FabricBlockEntityTypeBuilder.Factory { pos, state -> factory(pos, state) }, block).build()
+    override fun <T : BlockEntity> blockEntityType(factory: (BlockPos, BlockState) -> T, vararg blocks: Block): BlockEntityType<T> =
+        FabricBlockEntityTypeBuilder.create(FabricBlockEntityTypeBuilder.Factory { pos, state -> factory(pos, state) }, *blocks).build()
 
     override fun sendToPlayer(player: ServerPlayer, payload: CustomPacketPayload) {
         ServerPlayNetworking.send(player, payload)

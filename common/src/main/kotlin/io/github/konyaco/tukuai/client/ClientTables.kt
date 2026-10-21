@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.Minecraft
@@ -27,16 +28,27 @@ class ClientTable(val pos: BlockPos, val snapshot: TableSnapshot, private val re
     }
 
     private var scene: List<TableCard>? = null
-    private var sceneKey: Triple<List<Direction>, Int, Int>? = null
+    private var sceneKey: Triple<List<SeatPlace>, Int, Int>? = null
 
     /** Cards on the table top, worked out once per update rather than every frame. */
-    fun scene(sides: List<Direction>): List<TableCard> {
-        val key = Triple(sides, ClientConfig.cardBack, ClientConfig.cardFace)
+    fun scene(seats: List<SeatPlace>): List<TableCard> {
+        val key = Triple(seats, ClientConfig.cardBack, ClientConfig.cardFace)
         if (key != sceneKey) {
             sceneKey = key
-            scene = if (view == null) emptyList() else ui?.scene(this, sides) ?: emptyList()
+            scene = if (view == null) emptyList() else ui?.scene(this, seats) ?: emptyList()
         }
         return scene ?: emptyList()
+    }
+
+    /** The most seats the table block in the world has room for. */
+    val maxSeats: Int
+        get() = (Minecraft.getInstance().level?.getBlockState(pos)?.block as? CardTableBlock)?.maxSeats ?: 4
+
+    /** Where each seat is at this table, from the table block in the world; empty if it is not there. */
+    fun seatPlaces(): List<SeatPlace> {
+        val state = Minecraft.getInstance().level?.getBlockState(pos) ?: return emptyList()
+        val block = state.block as? CardTableBlock ?: return emptyList()
+        return SeatPlace.of(state.getValue(CardTableBlock.FACING), block.radius, snapshot.seats.size)
     }
 
     /** True for a player who is not in the game on this table, only looking on. */

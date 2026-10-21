@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "tukuai:big_card_table",
+  "key": {
+    "W": "#minecraft:wool",
+    "P": "minecraft:pale_oak_planks",
+    "T": "tukuai:card_table",
+    "L": "#minecraft:logs"
+  },
+  "pattern": [
+    "WWW",
+    "PTP",
+    "L L"
+  ],
+  "result": {
+    "count": 1,
+    "id": "tukuai:big_card_table",
+    "components": {
+      "minecraft:block_state": {
+        "wood": "pale_oak"
+      }
+    }
+  }
+}

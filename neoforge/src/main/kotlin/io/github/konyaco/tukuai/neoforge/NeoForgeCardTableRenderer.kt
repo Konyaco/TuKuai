@@ -8,9 +8,11 @@ import net.minecraft.world.phys.AABB
 
 /**
  * NeoForge skips block entities whose box is off screen, and the box is one block by
- * default. The table draws across all nine of its blocks, so widen it to match.
+ * default. The table draws across all of its blocks, so widen it to match.
  */
 class NeoForgeCardTableRenderer(context: BlockEntityRendererProvider.Context) : CardTableRenderer(context) {
-    override fun getRenderBoundingBox(blockEntity: CardTableBlockEntity): AABB =
-        AABB(blockEntity.blockPos).inflate(CardTableBlock.HALF_WIDTH - 0.5, 0.5, CardTableBlock.HALF_WIDTH - 0.5)
+    override fun getRenderBoundingBox(blockEntity: CardTableBlockEntity): AABB {
+        val half = (blockEntity.blockState.block as? CardTableBlock)?.halfWidth ?: CardTableBlock.HALF_WIDTH
+        return AABB(blockEntity.blockPos).inflate(half - 0.5, 0.5, half - 0.5)
+    }
 }

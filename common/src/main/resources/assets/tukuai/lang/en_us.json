@@ -1,5 +1,6 @@
 {
   "block.tukuai.card_table": "Card Table",
+  "block.tukuai.big_card_table": "Big Card Table",
   "block.tukuai.stool": "Stool",
   "entity.tukuai.seat": "Seat",
   "tukuai.game.doudizhu": "Dou Dizhu",
@@ -477,6 +478,8 @@
   "tukuai.preset.tutu.party": "Party (4 players, more specials)",
   "tukuai.preset.tutu.three": "Classic (3 players)",
   "tukuai.preset.tutu.two": "Classic (2 players)",
+  "tukuai.preset.tutu.six": "Party (6 players, big table)",
+  "tukuai.preset.tutu.eight": "Party (8 players, big table)",
   "tukuai.tutu.color.yellow": "Yellow",
   "tukuai.tutu.color.purple": "Purple",
   "tukuai.tutu.color.blue": "Blue",
@@ -529,6 +532,7 @@
   "tukuai.guide.tutu.table.classic": "The classic deck of %s cards.",
   "tukuai.guide.tutu.table.party": "The party deck of %s cards, with more lightning, eggs, TNT and cacti.",
   "tukuai.guide.tutu.table.two_players": "With two players a trident works like a snowball.",
+  "tukuai.guide.tutu.table.big_table": "Five or more players need a big card table.",
   "modmenu.descriptionTranslation.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money.",
   "fml.menu.mods.info.description.tukuai": "Dirt Block Parlor (土块棋牌室): play Dou Dizhu and other card and board games at a table in Minecraft. Uses in-game points only, never real money."
 }
