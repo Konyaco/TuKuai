@@ -11,6 +11,8 @@ import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
+import io.github.konyaco.tukuai.engine.guandan.GdPhase
+import io.github.konyaco.tukuai.engine.guandan.GdView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.TableOp
@@ -41,7 +43,8 @@ import org.lwjgl.glfw.GLFW
  * The pictures land in `fabric/build/run/clientGameTest/screenshots`.
  *
  * Two tables in a small card room: Dou Dizhu on the left with stools, UNO on the right,
- * where the villagers have taken the seats.
+ * where the villagers have taken the seats. Guandan is played for a while at the Dou
+ * Dizhu table, between its replay and the walk over to UNO.
  */
 class ShowcaseGameTest : FabricClientGameTest {
     private companion object {
@@ -102,17 +105,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         act(server, ddz, TableOp.AUTO, 1)
         context.waitTicks(260)
         act(server, ddz, TableOp.AUTO, 0)
-        // Play our own turns until someone else's cards are on the table, then ask for a hint.
-        context.input.setCursorPos(0.0, 0.0)
-        for (turn in 0 until 8) {
-            context.waitFor({ myDdzTurn(ddz) != null }, 1200)
-            val beating = context.computeOnClient<Boolean, RuntimeException> { myDdzTurn(ddz)!!.toBeat != null }
-            context.input.pressKey(GLFW.GLFW_KEY_H)
-            if (beating) break
-            context.input.pressKey(GLFW.GLFW_KEY_SPACE)
-            context.waitTicks(5)
-        }
-        context.waitTicks(10)
+        playUntilBeating(context, server, ddz) { myDdzTurn(ddz)?.let { it.toBeat != null } }
         shot("ddz-table")
         // Seated players sit close to the table; a wider view takes in the others too.
         setFov(context, 85)
@@ -147,6 +140,25 @@ class ShowcaseGameTest : FabricClientGameTest {
         context.waitTicks(5)
         shot("replay")
         context.setScreen { null }
+
+        // Guandan at the same table, with a fourth computer, until we have a play to beat.
+        act(server, ddz, TableOp.GAME, text = "guandan")
+        act(server, ddz, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
+        context.waitFor({ ClientTables[ddz]?.snapshot?.let { it.gameId == "guandan" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        act(server, ddz, TableOp.START)
+        context.waitFor({ ClientTables[ddz]?.snapshot?.let { it.gameId == "guandan" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.setScreen { TableScreen(ddz) }
+        act(server, ddz, TableOp.AUTO, 1)
+        context.waitTicks(200)
+        act(server, ddz, TableOp.AUTO, 0)
+        playUntilBeating(context, server, ddz) { myGdTurn(ddz)?.let { it.toBeat != null } }
+        shot("gd-table")
+        context.setScreen { null }
+        // Alone with computers, ending the match is our call; then back to Dou Dizhu.
+        act(server, ddz, TableOp.END)
+        context.waitFor({ ClientTables[ddz]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        act(server, ddz, TableOp.GAME, text = "doudizhu")
+        context.waitFor({ ClientTables[ddz]?.snapshot?.gameId == "doudizhu" }, 100)
 
         // UNO at the other table. The player has to stand up and walk over first.
         act(server, ddz, TableOp.STAND)
@@ -195,6 +207,33 @@ class ShowcaseGameTest : FabricClientGameTest {
         }
         command(server, "gamemode creative @a")
     }
+
+    /**
+     * Plays our own turns with the hint until someone else's cards are on the table, then
+     * picks the hint's answer to them. A round that ends first is started again.
+     * [beating] is null while it is not our turn.
+     */
+    private fun playUntilBeating(context: ClientGameTestContext, server: TestServerContext, table: BlockPos, beating: () -> Boolean?) {
+        context.input.setCursorPos(0.0, 0.0)
+        for (turn in 0 until 40) {
+            context.waitFor({ beating() != null || ClientTables[table]?.snapshot?.status == TableStatus.FINISHED }, 1200)
+            if (context.computeOnClient<Boolean?, RuntimeException> { beating() } == null) {
+                act(server, table, TableOp.START)
+                context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
+                continue
+            }
+            context.waitTicks(10)
+            context.input.pressKey(GLFW.GLFW_KEY_H)
+            context.waitTicks(5)
+            if (context.computeOnClient<Boolean, RuntimeException> { beating() == true }) break
+            context.input.pressKey(GLFW.GLFW_KEY_SPACE)
+            context.waitTicks(5)
+        }
+        context.waitTicks(10)
+    }
+
+    private fun myGdTurn(table: BlockPos): GdView? =
+        (ClientTables[table]?.view as? GdView)?.takeIf { it.isMyTurn && it.phase == GdPhase.PLAYING }
 
     private fun myDdzTurn(table: BlockPos): DdzView? =
         (ClientTables[table]?.view as? DdzView)?.takeIf { it.isMyTurn && it.phase == DdzPhase.PLAYING }
