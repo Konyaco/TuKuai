@@ -299,11 +299,12 @@ class TutuPanel(private val screen: PanelHost) : GamePanel {
         CardArt.draw(g, CardArt.tutu(view.top, named), discardX, cy, scale)
         g.text(font, TutuUi.stateLine(view), discardX - 3, cy + h + 5, TableScreen.WHITE, true)
 
-        // The next cactus pokes out of the left of the draw pile, with how many draws are left
-        // before it; burning TNT stands right of the discard pile.
+        // The next cactus pokes out of the draw pile, with how many draws are left before it;
+        // burning TNT shows after the colour to follow. Both keep clear of the news beside the
+        // players on the left and right.
         val cactusIn = view.cactusIn
         if (cactusIn >= 0) {
-            val x = pileX - 12
+            val x = pileX + 3
             CardArt.draw(g, CardArt.tutu(TutuFace(null, TutuKind.CACTUS)), x, cy + 6, 0.5f)
             val text = Component.literal(if (cactusIn == 0) "!" else cactusIn.toString())
             g.centeredText(font, text, x + 8, cy + 31, if (cactusIn == 0) TableScreen.RED else TableScreen.GREEN)
@@ -313,10 +314,11 @@ class TutuPanel(private val screen: PanelHost) : GamePanel {
             }
         }
         if (view.bombs > 0) {
-            val x = discardX + w + 6
-            CardArt.drawTnt(g, x, cy + 6, 16)
-            g.centeredText(font, Component.literal("×${view.bombs}"), x + 8, cy + 25, TableScreen.RED)
-            if (mouseX in x until x + 16 && mouseY in cy + 6 until cy + 34) {
+            val x = discardX - 3 + font.width(TutuUi.stateLine(view)) + 6
+            val y = cy + h + 3
+            CardArt.drawTnt(g, x, y, 11)
+            g.text(font, Component.literal("×${view.bombs}"), x + 13, y + 2, TableScreen.RED, true)
+            if (mouseX in x until x + 30 && mouseY in y until y + 11) {
                 g.setTooltipForNextFrame(font, Component.translatable("tukuai.tutu.tnt_burning", view.bombs), mouseX, mouseY)
             }
         }
