@@ -10,7 +10,8 @@ import kotlin.math.min
 /**
  * The mouse on the table in the immersive view. It finds which of the player's own cards
  * ([TableCard.mine]) is under the cursor, by casting a ray from the camera through it, and
- * dresses those cards for drawing: raised and tinted while picked, framed under the cursor.
+ * dresses those cards for drawing: raised and tinted while picked, framed under the cursor
+ * (over any frame the game gave them).
  */
 object TablePointer {
     /** The table the cards were last dressed for, and the cards as they were drawn. */
@@ -44,7 +45,7 @@ object TablePointer {
             val current = rises[id(card)] ?: target
             val rise = current + (target - current) * min(1f, seconds * EASE)
             rises[id(card)] = rise
-            card.copy(rise = rise, tint = if (raised) PICKED_TINT else -1, outline = if (under) OUTLINE_COLOR else 0)
+            card.copy(rise = rise, tint = if (raised) PICKED_TINT else -1, outline = if (under) OUTLINE_COLOR else card.outline)
         }
         drawnAt = pos
         drawn = dressed
