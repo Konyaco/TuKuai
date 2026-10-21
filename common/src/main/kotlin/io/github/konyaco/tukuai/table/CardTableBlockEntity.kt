@@ -77,14 +77,13 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private var matchRounds = DEFAULT_MATCH_ROUNDS
 
     /**
-     * The match has been played out, or everyone agreed to stop it: [tally] is final, and
+     * The match has been played out, or a player stopped it: [tally] is final, and
      * the next game starts a new match from nothing.
      */
     private var matchOver = false
 
-    /** Who is ready for the next game, see [TableOp.START], and who agreed to end the match, see [TableOp.END]. */
+    /** Who is ready for the next game, see [TableOp.START]. */
     private var ready = BooleanArray(3)
-    private var endVotes = BooleanArray(3)
 
     /** The seat each player was dealt into when [match] started; they see nothing else until it is over. */
     private var dealtIn: Map<UUID, Seat> = emptyMap()
@@ -122,6 +121,25 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         }
 
     private val idle: Boolean get() = status != TableStatus.PLAYING
+
+    /**
+     * A game is on but every player in it has stood up or gone away, so it waits instead of
+     * the computers playing it out by themselves. Anyone may then take a seat, see [takeOver].
+     */
+    private val paused: Boolean
+        get() = status == TableStatus.PLAYING && seats.indices.none(::atTable)
+
+    /**
+     * Whether the player in [seat] still takes part: here, and either playing for themselves
+     * or letting the computer play while they stay in their seat.
+     */
+    private fun atTable(seat: Seat): Boolean {
+        val occupant = seats[seat] as? Occupant.Human ?: return false
+        if (!present[seat]) return false
+        if (!auto[seat]) return true
+        val vehicle = (level as? ServerLevel)?.server?.playerList?.getPlayer(occupant.uuid)?.vehicle
+        return vehicle is SeatEntity && vehicle.table == worldPosition
+    }
 
     private val center: Vec3 get() = Vec3.atCenterOf(worldPosition)
 
@@ -178,7 +196,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         absentChecks = IntArray(count) { absentChecks.getOrElse(it) { 0 } }
         timeouts = IntArray(count) { timeouts.getOrElse(it) { 0 } }
         ready = BooleanArray(count)
-        endVotes = BooleanArray(count)
         tally = IntArray(count)
         rounds = 0
         matchOver = false
@@ -186,7 +203,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     /**
      * The people at the table who are here and playing for themselves. They decide together
-     * when the next game starts and whether to stop; one alone with computers decides alone.
+     * when the next game starts; one alone with computers decides alone.
      */
     private fun voters(): List<Seat> = seats.indices.filter { seats[it] is Occupant.Human && present[it] && !auto[it] }
 
@@ -208,10 +225,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         start(level)
     }
 
-    /** Ends the match once everyone at the table agreed; a game still being played is dropped. */
-    private fun endIfAgreed(level: ServerLevel) {
-        if (endVotes.none { it } || voters().any { !endVotes[it] }) return
-        endVotes.fill(false)
+    /** Ends the match for everyone; a game still being played is dropped. */
+    private fun endMatch(level: ServerLevel) {
         ready.fill(false)
         if (status == TableStatus.PLAYING) {
             thinking?.cancel(false)
@@ -234,11 +249,16 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             mount(level, player, mine)
             return
         }
+        if (paused) {
+            nearestSeat(player, seats.indices.filter { seats[it] is Occupant.Human })?.let { takeOver(level, player, it) }
+            return
+        }
         if (!idle) return
-        val free = seats.indices.filter { seats[it] == null }
-        val nearest = free.minByOrNull { seatPosition(it).distanceToSqr(player.position()) } ?: return
-        takeSeat(level, player, nearest)
+        nearestSeat(player, seats.indices.filter { seats[it] == null })?.let { takeSeat(level, player, it) }
     }
+
+    private fun nearestSeat(player: ServerPlayer, among: List<Seat>): Seat? =
+        among.minByOrNull { seatPosition(it).distanceToSqr(player.position()) }
 
     /**
      * Sitting on the stool on [side] of the table, [along] blocks to the right of its middle:
@@ -256,6 +276,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             mount(level, player, seat)
         } else if (occupant == null && idle) {
             takeSeat(level, player, seat)
+        } else if (occupant is Occupant.Human && paused && seatOf(player.uuid) == null) {
+            takeOver(level, player, seat)
         }
         return true
     }
@@ -270,6 +292,20 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         absentChecks[seat] = 0
         lobbyChanged()
         mount(level, player, seat)
+    }
+
+    /**
+     * Sits [player] in [seat] of a [paused] game in place of whoever left it: they get its
+     * cards and the game goes on with them, or they may end it.
+     */
+    private fun takeOver(level: ServerLevel, player: ServerPlayer, seat: Seat) {
+        val gone = (seats[seat] as? Occupant.Human)?.uuid
+        dealtIn = dealtIn.filterKeys { it != gone } + (player.uuid to seat)
+        auto[seat] = false
+        timeouts[seat] = 0
+        takeSeat(level, player, seat)
+        // Whoever is to act gets a full turn from now.
+        lastStep = -1
     }
 
     /**
@@ -324,10 +360,16 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         when (request.op) {
             TableOp.SIT -> {
                 val seat = request.a
-                if (seat !in seats.indices) return
-                val occupant = seats[seat]
-                if (occupant == null && idle) {
+                val occupant = seats.getOrNull(seat)
+                if (seat == -1 && mine == null && paused) {
+                    // Take whichever seat is nearest, as right-clicking the table does.
+                    nearestSeat(player, seats.indices.filter { seats[it] is Occupant.Human })?.let { takeOver(level, player, it) }
+                } else if (seat !in seats.indices) {
+                    return
+                } else if (occupant == null && idle) {
                     takeSeat(level, player, seat)
+                } else if (occupant is Occupant.Human && occupant.uuid != player.uuid && mine == null && paused) {
+                    takeOver(level, player, seat)
                 } else if (occupant is Occupant.Human && occupant.uuid == player.uuid) {
                     auto[seat] = false
                     changed()
@@ -339,7 +381,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 if (idle) seats[mine] = null else auto[mine] = true
                 dismount(player)
                 if (idle) lobbyChanged() else changed()
-                endIfAgreed(level)
             }
             TableOp.ADD_BOT -> {
                 if (!idle) return
@@ -407,16 +448,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 }
             }
             TableOp.END -> {
+                // Any one player in it may stop the match; nobody has to wait for the others to agree.
                 if (mine == null || matchOver || (idle && rounds == 0)) return
-                endVotes[mine] = true
-                changed()
-                endIfAgreed(level)
-            }
-            TableOp.KEEP -> {
-                if (mine != null && endVotes.any { it }) {
-                    endVotes.fill(false)
-                    changed()
-                }
+                endMatch(level)
             }
             TableOp.ACT -> {
                 val m = match ?: return
@@ -439,7 +473,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 auto[mine] = request.a != 0
                 timeouts[mine] = 0
                 changed()
-                endIfAgreed(level)
             }
             TableOp.SPECTATE -> {
                 val host = host
@@ -462,7 +495,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         auto.fill(false)
         timeouts.fill(0)
         ready = BooleanArray(m.seatCount)
-        endVotes = BooleanArray(m.seatCount)
         lastStep = -1
         changed()
         level.playSound(null, worldPosition, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1f, 1f)
@@ -476,7 +508,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         if (isRemoved) return
         if (ticks % 20 == 0L) checkPresence(level)
         val m = match
-        if (m != null && m.result == null) driveTurn(level, m)
+        if (m != null && m.result == null) {
+            if (paused) pause() else driveTurn(level, m)
+        }
         sync(level)
     }
 
@@ -539,7 +573,16 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         changed()
         // Someone who walked off no longer holds up the others.
         startIfReady(level)
-        endIfAgreed(level)
+    }
+
+    /** Nothing moves while [paused]; the turn starts afresh once someone is back. */
+    private fun pause() {
+        thinking?.cancel(false)
+        thinking = null
+        if (lastStep != -1) {
+            lastStep = -1
+            changed()
+        }
     }
 
     private fun driveTurn(level: ServerLevel, m: MatchHandle) {
@@ -618,7 +661,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         result.scores.forEachIndexed { seat, points -> if (seat < tally.size) tally[seat] += points }
         rounds++
         if (matchRounds in 1..rounds) matchOver = true
-        endVotes.fill(false)
         // Whoever let the computer play while staying in their seat is back in charge for the next
         // game, and so has a say in when it starts; those who stood up are not.
         for (seat in seats.indices) {
@@ -684,7 +726,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private fun snapshot(level: ServerLevel, you: Seat?, view: ByteArray?, leaders: List<LeaderEntry>): TableSnapshot {
         val m = match
         val actor = m?.toAct
-        val timed = actor != null && m.result == null && seats.getOrNull(actor) is Occupant.Human &&
+        val waiting = paused
+        val timed = actor != null && m.result == null && !waiting && seats.getOrNull(actor) is Occupant.Human &&
             !auto[actor] && present[actor] && turnSeconds > 0
         return TableSnapshot(
             gameId = gameId,
@@ -694,7 +737,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             seats = seats.indices.map { seat ->
                 val occupant = seats[seat]
                 val record = (occupant as? Occupant.Human)?.let { StatsStore.of(level.server, it.uuid)?.games?.get(gameId) }
-                SeatInfo(occupant, present[seat], auto[seat], record?.games ?: 0, record?.wins ?: 0, ready[seat], endVotes[seat])
+                SeatInfo(occupant, present[seat], auto[seat], record?.games ?: 0, record?.wins ?: 0, ready[seat])
             },
             you = you,
             tally = tally.toList(),
@@ -707,6 +750,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             host = host?.let(::seatOf),
             matchRounds = matchRounds,
             matchOver = matchOver,
+            paused = waiting,
             leaderboard = leaders,
         )
     }
@@ -754,7 +798,6 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         matchRounds = input.getIntOr("match_rounds", DEFAULT_MATCH_ROUNDS).takeIf { it in ROUND_CHOICES } ?: DEFAULT_MATCH_ROUNDS
         matchOver = input.getIntOr("match_over", 0) != 0
         ready = BooleanArray(count)
-        endVotes = BooleanArray(count)
         match = input.getString("match").map { encoded ->
             try {
                 Replay.decode(Base64.getDecoder().decode(encoded)).rebuildAny().takeIf { it.seatCount == count }

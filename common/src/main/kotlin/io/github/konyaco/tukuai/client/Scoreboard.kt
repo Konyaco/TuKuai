@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component
  * The small box at the top left of the table screen during a match: which game of how
  * many this is, and everyone's points so far, so nobody has to go back to the
  * lobby to see the score. Players who are ready for the next game get a tick, and a
- * proposal to stop the match shows how many agreed.
+ * game that waits because its players all left says so.
  */
 object Scoreboard {
     /** Wide enough for a name and its points, and narrow enough to stay clear of the result box in the middle. */
@@ -25,10 +25,9 @@ object Scoreboard {
     fun render(g: GuiGraphicsExtractor, table: ClientTable): Int {
         val s = table.snapshot
         val voters = s.voters
-        val endVotes = s.seats.count { it.endVote }
         // A watcher's line, wrapped to the box, at its foot.
         val watching = table.watchingLine()?.let { font.split(it, WIDTH - 8) }.orEmpty()
-        val lines = 1 + s.seats.size + (if (endVotes > 0) 1 else 0) + watching.size
+        val lines = 1 + s.seats.size + (if (s.paused) 1 else 0) + watching.size
         val bottom = TOP + 4 + lines * LINE
         g.fill(LEFT, TOP, LEFT + WIDTH, bottom, BACKGROUND)
         g.fill(LEFT, TOP, LEFT + WIDTH, TOP + 1, EDGE)
@@ -52,8 +51,8 @@ object Scoreboard {
             g.text(font, text, pointsX, y, pointsColor(points), false)
             y += LINE
         }
-        if (endVotes > 0) {
-            g.text(font, Component.translatable("tukuai.table.end.count", endVotes, voters.size.coerceAtLeast(endVotes)), x, y, TableScreen.YELLOW, false)
+        if (s.paused) {
+            g.text(font, Component.translatable("tukuai.table.paused"), x, y, TableScreen.YELLOW, false)
             y += LINE
         }
         for (line in watching) {

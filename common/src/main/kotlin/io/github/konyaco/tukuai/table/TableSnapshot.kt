@@ -50,8 +50,6 @@ data class SeatInfo(
     val wins: Int = 0,
     /** Wants the next game to start; it starts once every player at the table does. */
     val ready: Boolean = false,
-    /** Wants to end the match now; it ends once every player at the table does. */
-    val endVote: Boolean = false,
 )
 
 /** One line of a game's leaderboard: a player's record in this world. */
@@ -81,12 +79,14 @@ data class TableSnapshot(
     val host: Seat? = null,
     /** How many games make a match; after that the points are settled. 0 for no limit. */
     val matchRounds: Int = 0,
-    /** The match is over, by reaching [matchRounds] or because everyone agreed to stop; [tally] is final. */
+    /** The match is over, by reaching [matchRounds] or because a player stopped it; [tally] is final. */
     val matchOver: Boolean = false,
+    /** A game is on but every player in it has left, so it waits; anyone may sit down and play on or end it. */
+    val paused: Boolean = false,
     /** The players with the most points at this game in this world, best first; sent only between games. */
     val leaderboard: List<LeaderEntry> = emptyList(),
 ) {
-    /** The people at the table who are here and playing for themselves; they decide together when to start or stop. */
+    /** The people at the table who are here and playing for themselves; they decide together when to start. */
     val voters: List<Seat>
         get() = seats.indices.filter { seats[it].occupant is Occupant.Human && seats[it].present && !seats[it].auto }
 
@@ -97,7 +97,7 @@ data class TableSnapshot(
     override fun hashCode(): Int = encode().contentHashCode()
 
     companion object {
-        private const val VERSION = 4
+        private const val VERSION = 5
 
         fun decode(data: ByteArray): TableSnapshot = CODEC.decode(data)
 
@@ -110,11 +110,12 @@ data class TableSnapshot(
                         is Occupant.Human -> int(1).long(o.uuid.mostSignificantBits).long(o.uuid.leastSignificantBits).string(o.name)
                         is Occupant.Computer -> int(2).int(o.level.ordinal)
                     }
-                    bool(seat.present).bool(seat.auto).int(seat.games).int(seat.wins).bool(seat.ready).bool(seat.endVote)
+                    bool(seat.present).bool(seat.auto).int(seat.games).int(seat.wins).bool(seat.ready)
                 }
                 writer.int(value.you ?: -1).ints(value.tally).int(value.rounds).int(value.status.ordinal)
                     .int(value.step).int(value.timerTicks).nullable(value.view) { bytes(it) }
                     .bool(value.spectators).int(value.host ?: -1).int(value.matchRounds).bool(value.matchOver)
+                    .bool(value.paused)
                 writer.list(value.leaderboard) { string(it.name).int(it.games).int(it.wins).int(it.points) }
             }
 
@@ -132,7 +133,7 @@ data class TableSnapshot(
                             2 -> Occupant.Computer(BotLevel.entries[int()])
                             else -> null
                         }
-                        SeatInfo(occupant, bool(), bool(), int(), int(), bool(), bool())
+                        SeatInfo(occupant, bool(), bool(), int(), int(), bool())
                     },
                     you = reader.int().takeIf { it >= 0 },
                     tally = reader.ints(),
@@ -145,6 +146,7 @@ data class TableSnapshot(
                     host = reader.int().takeIf { it >= 0 },
                     matchRounds = reader.int(),
                     matchOver = reader.bool(),
+                    paused = reader.bool(),
                     leaderboard = reader.list { LeaderEntry(string(), int(), int(), int()) },
                 )
             }
@@ -154,7 +156,10 @@ data class TableSnapshot(
 
 /** What a client asks the table to do. The meaning of `a`, `b` and `text` depends on the op. */
 enum class TableOp {
-    /** Sit in seat `a`, or get back on it after standing up during a game. */
+    /**
+     * Sit in seat `a`, or get back on it after standing up during a game. While a game is
+     * paused because its players all left, anyone may take a seat; `a` = -1 takes the nearest.
+     */
     SIT,
 
     /** Leave the seat; during a game the computer keeps playing for you. */
@@ -193,11 +198,8 @@ enum class TableOp {
     /** No longer ready, see [START]. */
     UNREADY,
 
-    /** Agree to end the match now. It ends once every player at the table agrees; a game being played is dropped. */
+    /** End the match now, for everyone at the table; a game being played is dropped. */
     END,
-
-    /** Turn down ending the match, which clears everyone's agreement. */
-    KEEP,
 
     /** Set how many games make a match to `a`; 0 means no limit. */
     ROUNDS,

@@ -105,7 +105,7 @@ The table takes up 3x3 blocks. Each hand stands on it facing its owner, so every
 
 Empty seats can take a computer: easy, normal or hard. Hard plays the hand out in its head many times before it commits to a card.
 
-If someone walks away or drops out, a computer plays their turns so the game doesn't stall. Run out of time twice in a row and the computer takes over for you; click "Stop auto" to get your hand back.
+If someone walks away or drops out, a computer plays their turns so the game doesn't stall. If everyone in the game has left, it pauses instead of the computers playing on alone; anyone who sits down can pick up a seat and play on or end the match. Run out of time twice in a row and the computer takes over for you; click "Stop auto" to get your hand back.
 
 ### Replays and records
 
@@ -206,7 +206,7 @@ Replays are saved in `tukuai/replays` inside the world folder.
 
 ### Matches
 
-A match is 8 games by default (4, 12, 16 or no limit in the lobby). The box in the top left shows which game it is and everyone's points so far. After the last game, "Standings" shows the final places, and the next game starts a new match from zero. With more than one person at the table, the next game starts only when everyone has clicked "Play again", so nobody misses the result. To stop early, open the ☰ menu and click "End the match": everyone at the table has to agree, the game being played is dropped and the finished games are settled.
+A match is 8 games by default (4, 12, 16 or no limit in the lobby). The box in the top left shows which game it is and everyone's points so far. After the last game, "Standings" shows the final places, and the next game starts a new match from zero. With more than one person at the table, the next game starts only when everyone has clicked "Play again", so nobody misses the result. To stop early, open the ☰ menu and click "End the match": any one player can end it for everyone, the game being played is dropped and the finished games are settled.
 
 ### Records
 

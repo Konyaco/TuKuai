@@ -80,6 +80,7 @@ class PeerClient : ClientModInitializer {
         if (t != null) {
             val s = t.snapshot
             p["status"] = s.status.name
+            p["paused"] = s.paused.toString()
             p["step"] = s.step.toString()
             p["rounds"] = s.rounds.toString()
             p["tally"] = s.tally.joinToString(";")
