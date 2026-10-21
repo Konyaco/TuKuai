@@ -18,6 +18,7 @@ import io.github.konyaco.tukuai.engine.guandan.GdView
 import io.github.konyaco.tukuai.engine.paodekuai.PdkAction
 import io.github.konyaco.tukuai.engine.paodekuai.PdkCodecs
 import io.github.konyaco.tukuai.engine.paodekuai.PdkView
+import io.github.konyaco.tukuai.engine.tutu.TutuView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.ReplayStore
@@ -62,8 +63,10 @@ class TuKuaiClientGameTest : FabricClientGameTest {
     override fun runTest(context: ClientGameTestContext) {
         // Taking README screenshots with ShowcaseGameTest; no need to play the whole test round too.
         if (System.getenv("TUKUAI_SHOWCASE") != null || System.getenv("TUKUAI_MULTIPLAYER") != null) return
-        // TUKUAI_ONLY=<name> runs just one of the tests, to try it quickly.
-        if (System.getenv("TUKUAI_ONLY")?.let { it != "game" } == true) return
+        // TUKUAI_ONLY=<name> runs just one of the tests, to try it quickly; "tutu" plays only Tutu cards.
+        val only = System.getenv("TUKUAI_ONLY")
+        if (only == "tutu") return onlyTutu(context)
+        if (only != null && only != "game") return
         context.worldBuilder().create().use { world ->
             world.clientLevel.waitForChunksRender()
             val server = world.server
@@ -278,7 +281,97 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.waitTicks(5)
         shot(context, "19-uno-replay")
 
+        playTutu(context, server, table)
         playPaoDeKuai(context, server, table)
+    }
+
+    /** A table with only us and computers, straight into a hand of Tutu cards; `TUKUAI_LANG` picks the language. */
+    private fun onlyTutu(context: ClientGameTestContext) {
+        val lang = System.getenv("TUKUAI_LANG") ?: "en_us"
+        if (lang != "en_us") {
+            context.runOnClient<RuntimeException> { mc ->
+                mc.options.languageCode = lang
+                mc.languageManager.setSelected(lang)
+                mc.reloadResourcePacks()
+            }
+            context.waitTicks(2)
+            context.waitFor({ it.overlay == null }, 1200)
+        }
+        context.worldBuilder().create().use { world ->
+            world.clientLevel.waitForChunksRender()
+            val server = world.server
+            val table = server.computeOnServer<BlockPos, RuntimeException> { s -> buildScene(s) }
+            context.waitTicks(40)
+            world.clientLevel.waitForChunksRender()
+            act(server, table, TableOp.SIT, 0)
+            context.waitTicks(10)
+            playTutu(context, server, table)
+        }
+    }
+
+    /**
+     * Switches the table to Tutu cards, with four seats, and plays a hand of it: the lobby,
+     * the rule book's wild cards, our turn, a cactus in the pile or TNT burning, the end and
+     * the replay.
+     */
+    private fun playTutu(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        act(server, table, TableOp.GAME, text = "tutu")
+        repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "tutu" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "tutu-1-lobby")
+        readRules(context, "tutu", "wilds")
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "tutu" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.input.lookAt(table)
+        context.waitTicks(12)
+        shot(context, "tutu-2-world-dealing")
+
+        context.setScreen { TableScreen(table) }
+        context.waitFor({ (ClientTables[table]?.view as? TutuView)?.isMyTurn == true }, 1200)
+        context.waitTicks(10)
+        shot(context, "tutu-3-screen-turn")
+
+        // Let the computer play for us until TNT is lit, or failing that a cactus is planted, or the hand ends.
+        act(server, table, TableOp.AUTO, 1)
+        context.waitFor({ (ClientTables[table]?.view as? TutuView)?.let { it.finished || it.bombs > 0 || it.cacti.isNotEmpty() } == true }, 6000)
+        context.waitFor({ (ClientTables[table]?.view as? TutuView)?.let { it.finished || it.bombs > 0 || it.drawCount < 40 } == true }, 6000)
+        context.waitTicks(5)
+        shot(context, "tutu-4-screen-specials")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "tutu-5-world-specials")
+
+        var waited = 0
+        while (status(server, table) != TableStatus.FINISHED) {
+            check(waited < 12000) { "The Tutu hand did not finish" }
+            context.waitTicks(100)
+            waited += 100
+        }
+        context.waitFor({ (ClientTables[table]?.view as? TutuView)?.finished == true }, 200)
+        val view = ClientTables[table]!!.view as TutuView
+        check(view.settlement!!.scores.sum() == 0) { "The Tutu hand ended oddly: $view" }
+        context.waitTicks(20)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "tutu-6-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "tutu-7-world-result")
+
+        act(server, table, TableOp.REPLAY)
+        context.waitFor({ it.screen is ReplayScreen }, 100)
+        context.runOnClient<RuntimeException> {
+            val replay = it.screen as ReplayScreen
+            replay.pause()
+            replay.seek(replay.total / 2)
+        }
+        context.waitTicks(5)
+        shot(context, "tutu-8-replay")
     }
 
     /**

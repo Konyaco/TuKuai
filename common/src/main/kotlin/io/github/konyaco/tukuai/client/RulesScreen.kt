@@ -5,6 +5,7 @@ import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.core.GuideBlock
 import io.github.konyaco.tukuai.engine.core.GuideSection
 import io.github.konyaco.tukuai.engine.core.guide
+import io.github.konyaco.tukuai.engine.tutu.TutuFace
 import io.github.konyaco.tukuai.engine.uno.UnoFace
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -248,6 +249,7 @@ class RulesScreen(
     private fun sprite(card: Any): Int? = when (card) {
         is PlayingCard -> CardArt.face(card)
         is UnoFace -> CardArt.unoFace(card)
+        is TutuFace -> CardArt.tutu(card)
         else -> null
     }
 

@@ -4,6 +4,7 @@ import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.ddz.DdzUi
 import io.github.konyaco.tukuai.client.gd.GdUi
 import io.github.konyaco.tukuai.client.pdk.PdkUi
+import io.github.konyaco.tukuai.client.tutu.TutuUi
 import io.github.konyaco.tukuai.client.uno.UnoUi
 import io.github.konyaco.tukuai.platform.ClientPlatform
 import io.github.konyaco.tukuai.platform.Services
@@ -17,6 +18,7 @@ object TuKuaiClient {
         Services.openReplay = ReplayScreen::open
         GameUis.register(DdzUi)
         GameUis.register(UnoUi)
+        GameUis.register(TutuUi)
         GameUis.register(PdkUi)
         GameUis.register(GdUi)
     }

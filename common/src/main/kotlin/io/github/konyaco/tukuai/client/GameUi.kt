@@ -31,6 +31,9 @@ interface GameUi {
 
     /** Called when an update for a table arrives, to play sounds for what just happened at it. */
     fun onUpdate(previous: ClientTable?, table: ClientTable) {}
+
+    /** Called every client tick for each table nearby, for smoke and sparks that go on while a game does. */
+    fun tick(table: ClientTable) {}
 }
 
 /** The screen a [GamePanel] is drawn in: the table screen, or the replay viewer. */
@@ -143,6 +146,11 @@ data class TableCard(
     val tint: Int = -1,
     /** Colour of a lit frame around the card, as ARGB; 0 for none. */
     val outline: Int = 0,
+    /**
+     * Not a card but a little block as wide as the card: the top 32×32 of [sprite] on its
+     * four sides and of [backSprite] on top, as for the TNT burning on a Tutu table.
+     */
+    val cube: Boolean = false,
 )
 
 object GameUis {

@@ -1,7 +1,8 @@
 """Generates TuKuai's pixel-art textures: the card atlas and the table block faces.
 
 Run from the repository root: python3 tools/gen_textures.py
-Needs Pillow. Output goes into common/src/main/resources/assets/tukuai/textures.
+Needs Pillow; without it, PYTHONPATH=tools/minipil python3 tools/gen_textures.py uses a
+small stand-in that writes the same pixels. Output goes into common/src/main/resources/assets/tukuai/textures.
 The card layout here must match client/CardAtlas.kt.
 """
 import math
@@ -12,9 +13,10 @@ from PIL import Image
 OUT = "common/src/main/resources/assets/tukuai/textures"
 CARD_W, CARD_H = 32, 44
 COLS = 14
-ATLAS_W, ATLAS_H = 512, 1024
+ATLAS_W, ATLAS_H = 512, 2048
 UNO_ROW = 6  # UNO cards start on this row of cards, below the icons; see CardArt.UNO_FIRST.
 STYLE_ROW = 11  # The other face styles start on this row, 54 cards each; see CardArt.STYLE_FIRST.
+TUTU_ROW = 19  # Tutu cards start on this row, after the face styles; see CardArt.TUTU_FIRST.
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
@@ -414,6 +416,260 @@ def uno_cards():
     return cards
 
 
+# ---- Tutu cards ----------------------------------------------------------------------------
+
+TUTU_COLORS = {  # Same order as TutuColor in the engine.
+    "Y": (232, 186, 24, 255),
+    "P": (146, 74, 206, 255),
+    "B": (40, 104, 206, 255),
+    "G": (58, 156, 58, 255),
+}
+GRASS = [(96, 160, 56, 255), (84, 142, 48, 255), (110, 176, 64, 255)]
+DIRT = [(134, 96, 67, 255), (121, 85, 58, 255), (150, 108, 74, 255), (104, 74, 50, 255)]
+
+# 16x16 icons in the middle of the special cards, one letter a colour; "." is see-through.
+TUTU_ICONS = {
+    "S": (  # A snowball.
+        ["................",
+         "......####......",
+         "....##wwww##....",
+         "...#wwwwwwwb#...",
+         "..#wwwwwwwwwb#..",
+         "..#wwwwwwwwwb#..",
+         ".#wwwwwwwwwwbb#.",
+         ".#wwwwwwwwwwbb#.",
+         ".#wwwwwwwwwbbb#.",
+         ".#wwwwwwwwbbbb#.",
+         "..#wwwwwwbbbb#..",
+         "..#bwwwbbbbbb#..",
+         "...#bbbbbbbb#...",
+         "....##bbbb##....",
+         "......####......",
+         "................"],
+        {"#": (70, 84, 110, 255), "w": (250, 252, 255, 255), "b": (184, 206, 226, 255)},
+    ),
+    "R": (  # A trident.
+        ["..cc...cc...cc..",
+         "..cc...cc...cc..",
+         "..cc...cc...cc..",
+         "..cc...cc...cc..",
+         "..ccc..cc..ccc..",
+         "...cccccccccc...",
+         "....cccccccc....",
+         ".......ss.......",
+         ".......ss.......",
+         ".......ss.......",
+         ".......ss.......",
+         ".......ss.......",
+         ".......ss.......",
+         ".......ss.......",
+         ".......dd.......",
+         "................"],
+        {"c": (64, 196, 180, 255), "s": (46, 120, 112, 255), "d": (30, 70, 66, 255)},
+    ),
+    "+2": (  # A shovel.
+        ["......####......",
+         ".....#iiii#.....",
+         ".....#iIii#.....",
+         ".....#iIii#.....",
+         ".....#iiii#.....",
+         ".....#iiii#.....",
+         "......#ii#......",
+         ".......hh.......",
+         ".......hh.......",
+         ".......hh.......",
+         ".......hh.......",
+         ".......hh.......",
+         ".......hh.......",
+         ".....hhhhhh.....",
+         ".....hh..hh.....",
+         ".....hhhhhh....."],
+        {"#": (70, 70, 74, 255), "i": (196, 196, 200, 255), "I": (240, 240, 244, 255), "h": (120, 84, 44, 255)},
+    ),
+    "L": (  # A bolt of lightning.
+        ["..........###...",
+         ".........#yy#...",
+         "........#yy#....",
+         ".......#yy#.....",
+         "......#yy#......",
+         ".....#yyyyyy#...",
+         ".....###yyy#....",
+         ".......#yy#.....",
+         "......#yy#......",
+         ".....#yy#.......",
+         "....#yy#........",
+         "...#yy#.........",
+         "...#y#..........",
+         "...##...........",
+         "................",
+         "................"],
+        {"#": (60, 52, 20, 255), "y": (255, 228, 60, 255)},
+    ),
+    "E": (  # An egg with spots of every colour, since it hatches into any of them.
+        ["......####......",
+         "....##eeee##....",
+         "...#eeeeeeee#...",
+         "...#eeyeeeee#...",
+         "..#eeyyeeeeee#..",
+         "..#eeeeeeppee#..",
+         "..#eeeeeeppee#..",
+         "..#eebbeeeeee#..",
+         "..#eebbeeeeee#..",
+         "..#eeeeeeggee#..",
+         "..#eeeeeeggee#..",
+         "...#eeeeeeee#...",
+         "...#eeeeeeee#...",
+         "....##eeee##....",
+         "......####......",
+         "................"],
+        {"#": (96, 76, 52, 255), "e": (244, 232, 204, 255), "y": TUTU_COLORS["Y"], "p": TUTU_COLORS["P"],
+         "b": TUTU_COLORS["B"], "g": TUTU_COLORS["G"]},
+    ),
+    "T": (  # The side of a block of TNT.
+        ["rrrRrrrRrrrRrrrR",
+         "rrrRrrrRrrrRrrrR",
+         "rrrRrrrRrrrRrrrR",
+         "rrrRrrrRrrrRrrrR",
+         "wwwwwwwwwwwwwwww",
+         "wkkkwkwwkwkkkwww",
+         "wwkwwkkwkwwkwwww",
+         "wwkwwkwkkwwkwwww",
+         "wwkwwkwwkwwkwwww",
+         "wwkwwkwwkwwkwwww",
+         "wwwwwwwwwwwwwwww",
+         "rrrRrrrRrrrRrrrR",
+         "rrrRrrrRrrrRrrrR",
+         "rrrRrrrRrrrRrrrR",
+         "rrrRrrrRrrrRrrrR",
+         "rrrRrrrRrrrRrrrR"],
+        {"r": (214, 52, 40, 255), "R": (150, 30, 24, 255), "w": (238, 238, 232, 255), "k": (30, 30, 30, 255)},
+    ),
+    "C": (  # A cactus in sand.
+        ["......gggg......",
+         ".....gGggGg.....",
+         "...s.gggggg.s...",
+         "....sgGggGgs....",
+         ".....gggggg.....",
+         "...s.gGggGg.s...",
+         "....sggggggs....",
+         ".....gGggGg.....",
+         "...s.gggggg.s...",
+         "....sggggggs....",
+         ".....gGggGg.....",
+         ".....gggggg.....",
+         ".....gggggg.....",
+         "...dddddddddd...",
+         "..dddddddddddd..",
+         "................"],
+        {"g": (72, 150, 54, 255), "G": (36, 92, 30, 255), "s": (230, 226, 190, 255), "d": (222, 206, 150, 255)},
+    ),
+}
+
+# Small marks for the corners, in white.
+TUTU_MARKS = {
+    "S": [".###.", "#####", "#####", "#####", ".###."],
+    "R": ["#.#.#", "#.#.#", "#####", "..#..", "..#..", "..#.."],
+    "L": ["..##", ".##.", "####", ".##.", "##..", "#..."],
+}
+
+
+def icon(card, key, x, y, palette=None):
+    rows, colors = TUTU_ICONS[key]
+    colors = palette or colors
+    for dy, row in enumerate(rows):
+        for dx, ch in enumerate(row):
+            if ch in colors:
+                put(card, x + dx, y + dy, colors[ch])
+
+
+def tutu_blank(field):
+    """A card with a white margin around a coloured field, or grass over dirt for a wild card."""
+    card = blank(WHITE)
+    rnd = random.Random(11)
+    for y in range(3, CARD_H - 3):
+        for x in range(3, CARD_W - 3):
+            if field is None:
+                c = rnd.choice(GRASS) if y < 9 else rnd.choice(DIRT)
+                if y == 9 and rnd.random() < 0.5:
+                    c = GRASS[1]
+            else:
+                c = field
+            card.putpixel((x, y), c)
+    return card
+
+
+def window(card, border, fill, x0=6, y0=12, size=20, thick=1):
+    """The square in the middle of a card that the number or the picture sits in."""
+    for y in range(y0, y0 + size):
+        for x in range(x0, x0 + size):
+            edge = min(x - x0, y - y0, x0 + size - 1 - x, y0 + size - 1 - y) < thick
+            corner = (x - x0 in (0, size - 1)) and (y - y0 in (0, size - 1))
+            if not corner:
+                put(card, x, y, border if edge else fill)
+
+
+def tutu_face(color, kind):
+    """A coloured card: [kind] is a number 1..9, or S, R, +2 or L for the specials."""
+    field = TUTU_COLORS[color]
+    card = tutu_blank(field)
+    dark = tuple(v * 3 // 5 for v in field[:3]) + (255,)
+    window(card, dark, WHITE)
+    if kind.isdigit():
+        centered(card, scaled(FONT[kind], 2), field)
+        small = label_rows(kind)
+    else:
+        icon(card, kind, 8, 14)
+        small = label_rows("+2") if kind == "+2" else TUTU_MARKS[kind]
+    corners(card, small, WHITE)
+    return card
+
+
+def tutu_wild(kind, chosen=None):
+    """An egg, TNT or cactus; once played, [chosen] fills its window with the colour named."""
+    card = tutu_blank(None)
+    if chosen:
+        c = TUTU_COLORS[chosen]
+        window(card, c, tuple((v + 255 * 2) // 3 for v in c[:3]) + (255,), x0=5, y0=11, size=22, thick=2)
+    else:
+        window(card, (70, 50, 34, 255), WHITE)
+    icon(card, kind, 8, 14)
+    for (dx, dy), c in zip([(0, 0), (2, 0), (0, 2), (2, 2)], "YPBG"):
+        for y in range(2):
+            for x in range(2):
+                put(card, 4 + dx + x, 4 + dy + y, TUTU_COLORS[c])
+                put(card, CARD_W - 8 + (2 - dx) + x, CARD_H - 8 + (2 - dy) + y, TUTU_COLORS[c])
+    return card
+
+
+def tnt_block(top):
+    """A cell whose top 32x32 is the side, or the top, of a little block of TNT for the table."""
+    cell = Image.new("RGBA", (CARD_W, CARD_H), CLEAR)
+    if top:
+        rows = ["rrrrrrrrrrrrrrrr"] + ["r" + "g" * 14 + "r"] * 14 + ["rrrrrrrrrrrrrrrr"]
+        rows[7] = "r" + "g" * 6 + "kk" + "g" * 6 + "r"
+        rows[8] = rows[7]
+        colors = {"r": (214, 52, 40, 255), "g": (190, 186, 176, 255), "k": (40, 36, 34, 255)}
+    else:
+        rows, colors = TUTU_ICONS["T"]
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            for k in range(4):
+                cell.putpixel((x * 2 + k % 2, y * 2 + k // 2), colors[ch])
+    return cell
+
+
+def tutu_cards():
+    """Same order as TutuDeck.FACES, then TNT and the cactus with each colour named, then the TNT block; see CardArt.tutu."""
+    cards = []
+    for color in TUTU_COLORS:
+        cards += [tutu_face(color, kind) for kind in [str(n) for n in range(1, 10)] + ["S", "R", "+2", "L"]]
+    cards += [tutu_wild(kind) for kind in "ETC"]
+    for kind in "TC":
+        cards += [tutu_wild(kind, color) for color in TUTU_COLORS]
+    cards += [tnt_block(False), tnt_block(True)]
+    return cards
+
+
 def landlord_icon():
     icon = Image.new("RGBA", (16, 16), CLEAR)
     hat = ["................",
@@ -477,6 +733,8 @@ def atlas():
     styled += [face(r, s, four=True) for s in SUITS for r in RANKS] + [joker(False), joker(True)]
     for i, card in enumerate(styled):
         sheet.paste(card, ((i % COLS) * CARD_W, (STYLE_ROW + i // COLS) * CARD_H))
+    for i, card in enumerate(tutu_cards()):
+        sheet.paste(card, ((i % COLS) * CARD_W, (TUTU_ROW + i // COLS) * CARD_H))
     # The paper colour of a card's edges, for cards drawn with thickness on the table.
     for y in range(8):
         for x in range(8):
