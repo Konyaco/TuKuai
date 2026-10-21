@@ -73,7 +73,12 @@ When someone is down to one card, their box and the table show a red warning, an
 
 Four players in two teams, partners across the table, with two decks: 27 cards each. Plays work as in Dou Dizhu, with straights of exactly five, three pairs in a row and two threes in a row, and bombs of four to ten cards, straight flushes and the four jokers. Your team wins the round when one of you goes out first, and goes up one to three levels depending on where your partner finishes. The next round is played at the winners' level, and the two hearts of that rank are wild. Two rule sets: one round, or play to A, with the levels and the tribute carried from round to round.
 
-Your partner's box is blue and the other team's red, and the level being played is shown at the top of the screen.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/en/gd-table.webp" alt="Guandan in the table view"></td>
+    <td width="50%">Your partner's box is blue and the other team's red, and the level being played is shown at the top of the screen.</td>
+  </tr>
+</table>
 
 ### Out in the world
 
