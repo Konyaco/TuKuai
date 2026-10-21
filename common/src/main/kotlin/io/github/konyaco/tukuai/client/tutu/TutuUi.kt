@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
 import io.github.konyaco.tukuai.client.PanelHost
+import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.render.CardTableRenderer
@@ -42,10 +43,10 @@ object TutuUi : GameUi {
      * 0. Planted cacti stick out of the draw pile at their depth, face up for all to see, and
      * lit TNT stands as little blocks in the opposite corner.
      */
-    override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
+    override fun scene(table: ClientTable, seats: List<SeatPlace>): List<TableCard> {
         val view = table.view as? TutuView ?: return emptyList()
         val cards = ArrayList<TableCard>()
-        val first = sides.firstOrNull() ?: return emptyList()
+        val first = seats.firstOrNull()?.side ?: return emptyList()
         val (pileX, pileZ) = pileSpot(first)
         val upX = -first.stepX.toFloat()
         val upZ = -first.stepZ.toFloat()
@@ -73,7 +74,7 @@ object TutuUi : GameUi {
         }
 
         for (seat in 0 until view.players) {
-            val side = sides.getOrNull(seat) ?: continue
+            val place = seats.getOrNull(seat) ?: continue
             val revealed = view.revealedHands.getOrNull(seat)
             val hand: List<Pair<Int, Int>> = when {
                 seat == view.seat && !view.finished -> sorted(view.hand).map { CardArt.tutu(it) to it.id }
@@ -82,7 +83,7 @@ object TutuUi : GameUi {
             }
             val watched = revealed != null && seat != view.seat
             layHand(
-                cards, side, hand, standing = !view.finished, bothSides = watched, fromX = pileX, fromZ = pileZ,
+                cards, place, hand, standing = !view.finished, bothSides = watched, fromX = pileX, fromZ = pileZ,
                 mine = seat == view.seat && !view.finished,
             )
         }
@@ -102,14 +103,14 @@ object TutuUi : GameUi {
             val radians = Math.toRadians(angle.toDouble())
             val tossX = -first.stepX * cos(radians).toFloat() + first.stepZ * sin(radians).toFloat()
             val tossZ = -first.stepZ * cos(radians).toFloat() - first.stepX * sin(radians).toFloat()
-            val from = playedBy[card]?.let { sides.getOrNull(it) }
+            val from = playedBy[card]?.let { seats.getOrNull(it) }
             cards += TableCard(
                 ((depth * 31) % 7 - 3) * TOSS_SHIFT,
                 ((depth * 17) % 7 - 3) * TOSS_SHIFT,
                 tossX, tossZ, CardArt.tutu(view.shownFace(card), named[card]), DISCARD_SCALE, layer = i,
                 lift = CardTableRenderer.DISPLAY_HEIGHT + 0.002f,
-                fromX = from?.let { it.stepX * HAND_DISTANCE } ?: pileX,
-                fromZ = from?.let { it.stepZ * HAND_DISTANCE } ?: pileZ,
+                fromX = from?.let { it.side.stepX * HAND_DISTANCE + it.shiftX } ?: pileX,
+                fromZ = from?.let { it.side.stepZ * HAND_DISTANCE + it.shiftZ } ?: pileZ,
                 key = card.id,
             )
         }
@@ -134,7 +135,7 @@ object TutuUi : GameUi {
 
     private fun layHand(
         cards: MutableList<TableCard>,
-        side: Direction,
+        place: SeatPlace,
         hand: List<Pair<Int, Int>>,
         standing: Boolean,
         bothSides: Boolean,
@@ -143,14 +144,15 @@ object TutuUi : GameUi {
         mine: Boolean,
     ) {
         if (hand.isEmpty()) return
+        val side = place.side
         val upX = -side.stepX.toFloat()
         val upZ = -side.stepZ.toFloat()
         val rightX = -upZ
         val rightZ = upX
         val step = if (hand.size <= 1) 0f else minOf(HAND_STEP, HAND_WIDTH / (hand.size - 1))
         val total = step * (hand.size - 1)
-        val cx = side.stepX * HAND_DISTANCE
-        val cz = side.stepZ * HAND_DISTANCE
+        val cx = side.stepX * HAND_DISTANCE + place.shiftX
+        val cz = side.stepZ * HAND_DISTANCE + place.shiftZ
         hand.forEachIndexed { i, (sprite, key) ->
             val offset = -total / 2 + i * step
             val nearer = if (standing) (i - (hand.size - 1) / 2f) * HAND_DEPTH else 0f
@@ -228,7 +230,9 @@ object TutuUi : GameUi {
                 TutuEventKind.SKIPPED -> ClientTables.playAt(pos, SoundEvents.POWDER_SNOW_STEP, 1f, 1f)
                 TutuEventKind.CACTUS -> {
                     ClientTables.playAt(pos, SoundEvents.PLAYER_HURT_SWEET_BERRY_BUSH, 1f, 1f)
-                    sideOf(table, event.seat)?.let { burst(pos, ParticleTypes.DAMAGE_INDICATOR, it.stepX * 1.1f, it.stepZ * 1.1f, 4) }
+                    table.seatPlaces().getOrNull(event.seat)?.let {
+                        burst(pos, ParticleTypes.DAMAGE_INDICATOR, it.side.stepX * HAND_DISTANCE + it.shiftX, it.side.stepZ * HAND_DISTANCE + it.shiftZ, 4)
+                    }
                 }
                 TutuEventKind.BOOM -> {
                     ClientTables.playAt(pos, SoundEvents.GENERIC_EXPLODE, 0.7f, 1.3f)
@@ -260,12 +264,6 @@ object TutuUi : GameUi {
     private fun facing(table: ClientTable): Direction? {
         val state = Minecraft.getInstance().level?.getBlockState(table.pos) ?: return null
         return if (state.hasProperty(CardTableBlock.FACING)) state.getValue(CardTableBlock.FACING) else null
-    }
-
-    private fun sideOf(table: ClientTable, seat: Seat): Direction? {
-        var side = facing(table) ?: return null
-        repeat(seat) { side = side.counterClockWise }
-        return side
     }
 
     /** A few particles just above the table top, [x] and [z] blocks from its middle. */

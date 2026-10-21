@@ -1,5 +1,6 @@
 {
   "block.tukuai.card_table": "カードテーブル",
+  "block.tukuai.big_card_table": "大きなカードテーブル",
   "block.tukuai.stool": "スツール",
   "entity.tukuai.seat": "座席",
   "tukuai.game.doudizhu": "闘地主",
@@ -477,6 +478,8 @@
   "tukuai.preset.tutu.party": "パーティー（4 人・特殊カード多め）",
   "tukuai.preset.tutu.three": "クラシック（3 人）",
   "tukuai.preset.tutu.two": "クラシック（2 人）",
+  "tukuai.preset.tutu.six": "パーティー（6 人・大きなテーブル）",
+  "tukuai.preset.tutu.eight": "パーティー（8 人・大きなテーブル）",
   "tukuai.tutu.color.yellow": "黄",
   "tukuai.tutu.color.purple": "紫",
   "tukuai.tutu.color.blue": "青",
@@ -529,6 +532,7 @@
   "tukuai.guide.tutu.table.classic": "クラシックのデッキ、全 %s 枚。",
   "tukuai.guide.tutu.table.party": "パーティーのデッキ、全 %s 枚。雷、スポーンエッグ、TNT、サボテンが多め。",
   "tukuai.guide.tutu.table.two_players": "2 人のときはトライデントが雪玉と同じ働きをします。",
+  "tukuai.guide.tutu.table.big_table": "5 人以上は大きなカードテーブルで遊びます。",
   "modmenu.descriptionTranslation.tukuai": "土塊棋牌室：Minecraft の中にテーブルを置いて、友だちや CPU と闘地主などのカード・ボードゲームを遊べます。ゲーム内のポイントだけを使い、現実のお金は一切扱いません。",
   "fml.menu.mods.info.description.tukuai": "土塊棋牌室：Minecraft の中にテーブルを置いて、友だちや CPU と闘地主などのカード・ボードゲームを遊べます。ゲーム内のポイントだけを使い、現実のお金は一切扱いません。"
 }

@@ -75,6 +75,7 @@ object TutuGuide {
             if (rules.party) Point("$t.party", listOf(size)) else Point("$t.classic", listOf(size)),
             // Tutu.play: between two players a trident works like a snowball.
             if (rules.players == 2) Point("$t.two_players") else null,
+            if (rules.players > 4) Point("$t.big_table") else null,
         )
     }
 

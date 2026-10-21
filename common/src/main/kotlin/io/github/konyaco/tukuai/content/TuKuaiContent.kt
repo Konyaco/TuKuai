@@ -31,12 +31,19 @@ object TuKuaiContent {
 
     val CARD_TABLE_ITEM: Item = BlockItem(CARD_TABLE, itemProperties("card_table").useBlockDescriptionPrefix())
 
+    /** The 5x5 table for up to eight players. */
+    val BIG_CARD_TABLE: BigCardTableBlock = BigCardTableBlock(
+        blockProperties("big_card_table").mapColor(Wood::mapColorOf).noOcclusion().pushReaction(PushReaction.BLOCK),
+    )
+
+    val BIG_CARD_TABLE_ITEM: Item = BlockItem(BIG_CARD_TABLE, itemProperties("big_card_table").useBlockDescriptionPrefix())
+
     val STOOL: StoolBlock = StoolBlock(blockProperties("stool").mapColor(Wood::mapColorOf).noOcclusion().strength(1.5f))
 
     val STOOL_ITEM: Item = BlockItem(STOOL, itemProperties("stool").useBlockDescriptionPrefix())
 
     val CARD_TABLE_ENTITY: BlockEntityType<CardTableBlockEntity> by lazy {
-        Services.platform.blockEntityType(::CardTableBlockEntity, CARD_TABLE)
+        Services.platform.blockEntityType(::CardTableBlockEntity, CARD_TABLE, BIG_CARD_TABLE)
     }
 
     /** The invisible thing a player rides while sitting at a table. */
@@ -46,9 +53,13 @@ object TuKuaiContent {
         .clientTrackingRange(8)
         .build(ResourceKey.create(Registries.ENTITY_TYPE, TuKuai.id("seat")))
 
-    /** The creative tab entries: a table in every wood, then an oak stool in every colour and a red one in every other wood. */
+    /**
+     * The creative tab entries: a table in every wood, a big table in every wood, then an oak
+     * stool in every colour and a red one in every other wood.
+     */
     fun creativeStacks(): List<ItemStack> =
         Wood.entries.map { wood -> withState(ItemStack(CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
+            Wood.entries.map { wood -> withState(ItemStack(BIG_CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
             DyeColor.entries.map { color -> withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, color)) } +
             Wood.entries.drop(1).map { wood ->
                 withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, DyeColor.RED).with(StoolBlock.WOOD, wood))

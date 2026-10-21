@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
 import io.github.konyaco.tukuai.client.PanelHost
+import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.render.CardTableRenderer
@@ -36,10 +37,10 @@ object UnoUi : GameUi {
      * face out on both sides. The discard pile lies on top of the display in the middle,
      * so every seat can see it, and the draw pile sits in the corner to the right of seat 0.
      */
-    override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
+    override fun scene(table: ClientTable, seats: List<SeatPlace>): List<TableCard> {
         val view = table.view as? UnoView ?: return emptyList()
         val cards = ArrayList<TableCard>()
-        val first = sides.firstOrNull() ?: return emptyList()
+        val first = seats.firstOrNull()?.side ?: return emptyList()
         val corner = first.clockWise
         val pileX = (first.stepX + corner.stepX) * PILE_DISTANCE
         val pileZ = (first.stepZ + corner.stepZ) * PILE_DISTANCE
@@ -54,7 +55,7 @@ object UnoUi : GameUi {
         }
 
         for (seat in 0 until view.players) {
-            val side = sides.getOrNull(seat) ?: continue
+            val place = seats.getOrNull(seat) ?: continue
             val revealed = view.revealedHands.getOrNull(seat)
             val hand: List<Pair<Int, Int>> = when {
                 seat == view.seat && !view.finished -> sorted(view.hand).map { CardArt.uno(it) to it.id }
@@ -63,7 +64,7 @@ object UnoUi : GameUi {
             }
             val watched = revealed != null && seat != view.seat
             layHand(
-                cards, side, hand, standing = !view.finished, bothSides = watched, fromX = pileX, fromZ = pileZ,
+                cards, place, hand, standing = !view.finished, bothSides = watched, fromX = pileX, fromZ = pileZ,
                 mine = seat == view.seat && !view.finished,
             )
         }
@@ -83,14 +84,14 @@ object UnoUi : GameUi {
             val radians = Math.toRadians(angle.toDouble())
             val upX = -first.stepX * cos(radians).toFloat() + first.stepZ * sin(radians).toFloat()
             val upZ = -first.stepZ * cos(radians).toFloat() - first.stepX * sin(radians).toFloat()
-            val from = playedBy[card]?.let { sides.getOrNull(it) }
+            val from = playedBy[card]?.let { seats.getOrNull(it) }
             cards += TableCard(
                 ((depth * 31) % 7 - 3) * TOSS_SHIFT,
                 ((depth * 17) % 7 - 3) * TOSS_SHIFT,
                 upX, upZ, CardArt.uno(card, named[card]), DISCARD_SCALE, layer = i,
                 lift = CardTableRenderer.DISPLAY_HEIGHT + 0.002f,
-                fromX = from?.let { it.stepX * HAND_DISTANCE } ?: pileX,
-                fromZ = from?.let { it.stepZ * HAND_DISTANCE } ?: pileZ,
+                fromX = from?.let { it.side.stepX * HAND_DISTANCE + it.shiftX } ?: pileX,
+                fromZ = from?.let { it.side.stepZ * HAND_DISTANCE + it.shiftZ } ?: pileZ,
                 key = card.id,
             )
         }
@@ -99,7 +100,7 @@ object UnoUi : GameUi {
 
     private fun layHand(
         cards: MutableList<TableCard>,
-        side: Direction,
+        place: SeatPlace,
         hand: List<Pair<Int, Int>>,
         standing: Boolean,
         bothSides: Boolean,
@@ -108,14 +109,15 @@ object UnoUi : GameUi {
         mine: Boolean,
     ) {
         if (hand.isEmpty()) return
+        val side = place.side
         val upX = -side.stepX.toFloat()
         val upZ = -side.stepZ.toFloat()
         val rightX = -upZ
         val rightZ = upX
         val step = if (hand.size <= 1) 0f else minOf(HAND_STEP, HAND_WIDTH / (hand.size - 1))
         val total = step * (hand.size - 1)
-        val cx = side.stepX * HAND_DISTANCE
-        val cz = side.stepZ * HAND_DISTANCE
+        val cx = side.stepX * HAND_DISTANCE + place.shiftX
+        val cz = side.stepZ * HAND_DISTANCE + place.shiftZ
         hand.forEachIndexed { i, (sprite, key) ->
             val offset = -total / 2 + i * step
             val nearer = if (standing) (i - (hand.size - 1) / 2f) * HAND_DEPTH else 0f

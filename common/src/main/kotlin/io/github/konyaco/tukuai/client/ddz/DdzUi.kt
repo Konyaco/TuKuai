@@ -5,6 +5,7 @@ import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
+import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.PanelHost
@@ -37,11 +38,11 @@ object DdzUi : GameUi {
      * fourth side; a play comes from its player's hand. A watcher who may see every hand
      * sees the standing hands face out on both sides.
      */
-    override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
+    override fun scene(table: ClientTable, seats: List<SeatPlace>): List<TableCard> {
         val view = table.view as? DdzView ?: return emptyList()
         val finished = table.snapshot.status == TableStatus.FINISHED
         val recent = DdzPanel.recentActions(view)
-        val kittySide = PlayingCardScene.emptySide(sides)
+        val kittySide = PlayingCardScene.emptySide(seats)
         val deckX = (kittySide?.stepX ?: 0) * DECK_DISTANCE
         val deckZ = (kittySide?.stepZ ?: 0) * DECK_DISTANCE
 
@@ -49,7 +50,8 @@ object DdzUi : GameUi {
         fun faces(list: List<PlayingCard>) = list.sortedWith(DDZ_ORDER.reversed()).map(CardArt::face)
 
         for (seat in 0 until DouDizhu.SEATS) {
-            val side = sides.getOrNull(seat) ?: continue
+            val place = seats.getOrNull(seat) ?: continue
+            val side = place.side
             val revealed = view.revealedHands.getOrNull(seat)
             val hand = when {
                 seat == view.seat && !finished -> faces(view.hand)
@@ -58,18 +60,18 @@ object DdzUi : GameUi {
             }
             val watched = revealed != null && seat != view.seat
             scene.row(
-                side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ,
+                place, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ,
                 standing = !finished, bothSides = watched, mine = seat == view.seat && !finished,
             )
             val play = recent[seat]
             if (play != null && play.kind == DdzEventKind.PLAY) {
-                scene.row(side, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE, side.stepX * HAND_DISTANCE, side.stepZ * HAND_DISTANCE)
+                scene.row(place, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE, side.stepX * HAND_DISTANCE + place.shiftX, side.stepZ * HAND_DISTANCE + place.shiftZ)
             }
         }
 
         if (kittySide != null && view.phase != DdzPhase.FINISHED) {
             val kitty = if (view.kitty.isNotEmpty()) faces(view.kitty) else List(3) { CardArt.back() }
-            scene.row(kittySide, KITTY_DISTANCE, kitty, KITTY_STEP, PLAY_SCALE, deckX, deckZ)
+            scene.row(SeatPlace(kittySide), KITTY_DISTANCE, kitty, KITTY_STEP, PLAY_SCALE, deckX, deckZ)
         }
         return scene.cards
     }

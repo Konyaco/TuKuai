@@ -84,7 +84,7 @@ Four players in two teams, partners across the table, with two decks: 27 cards e
 
 TuKuai's own shedding game, played much like UNO: match the last card by colour, number or picture, and the first to run out of cards wins. The specials are Minecraft things. A snowball freezes the next player, a trident turns play around, a shovel makes the next player draw 2, and lightning makes them draw until they find its colour. The wild cards are where it gets lively: a spawn egg hatches into a random card as you play it, lit TNT blows up on someone's turn, nobody knows whose (they draw 4), and a cactus planted in the draw pile costs whoever draws it 3 more cards. Burning TNT really stands on the table, smoking, and everyone can see where the cacti are in the pile.
 
-The draw pile is never reshuffled: when it runs out the hand ends and the fewest cards win. Every card left is worth 10 points. Four rule sets: classic for 4, party for 4 (more specials), and classic for 3 and for 2.
+The draw pile is never reshuffled: when it runs out the hand ends and the fewest cards win. Every card left is worth 10 points. Six rule sets: classic for 4, party for 4 (more specials), classic for 3 and for 2, and party for 6 and for 8 at a big table.
 
 ### Out in the world
 
@@ -137,6 +137,8 @@ It speaks English, Simplified Chinese, Traditional Chinese, Japanese and Korean,
 Tables placed by older versions (one block big) grow into 3x3 tables by themselves. If there isn't room, they drop as an item instead.
 
 **Stools.** Craft one from a wool, a wooden slab and a stick, stacked top to bottom. The wool sets the cushion color, which you can re-dye later, and the slab sets the wood. Put a stool just outside the middle of a side that has a seat (three sides for Dou Dizhu and Pao De Kuai, all four for 4-player UNO, Tutu Cards and Guandan), and right-clicking it sits you in that seat. A stool that isn't next to a table is still a perfectly good stool.
+
+**Big card table.** Three wool across the top, then planks, a card table and planks, then a log in each bottom corner. It takes 5x5 blocks and seats up to eight, two to a side: put those stools just outside the edge, one either side of the middle block. Games for four or fewer seat one to a side at it, with the stool in the middle. Tutu Cards for 6 and 8 can only be picked at a big table.
 
 ### Controls
 

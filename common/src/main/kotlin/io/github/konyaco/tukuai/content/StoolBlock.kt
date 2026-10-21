@@ -28,9 +28,10 @@ import net.minecraft.world.phys.shapes.Shapes
 import net.minecraft.world.phys.shapes.VoxelShape
 
 /**
- * A wooden stool with a wool cushion, in the wood of the slab it was made with. Right-click to sit on it. A stool just outside the
- * middle of a card table's edge is that side's seat: sitting on it takes the seat and
- * opens the table. Right-click with a dye to change the cushion.
+ * A wooden stool with a wool cushion, in the wood of the slab it was made with. Right-click
+ * to sit on it. A stool just outside the middle of a card table's edge is that side's seat,
+ * and at a big table also one a block either side of the middle: sitting on it takes the
+ * seat and opens the table. Right-click with a dye to change the cushion.
  */
 class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
     init {
@@ -52,7 +53,7 @@ class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
             return InteractionResult.SUCCESS
         }
         val serverPlayer = player as ServerPlayer
-        if (table != null && table.first.sitAt(serverPlayer, table.second)) return InteractionResult.SUCCESS
+        if (table != null && table.first.sitAt(serverPlayer, table.second.side, table.second.along)) return InteractionResult.SUCCESS
         sit(level as ServerLevel, pos, serverPlayer)
         return InteractionResult.SUCCESS
     }
@@ -99,7 +100,7 @@ class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
         /** Height of the top of the cushion, in blocks; see tools/gen_models.py. */
         const val SEAT_HEIGHT = 12.0 / 16.0
 
-        /** How far a stool that serves as a table's seat is from the table's middle block. */
+        /** How far a stool that serves as a 3x3 table's seat is from the table's middle block. */
         const val TABLE_DISTANCE = 2
 
         private val SHAPE: VoxelShape = Shapes.or(
@@ -110,11 +111,21 @@ class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
             Block.box(12.0, 0.0, 12.0, 14.0, 8.0, 14.0),
         )
 
-        /** The card table this stool is a seat of, and the side of the table it is on. */
-        fun tableNextTo(level: Level, pos: BlockPos): Pair<CardTableBlockEntity, Direction>? {
-            for (side in Direction.Plane.HORIZONTAL) {
-                val table = level.getBlockEntity(pos.relative(side.opposite, TABLE_DISTANCE)) as? CardTableBlockEntity ?: continue
-                return table to side
+        /**
+         * The card table this stool is a seat of, and where along which side of it the stool
+         * stands: just outside the edge, facing the middle block or, at a big table, one
+         * either side of it.
+         */
+        fun tableNextTo(level: Level, pos: BlockPos): Pair<CardTableBlockEntity, SeatSpot>? {
+            for (radius in 1..2) {
+                for (side in Direction.Plane.HORIZONTAL) {
+                    for (along in -(radius - 1)..(radius - 1)) {
+                        val spot = SeatSpot(side, along)
+                        val center = pos.relative(side.opposite, radius + 1).relative(spot.right, -along)
+                        val table = level.getBlockEntity(center) as? CardTableBlockEntity ?: continue
+                        if (table.table.radius == radius) return table to spot
+                    }
+                }
             }
             return null
         }

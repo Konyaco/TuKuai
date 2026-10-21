@@ -11,13 +11,13 @@ class PlayingCardScene {
     val cards = ArrayList<TableCard>()
 
     /**
-     * A row of [sprites] in front of [side], [distance] blocks out from the middle, running
-     * left to right as the player on that side sees them. New cards fly in from ([fromX],
-     * [fromZ]). A [standing] hand shows its faces on both sides when [bothSides] is set.
-     * The player's own hand is [mine], so they can pick its cards on the table.
+     * A row of [sprites] in front of the seat at [place], [distance] blocks out from the
+     * middle, running left to right as the player there sees them. New cards fly in from
+     * ([fromX], [fromZ]). A [standing] hand shows its faces on both sides when [bothSides]
+     * is set. The player's own hand is [mine], so they can pick its cards on the table.
      */
     fun row(
-        side: Direction,
+        place: SeatPlace,
         distance: Float,
         sprites: List<Int>,
         step: Float,
@@ -29,14 +29,15 @@ class PlayingCardScene {
         mine: Boolean = false,
     ) {
         if (sprites.isEmpty()) return
+        val side = place.side
         // The player on this side faces the middle; cards run left to right as they see them.
         val upX = -side.stepX.toFloat()
         val upZ = -side.stepZ.toFloat()
         val rightX = -upZ
         val rightZ = upX
         val total = step * (sprites.size - 1)
-        val cx = side.stepX * distance
-        val cz = side.stepZ * distance
+        val cx = side.stepX * distance + place.shiftX
+        val cz = side.stepZ * distance + place.shiftZ
         sprites.forEachIndexed { i, sprite ->
             val offset = -total / 2 + i * step
             if (standing) {
@@ -63,7 +64,9 @@ class PlayingCardScene {
         private const val HAND_TILT = 60f
 
         /** The side of the table nobody sits at, for three players; cards are dealt from there. */
-        fun emptySide(sides: List<Direction>): Direction? =
-            sides.firstOrNull()?.let { first -> Direction.entries.firstOrNull { it.axis.isHorizontal && it !in sides } ?: first }
+        fun emptySide(seats: List<SeatPlace>): Direction? {
+            val sides = seats.map { it.side }
+            return sides.firstOrNull()?.let { first -> Direction.entries.firstOrNull { it.axis.isHorizontal && it !in sides } ?: first }
+        }
     }
 }

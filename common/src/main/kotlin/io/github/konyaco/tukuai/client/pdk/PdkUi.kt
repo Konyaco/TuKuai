@@ -7,6 +7,7 @@ import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PlayingCardScene
+import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.engine.card.PlayingCard
@@ -32,11 +33,11 @@ object PdkUi : GameUi {
      * and lies face up once the game is over; each seat's latest play lies nearer the
      * middle. The cards are dealt from a deck on the empty fourth side.
      */
-    override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
+    override fun scene(table: ClientTable, seats: List<SeatPlace>): List<TableCard> {
         val view = table.view as? PdkView ?: return emptyList()
         val finished = table.snapshot.status == TableStatus.FINISHED
         val recent = PdkPanel.recentActions(view)
-        val deckSide = PlayingCardScene.emptySide(sides)
+        val deckSide = PlayingCardScene.emptySide(seats)
         val deckX = (deckSide?.stepX ?: 0) * DECK_DISTANCE
         val deckZ = (deckSide?.stepZ ?: 0) * DECK_DISTANCE
         val scene = PlayingCardScene()
@@ -44,7 +45,8 @@ object PdkUi : GameUi {
         fun faces(list: List<PlayingCard>) = list.sortedWith(DDZ_ORDER.reversed()).map(CardArt::face)
 
         for (seat in 0 until PaoDeKuai.SEATS) {
-            val side = sides.getOrNull(seat) ?: continue
+            val place = seats.getOrNull(seat) ?: continue
+            val side = place.side
             val revealed = view.revealedHands.getOrNull(seat)
             val hand = when {
                 seat == view.seat && !finished -> faces(view.hand)
@@ -53,12 +55,12 @@ object PdkUi : GameUi {
             }
             val watched = revealed != null && seat != view.seat
             scene.row(
-                side, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ,
+                place, HAND_DISTANCE, hand, HAND_STEP, HAND_SCALE, deckX, deckZ,
                 standing = !finished, bothSides = watched, mine = seat == view.seat && !finished,
             )
             val play = recent[seat]
             if (play != null && play.kind == PdkEventKind.PLAY) {
-                scene.row(side, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE, side.stepX * HAND_DISTANCE, side.stepZ * HAND_DISTANCE)
+                scene.row(place, PLAY_DISTANCE, faces(play.cards), PLAY_STEP, PLAY_SCALE, side.stepX * HAND_DISTANCE + place.shiftX, side.stepZ * HAND_DISTANCE + place.shiftZ)
             }
         }
         return scene.cards

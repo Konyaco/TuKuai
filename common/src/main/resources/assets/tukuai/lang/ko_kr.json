@@ -1,5 +1,6 @@
 {
   "block.tukuai.card_table": "카드 테이블",
+  "block.tukuai.big_card_table": "큰 카드 테이블",
   "block.tukuai.stool": "의자",
   "entity.tukuai.seat": "좌석",
   "tukuai.game.doudizhu": "더우디주",
@@ -477,6 +478,8 @@
   "tukuai.preset.tutu.party": "파티 (4인, 특수 카드 더 많이)",
   "tukuai.preset.tutu.three": "클래식 (3인)",
   "tukuai.preset.tutu.two": "클래식 (2인)",
+  "tukuai.preset.tutu.six": "파티 (6인, 큰 테이블)",
+  "tukuai.preset.tutu.eight": "파티 (8인, 큰 테이블)",
   "tukuai.tutu.color.yellow": "노랑",
   "tukuai.tutu.color.purple": "보라",
   "tukuai.tutu.color.blue": "파랑",
@@ -529,6 +532,7 @@
   "tukuai.guide.tutu.table.classic": "클래식 덱, 모두 %s장.",
   "tukuai.guide.tutu.table.party": "파티 덱, 모두 %s장. 번개, 스폰 알, TNT, 선인장이 더 많습니다.",
   "tukuai.guide.tutu.table.two_players": "둘이서 할 때 삼지창은 눈덩이와 같습니다.",
+  "tukuai.guide.tutu.table.big_table": "5명 이상은 큰 카드 테이블에서 합니다.",
   "modmenu.descriptionTranslation.tukuai": "흙블록 기패실: Minecraft 안에 테이블을 놓고 친구나 컴퓨터와 더우디주 같은 카드·보드게임을 즐기세요. 게임 안의 점수만 쓰며, 실제 돈은 다루지 않습니다.",
   "fml.menu.mods.info.description.tukuai": "흙블록 기패실: Minecraft 안에 테이블을 놓고 친구나 컴퓨터와 더우디주 같은 카드·보드게임을 즐기세요. 게임 안의 점수만 쓰며, 실제 돈은 다루지 않습니다."
 }

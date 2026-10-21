@@ -3,6 +3,8 @@ package io.github.konyaco.tukuai.table
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
+import io.github.konyaco.tukuai.content.SeatSpot
+import io.github.konyaco.tukuai.content.TableSeats
 import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -24,6 +26,7 @@ import java.util.Base64
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
+import kotlin.math.abs
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
@@ -134,12 +137,18 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     /** The seat whose cards [uuid] may see, or null when they watch; see [Watching.seatFor]. */
     private fun viewSeatOf(uuid: UUID): Seat? = Watching.seatFor(dealtIn[uuid], seatOf(uuid), status != TableStatus.PLAYING)
 
-    /** The side of the table seat [seat] sits on; play goes counterclockwise seen from above. */
-    fun sideOf(seat: Seat): Direction {
-        var side = blockState.getValue(CardTableBlock.FACING)
-        repeat(seat) { side = side.counterClockWise }
-        return side
-    }
+    /** The 3x3 or the 5x5 table this is the middle of. */
+    val table: CardTableBlock get() = blockState.block as? CardTableBlock ?: TuKuaiContent.CARD_TABLE
+
+    /** Where seat [seat] is at this table; play goes counterclockwise seen from above. */
+    fun spotOf(seat: Seat): SeatSpot =
+        TableSeats.spots(blockState.getValue(CardTableBlock.FACING), table.radius, seats.size)[seat]
+
+    /** The side of the table seat [seat] sits on. */
+    fun sideOf(seat: Seat): Direction = spotOf(seat).side
+
+    /** Whether this table has room for every seat of [presetId] of [game]. */
+    private fun fits(game: GameDefinition<*, *, *, *>, presetId: String): Boolean = game.seatCount(presetId) <= table.maxSeats
 
     // ---- Changes -------------------------------------------------------------------------------
 
@@ -232,12 +241,13 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     /**
-     * Sitting on the stool on [side] of the table: takes the seat on that side if it is
-     * free, or goes back to it. False if that side has no seat, so the stool is just a stool.
+     * Sitting on the stool on [side] of the table, [along] blocks to the right of its middle:
+     * takes the nearest seat on that side if it is free, or goes back to it. False if that
+     * side has no seat, so the stool is just a stool.
      */
-    fun sitAt(player: ServerPlayer, side: Direction): Boolean {
+    fun sitAt(player: ServerPlayer, side: Direction, along: Int = 0): Boolean {
         val level = level as? ServerLevel ?: return false
-        val seat = seats.indices.firstOrNull { sideOf(it) == side } ?: return false
+        val seat = seats.indices.filter { spotOf(it).side == side }.minByOrNull { abs(spotOf(it).along - along) } ?: return false
         sentRevision.remove(player.uuid)
         val occupant = seats[seat]
         if (occupant is Occupant.Human && occupant.uuid == player.uuid) {
@@ -263,20 +273,21 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     /**
-     * On the stool by the middle of the table's edge on that seat's side, or on the floor
-     * just outside the edge when there is no stool.
+     * On the stool just outside the table's edge in front of the seat, or on the floor there
+     * when there is no stool.
      */
     private fun seatPosition(seat: Seat): Vec3 {
-        val side = sideOf(seat)
-        val stool = worldPosition.relative(side, StoolBlock.TABLE_DISTANCE)
+        val spot = spotOf(seat)
+        val side = spot.side
+        val stool = worldPosition.relative(side, table.radius + 1).relative(spot.right, spot.along)
         if (level?.getBlockState(stool)?.block is StoolBlock) {
             return Vec3(stool.x + 0.5, stool.y + StoolBlock.SEAT_HEIGHT - SeatEntity.HEIGHT, stool.z + 0.5)
         }
-        val distance = CardTableBlock.HALF_WIDTH + SEAT_GAP
+        val distance = table.halfWidth + SEAT_GAP
         return Vec3(
-            worldPosition.x + 0.5 + side.stepX * distance,
+            worldPosition.x + 0.5 + side.stepX * distance + spot.right.stepX * spot.along,
             worldPosition.y.toDouble(),
-            worldPosition.z + 0.5 + side.stepZ * distance,
+            worldPosition.z + 0.5 + side.stepZ * distance + spot.right.stepZ * spot.along,
         )
     }
 
@@ -351,7 +362,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 }
             }
             TableOp.PRESET -> {
-                if (!idle || game.presets.none { it.id == request.text }) return
+                if (!idle || game.presets.none { it.id == request.text } || !fits(game, request.text)) return
                 presetId = request.text
                 resizeSeats(game.seatCount(presetId))
                 if (match != null) match = null
@@ -361,7 +372,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                 val next = GameRegistry[request.text] ?: return
                 if (!idle || next.id == gameId) return
                 gameId = next.id
-                presetId = next.presets.first().id
+                presetId = next.presets.firstOrNull { fits(next, it.id) }?.id ?: next.presets.first().id
                 resizeSeats(next.seatCount(presetId))
                 tally.fill(0)
                 rounds = 0
@@ -471,30 +482,31 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     /**
      * Tables saved before they were 3x3 load as just their middle block. Grow the other
-     * eight parts where there is room, and move anyone already seated out to the new edge.
+     * parts where there is room, and move anyone already seated out to the new edge.
      * If something is in the way, the table drops as an item instead.
      */
     private fun checkParts(level: ServerLevel) {
         val state = blockState
+        val table = table
         val missing = ArrayList<Int>()
-        for (part in 0 until CardTableBlock.PARTS) {
-            if (part == CardTableBlock.CENTER) continue
-            val pos = CardTableBlock.posOf(worldPosition, part)
+        for (part in 0 until table.parts) {
+            if (part == table.centerPart) continue
+            val pos = table.posOf(worldPosition, part)
             if (!level.isLoaded(pos)) return
-            if (!CardTableBlock.sameTable(level.getBlockState(pos), state, part)) missing += part
+            if (!table.sameTable(level.getBlockState(pos), state, part)) missing += part
         }
         partsChecked = true
         if (missing.isEmpty()) return
-        val blocked = missing.any { !level.getBlockState(CardTableBlock.posOf(worldPosition, it)).canBeReplaced() }
+        val blocked = missing.any { !level.getBlockState(table.posOf(worldPosition, it)).canBeReplaced() }
         if (blocked) {
-            TuKuai.LOGGER.info("No room to make the card table at {} 3x3, dropping it as an item", worldPosition)
+            TuKuai.LOGGER.info("No room to make the card table at {} {}x{}, dropping it as an item", worldPosition, table.width, table.width)
             level.destroyBlock(worldPosition, true)
             return
         }
         for (part in missing) {
-            level.setBlock(CardTableBlock.posOf(worldPosition, part), state.setValue(CardTableBlock.PART, part), Block.UPDATE_ALL)
+            level.setBlock(table.posOf(worldPosition, part), state.setValue(table.partProperty, part), Block.UPDATE_ALL)
         }
-        val area = AABB(worldPosition).inflate(CardTableBlock.HALF_WIDTH + 1.0)
+        val area = AABB(worldPosition).inflate(table.halfWidth + 1.0)
         for (entity in level.getEntitiesOfClass(SeatEntity::class.java, area) { it.table == worldPosition }) {
             val seat = entity.passengers.firstNotNullOfOrNull { seatOf(it.uuid) } ?: continue
             placeSeat(entity, seat)

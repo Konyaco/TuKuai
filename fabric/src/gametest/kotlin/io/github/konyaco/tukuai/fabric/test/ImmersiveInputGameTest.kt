@@ -171,17 +171,10 @@ class ImmersiveInputGameTest : FabricClientGameTest {
     }
 
     private fun handCard(table: BlockPos, card: PlayingCard): TableCard? =
-        ClientTables[table]!!.scene(sides(table)).firstOrNull { it.mine && it.sprite == CardArt.face(card) }
+        ClientTables[table]!!.let { it.scene(it.seatPlaces()) }.firstOrNull { it.mine && it.sprite == CardArt.face(card) }
 
     /** The side of the table each seat sits at, as the renderer has it. */
-    private fun sides(table: BlockPos): List<Direction> {
-        val facing = Minecraft.getInstance().level!!.getBlockState(table).getValue(CardTableBlock.FACING)
-        return List(ClientTables[table]!!.snapshot.seats.size) { seat ->
-            var side: Direction = facing
-            repeat(seat) { side = side.counterClockWise }
-            side
-        }
-    }
+    private fun sides(table: BlockPos): List<Direction> = ClientTables[table]!!.seatPlaces().map { it.side }
 
     /** A 3x3 table north of the player with a stool on each seat side, in daylight. */
     private fun buildScene(server: MinecraftServer): BlockPos {

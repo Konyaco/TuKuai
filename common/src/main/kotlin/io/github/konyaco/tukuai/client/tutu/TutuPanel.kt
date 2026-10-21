@@ -191,12 +191,20 @@ class TutuPanel(private val screen: PanelHost) : GamePanel {
         val me = s.you ?: 0
         val recent = recentActions(view)
         renderTitle(g, table)
-        for (seat in 0 until view.players) {
-            if (seat == me) continue
-            renderOpponent(g, table, view, seat, recent[seat], placeOf(view, me, seat))
+        if (view.players > 4) {
+            for (seat in 0 until view.players) {
+                if (seat == me) continue
+                val (x, y) = slotOf(view, me, seat)
+                renderSmallOpponent(g, table, view, seat, recent[seat], x, y)
+            }
+        } else {
+            for (seat in 0 until view.players) {
+                if (seat == me) continue
+                renderOpponent(g, table, view, seat, recent[seat], placeOf(view, me, seat))
+            }
         }
         if (!view.finished) renderPiles(g, view, mouseX, mouseY)
-        renderSelf(g, table, view, me, recent[me])
+        if (view.players > 4) renderSelfLow(g, table, view, me, recent[me]) else renderSelf(g, table, view, me, recent[me])
         renderHand(g, view, mouseX, mouseY)
         if (view.finished) renderResult(g, table, view)
     }
@@ -324,6 +332,68 @@ class TutuPanel(private val screen: PanelHost) : GamePanel {
         }
     }
 
+    // ---- Five to eight players ---------------------------------------------------------------
+
+    /**
+     * Where the box of each other player goes when there are more than four: around the
+     * piles, from the one on your right (the next seat number) up the right side, across
+     * the top, between the scores and the buttons, and down the left, below the scores.
+     */
+    private fun slotOf(view: TutuView, me: Seat, seat: Seat): Pair<Int, Int> {
+        val others = view.players - 1
+        val used = when (others) {
+            4 -> listOf(0, 2, 4, 6)
+            5 -> listOf(0, 2, 3, 4, 6)
+            6 -> listOf(0, 1, 3, 4, 5, 6)
+            else -> (0..6).toList()
+        }
+        val rel = (seat - me).mod(view.players) - 1
+        val right = width - 8 - SMALL_BOX
+        val slots = listOf(
+            right to 120, right to 86, right to 52,
+            width / 2 + 6 to 4, width / 2 - 6 - SMALL_BOX to 4,
+            8 to 101, 8 to 134,
+        )
+        return slots[used[rel.coerceIn(0, used.size - 1)]]
+    }
+
+    /** A player's name, cards left and latest move, in a box small enough for eight at the table. */
+    private fun renderSmallOpponent(g: GuiGraphicsExtractor, table: ClientTable, view: TutuView, seat: Seat, recent: TutuEvent?, x: Int, y: Int) {
+        val acting = view.turn == seat && table.snapshot.status == TableStatus.PLAYING
+        g.fill(x - 2, y - 2, x + SMALL_BOX + 2, y + 30, if (acting) 0x90806020.toInt() else 0x70000000)
+        // The latest card played sits in the right of the box; the name gets the rest.
+        val card = recent?.takeIf { it.kind == TutuEventKind.PLAY && !view.finished }
+        val nameRoom = SMALL_BOX - if (card != null) 18 else 0
+        g.text(font, font.plainSubstrByWidth(seatLabel(table, seat).string, nameRoom), x, y + 1, TableScreen.WHITE, true)
+        g.text(font, Component.literal("× ${view.handCounts[seat]}"), x, y + 15, TableScreen.YELLOW, true)
+        if (card != null) {
+            CardArt.draw(g, CardArt.tutu(card.face ?: card.card!!.face, card.color), x + SMALL_BOX - 16, y + 3, 0.5f)
+        } else if (recent != null && !view.finished) {
+            eventText(recent)?.let { text ->
+                val shown = font.plainSubstrByWidth(text.string, SMALL_BOX - 26)
+                g.text(font, shown, x + SMALL_BOX - font.width(shown), y + 15, TableScreen.YELLOW, true)
+            }
+        }
+        if (acting) renderTimer(g, table, x + SMALL_BOX, y + 1, alignRight = true)
+    }
+
+    /** Your name, timer and latest news in one line just over your hand, clear of the boxes on the left. */
+    private fun renderSelfLow(g: GuiGraphicsExtractor, table: ClientTable, view: TutuView, me: Seat, recent: TutuEvent?) {
+        val y = handY() - 16
+        var x = 8
+        val seen = table.snapshot.you != null || view.revealedHands.isNotEmpty()
+        val label = if (!seen) Component.translatable("tukuai.table.watching") else seatLabel(table, me)
+        g.text(font, label, x, y, TableScreen.WHITE, true)
+        x += font.width(label) + 6
+        if (view.turn == me && table.snapshot.status == TableStatus.PLAYING && seen) {
+            renderTimer(g, table, x, y, alignRight = false)
+            x += 24
+        }
+        if (recent != null && recent.kind != TutuEventKind.PLAY && !view.finished) {
+            eventText(recent)?.let { g.text(font, it, width - 8 - font.width(it), y, TableScreen.YELLOW, true) }
+        }
+    }
+
     private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: TutuView, me: Seat, recent: TutuEvent?) {
         val y = buttonY() + 4
         val x = 8
@@ -431,6 +501,9 @@ class TutuPanel(private val screen: PanelHost) : GamePanel {
         private const val RAISE = 8
         private const val PILE_SCALE = 1.25f
         private const val RESULT_WIDTH = 212
+
+        /** Width of a player's box with more than four at the table. */
+        private const val SMALL_BOX = 84
         /** Room for the score, "-129" at most in practice, plus a gap. */
         private const val SCORE_COLUMN = 40
 

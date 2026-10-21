@@ -1,5 +1,6 @@
 {
   "block.tukuai.card_table": "牌桌",
+  "block.tukuai.big_card_table": "大方桌",
   "block.tukuai.stool": "凳子",
   "entity.tukuai.seat": "座位",
   "tukuai.game.doudizhu": "鬥地主",
@@ -477,6 +478,8 @@
   "tukuai.preset.tutu.party": "熱鬧（4 人，更多特殊牌）",
   "tukuai.preset.tutu.three": "經典（3 人）",
   "tukuai.preset.tutu.two": "經典（2 人）",
+  "tukuai.preset.tutu.six": "熱鬧（6 人，大方桌）",
+  "tukuai.preset.tutu.eight": "熱鬧（8 人，大方桌）",
   "tukuai.tutu.color.yellow": "黃",
   "tukuai.tutu.color.purple": "紫",
   "tukuai.tutu.color.blue": "藍",
@@ -529,6 +532,7 @@
   "tukuai.guide.tutu.table.classic": "經典牌組，一共 %s 張。",
   "tukuai.guide.tutu.table.party": "熱鬧牌組，一共 %s 張：閃電、生怪蛋、TNT 和仙人掌更多。",
   "tukuai.guide.tutu.table.two_players": "兩人對局時，三叉戟相當於雪球。",
+  "tukuai.guide.tutu.table.big_table": "五個人以上要坐大方桌。",
   "modmenu.descriptionTranslation.tukuai": "土塊棋牌室：在 Minecraft 裡擺一張牌桌，和朋友或電腦一起玩鬥地主等棋牌遊戲。只用遊戲內積分，不涉及真實金錢。",
   "fml.menu.mods.info.description.tukuai": "土塊棋牌室：在 Minecraft 裡擺一張牌桌，和朋友或電腦一起玩鬥地主等棋牌遊戲。只用遊戲內積分，不涉及真實金錢。"
 }

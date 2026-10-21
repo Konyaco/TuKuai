@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.BlockState
 
 /** The few things the two loaders do differently. Each loader sets [Services.platform] first thing. */
 interface Platform {
-    fun <T : BlockEntity> blockEntityType(factory: (BlockPos, BlockState) -> T, block: Block): BlockEntityType<T>
+    fun <T : BlockEntity> blockEntityType(factory: (BlockPos, BlockState) -> T, vararg blocks: Block): BlockEntityType<T>
 
     fun sendToPlayer(player: ServerPlayer, payload: CustomPacketPayload)
 

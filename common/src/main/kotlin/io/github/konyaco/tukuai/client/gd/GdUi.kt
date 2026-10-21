@@ -6,6 +6,7 @@ import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.GameUi
 import io.github.konyaco.tukuai.client.PanelHost
+import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.engine.card.PlayingCard
@@ -38,14 +39,15 @@ object GdUi : GameUi {
      * lies face up once a round is over; each seat's latest play lies nearer the middle.
      * New cards are dealt from the middle of the table.
      */
-    override fun scene(table: ClientTable, sides: List<Direction>): List<TableCard> {
+    override fun scene(table: ClientTable, seats: List<SeatPlace>): List<TableCard> {
         val view = table.view as? GdView ?: return emptyList()
         val over = view.phase == GdPhase.ROUND_OVER || view.phase == GdPhase.FINISHED
         val recent = GdPanel.recentActions(view)
         val cards = ArrayList<TableCard>()
 
         for (seat in 0 until Guandan.SEATS) {
-            val side = sides.getOrNull(seat) ?: continue
+            val place = seats.getOrNull(seat) ?: continue
+            val side = place.side
             val revealed = view.revealedHands.getOrNull(seat)
             val hand: List<Pair<Int, Int>> = when {
                 seat == view.seat && !over -> keyed(sorted(view, view.hand))
@@ -53,10 +55,10 @@ object GdUi : GameUi {
                 else -> List(view.handCounts[seat]) { CardArt.back() to -1 }
             }
             val watched = revealed != null && seat != view.seat
-            row(cards, side, HAND_DISTANCE, hand, HAND_STEP, HAND_WIDTH, HAND_SCALE, standing = !over, bothSides = watched, 0f, 0f)
+            row(cards, place, HAND_DISTANCE, hand, HAND_STEP, HAND_WIDTH, HAND_SCALE, standing = !over, bothSides = watched, 0f, 0f)
             val play = recent[seat]
             if (play != null && play.kind == GdEventKind.PLAY) {
-                row(cards, side, PLAY_DISTANCE, keyed(play.cards), PLAY_STEP, PLAY_WIDTH, PLAY_SCALE, standing = false, bothSides = false, side.stepX * HAND_DISTANCE, side.stepZ * HAND_DISTANCE)
+                row(cards, place, PLAY_DISTANCE, keyed(play.cards), PLAY_STEP, PLAY_WIDTH, PLAY_SCALE, standing = false, bothSides = false, side.stepX * HAND_DISTANCE + place.shiftX, side.stepZ * HAND_DISTANCE + place.shiftZ)
             }
         }
         return cards
@@ -73,7 +75,7 @@ object GdUi : GameUi {
 
     private fun row(
         cards: MutableList<TableCard>,
-        side: Direction,
+        place: SeatPlace,
         distance: Float,
         sprites: List<Pair<Int, Int>>,
         most: Float,
@@ -85,14 +87,15 @@ object GdUi : GameUi {
         fromZ: Float,
     ) {
         if (sprites.isEmpty()) return
+        val side = place.side
         val upX = -side.stepX.toFloat()
         val upZ = -side.stepZ.toFloat()
         val rightX = -upZ
         val rightZ = upX
         val step = if (sprites.size <= 1) 0f else minOf(most, widest / (sprites.size - 1))
         val total = step * (sprites.size - 1)
-        val cx = side.stepX * distance
-        val cz = side.stepZ * distance
+        val cx = side.stepX * distance + place.shiftX
+        val cz = side.stepZ * distance + place.shiftZ
         sprites.forEachIndexed { i, (sprite, key) ->
             val offset = -total / 2 + i * step
             val nearer = if (standing) (i - (sprites.size - 1) / 2f) * HAND_DEPTH else 0f

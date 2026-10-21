@@ -40,11 +40,13 @@ class TuKuaiNeoForge(bus: IEventBus) {
         // The suppliers run inside the registry events, which is when TuKuaiContent may first be read.
         val blocks = DeferredRegister.create(Registries.BLOCK, TuKuai.MOD_ID)
         blocks.register("card_table", Supplier { TuKuaiContent.CARD_TABLE })
+        blocks.register("big_card_table", Supplier { TuKuaiContent.BIG_CARD_TABLE })
         blocks.register("stool", Supplier { TuKuaiContent.STOOL })
         blocks.register(bus)
 
         val items = DeferredRegister.create(Registries.ITEM, TuKuai.MOD_ID)
         items.register("card_table", Supplier { TuKuaiContent.CARD_TABLE_ITEM })
+        items.register("big_card_table", Supplier { TuKuaiContent.BIG_CARD_TABLE_ITEM })
         items.register("stool", Supplier { TuKuaiContent.STOOL_ITEM })
         items.register(bus)
 
@@ -79,8 +81,8 @@ class TuKuaiNeoForge(bus: IEventBus) {
 }
 
 object NeoForgePlatform : Platform {
-    override fun <T : BlockEntity> blockEntityType(factory: (BlockPos, BlockState) -> T, block: Block): BlockEntityType<T> =
-        BlockEntityType(BlockEntityType.BlockEntitySupplier { pos, state -> factory(pos, state) }, block)
+    override fun <T : BlockEntity> blockEntityType(factory: (BlockPos, BlockState) -> T, vararg blocks: Block): BlockEntityType<T> =
+        BlockEntityType(BlockEntityType.BlockEntitySupplier { pos, state -> factory(pos, state) }, *blocks)
 
     override fun sendToPlayer(player: ServerPlayer, payload: CustomPacketPayload) {
         PacketDistributor.sendToPlayer(player, payload)

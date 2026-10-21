@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer
 import com.mojang.math.Axis
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientTables
+import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TablePointer
 import io.github.konyaco.tukuai.client.TableScreen
@@ -31,7 +32,7 @@ import kotlin.math.atan2
 
 /**
  * Draws the dyed cloth, the cards and the display in the middle of a card table. It is
- * attached to the table's middle block and draws across all nine.
+ * attached to the table's middle block and draws across all of its blocks.
  */
 open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityRendererProvider.Context) :
     BlockEntityRenderer<CardTableBlockEntity, CardTableRenderer.State> {
@@ -42,6 +43,9 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
         var back: Int = 0
         var lines: List<FormattedCharSequence> = emptyList()
         var turnSide: Direction? = null
+
+        /** Blocks from the middle block to the edge: 1 for a 3x3 table, 2 for a 5x5 one. */
+        var radius: Int = 1
     }
 
     /** Each table's cards on their way to where the latest update puts them. */
@@ -68,13 +72,10 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
             return
         }
         val facing = table.blockState.getValue(CardTableBlock.FACING)
-        val sides = List(client.snapshot.seats.size) { seat ->
-            var side: Direction = facing
-            repeat(seat) { side = side.counterClockWise }
-            side
-        }
+        state.radius = (table.blockState.block as? CardTableBlock)?.radius ?: 1
+        val seats = SeatPlace.of(facing, state.radius, client.snapshot.seats.size)
         val now = ClientTables.ticks + partialTick.toDouble()
-        val cards = motions.getOrPut(table.blockPos) { CardMotion() }.cards(client.scene(sides), now)
+        val cards = motions.getOrPut(table.blockPos) { CardMotion() }.cards(client.scene(seats), now)
         state.cards = TablePointer.dress(table.blockPos, cards)
         val snapshot = client.snapshot
         val lines = if (snapshot.status == TableStatus.LOBBY || client.view == null) {
@@ -83,14 +84,14 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
             client.ui?.displayLines(client) ?: emptyList()
         }
         state.lines = lines.map { it.visualOrderText }
-        state.turnSide = client.ui?.turnSeat(client)?.let { sides.getOrNull(it) }
+        state.turnSide = client.ui?.turnSeat(client)?.let { seats.getOrNull(it)?.side }
     }
 
     override fun submit(state: State, poseStack: PoseStack, collector: SubmitNodeCollector, camera: CameraRenderState) {
         val light = state.lightCoords
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(CardArt.ATLAS)) { pose, buffer ->
-            drawFelt(buffer, pose, light, ARGB_OPAQUE or lighten(state.feltColor))
-            drawFeltTrim(buffer, pose, light, state.feltColor)
+            drawFelt(buffer, pose, light, ARGB_OPAQUE or lighten(state.feltColor), state.radius)
+            drawFeltTrim(buffer, pose, light, state.feltColor, state.radius)
             drawDisplay(buffer, pose, light, state.turnSide)
             for (card in state.cards) drawCard(buffer, pose, light, card, state.back)
         }
@@ -98,13 +99,13 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
     }
 
     /** One tile of the cloth per block, cut short at the wooden rim. */
-    private fun drawFelt(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, color: Int) {
+    private fun drawFelt(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, color: Int, radius: Int) {
         val tile = CardArt.FELT_SIZE.toFloat()
-        for (bx in -1..1) for (bz in -1..1) {
-            val x0 = if (bx == -1) RIM else 0f
-            val x1 = if (bx == 1) 1f - RIM else 1f
-            val z0 = if (bz == -1) RIM else 0f
-            val z1 = if (bz == 1) 1f - RIM else 1f
+        for (bx in -radius..radius) for (bz in -radius..radius) {
+            val x0 = if (bx == -radius) RIM else 0f
+            val x1 = if (bx == radius) 1f - RIM else 1f
+            val z0 = if (bz == -radius) RIM else 0f
+            val z1 = if (bz == radius) 1f - RIM else 1f
             val uv = floatArrayOf(
                 (CardArt.FELT_U + x0 * tile) / CardArt.TEXTURE_WIDTH,
                 (CardArt.FELT_V + z0 * tile) / CardArt.TEXTURE_HEIGHT,
@@ -120,9 +121,9 @@ open class CardTableRenderer(@Suppress("UNUSED_PARAMETER") context: BlockEntityR
      * A shadow along the rim, where the cloth tucks under the wood, and a fine pale line
      * a hand's width in from it around the playing area, as on a card table's cloth.
      */
-    private fun drawFeltTrim(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, felt: Int) {
-        val lo = -1f + RIM
-        val hi = 2f - RIM
+    private fun drawFeltTrim(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, felt: Int, radius: Int) {
+        val lo = -radius + RIM
+        val hi = radius + 1f - RIM
         fun frame(inset: Float, width: Float, y: Float, color: Int) {
             val a = lo + inset
             val b = hi - inset
