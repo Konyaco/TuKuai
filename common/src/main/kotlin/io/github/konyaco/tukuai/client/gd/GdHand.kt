@@ -2,6 +2,8 @@ package io.github.konyaco.tukuai.client.gd
 
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.PanelHost
+import io.github.konyaco.tukuai.client.PlayingCardHand
+import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import org.lwjgl.glfw.GLFW
@@ -10,10 +12,12 @@ import org.lwjgl.glfw.GLFW
  * Your Guandan hand along the bottom of the screen, where cards are picked before playing
  * them. Two decks mean two of every card, so picks are kept by position in the hand rather
  * than by card. A long hand is laid out in two rows, the first row behind the second,
- * showing the corners with the ranks.
+ * showing the corners with the ranks. In the immersive view the hand is left out and its
+ * cards are picked where they stand on the table instead, told apart by [GdUi.keys].
  */
 class GdHand(private val host: PanelHost) {
     private var cards: List<PlayingCard> = emptyList()
+    private var keys: List<Int> = emptyList()
     private val picked = HashSet<Int>()
     private var hints: List<List<PlayingCard>> = emptyList()
     private var hintIndex = 0
@@ -36,8 +40,9 @@ class GdHand(private val host: PanelHost) {
 
     private fun topY(n: Int = cards.size) = if (twoRows(n)) frontY() - ROW_GAP else frontY()
 
-    /** The row above the hand where the turn buttons go. */
-    fun buttonY(n: Int = cards.size): Int = topY(maxOf(n, 0)) - RAISE - 4 - 22
+    /** The row above the hand where the turn buttons go; near the bottom when the hand is on the table. */
+    fun buttonY(n: Int = cards.size): Int =
+        if (host.inWorld) host.panelHeight - PlayingCardHand.BOTTOM_BUTTONS else topY(maxOf(n, 0)) - RAISE - 4 - 22
 
     /** Which row each card is in and its place in that row. */
     private fun rows(n: Int): List<Pair<Int, Int>> {
@@ -67,6 +72,7 @@ class GdHand(private val host: PanelHost) {
         if (step == lastStep && hand == cards) return
         val keep = selected.toMutableList()
         cards = hand
+        keys = GdUi.keys(hand)
         picked.clear()
         for (i in hand.indices) if (keep.remove(hand[i])) picked += i
         if (step != lastStep) {
@@ -125,6 +131,7 @@ class GdHand(private val host: PanelHost) {
     /** The mouse moved with the left button held: the cards of the sweep's row whose strip it crossed go the same way. */
     fun drag(x: Double): Boolean {
         val picking = sweep ?: return false
+        if (host.inWorld) return false
         val from = minOf(sweepX, x)
         val to = maxOf(sweepX, x)
         sweepX = x
@@ -149,10 +156,30 @@ class GdHand(private val host: PanelHost) {
         sweep = null
     }
 
+    /** A click on one of the player's cards on the table: picks or drops it, and starts a sweep. */
+    fun clickTableCard(card: TableCard): Boolean {
+        val i = keys.indexOf(card.key).takeIf { it >= 0 } ?: return false
+        if (!picked.remove(i)) picked += i
+        sweep = i in picked
+        host.refresh()
+        return true
+    }
+
+    /** The pointer swept over [card] on the table with the button held: it goes the way of the first card. */
+    fun dragTableCard(card: TableCard) {
+        val picking = sweep ?: return
+        val i = keys.indexOf(card.key).takeIf { it >= 0 } ?: return
+        if (if (picking) picked.add(i) else picked.remove(i)) host.refresh()
+    }
+
+    /** Whether [card] on the table shows a picked card. */
+    fun isRaised(card: TableCard): Boolean = keys.indexOf(card.key).let { it >= 0 && it in picked }
+
     /** Front row first, and the right-hand card of each row before those it covers. */
     private fun drawOrder(n: Int): List<Int> = (0 until n).sortedWith(compareBy<Int> { rows(n)[it].first }.thenBy { rows(n)[it].second })
 
     private fun cardAt(mx: Double, my: Double): Int? {
+        if (host.inWorld) return null
         val n = cards.size
         for (i in drawOrder(n).asReversed()) {
             val (x, y) = position(n, i)
@@ -164,7 +191,7 @@ class GdHand(private val host: PanelHost) {
     /** Draws the hand; [wild] says which cards to mark as wild. */
     fun render(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, wild: (PlayingCard) -> Boolean) {
         val n = cards.size
-        if (n == 0) return
+        if (n == 0 || host.inWorld) return
         val hovered = cardAt(mouseX.toDouble(), mouseY.toDouble())
         for (i in drawOrder(n)) {
             val (x, y) = position(n, i)
