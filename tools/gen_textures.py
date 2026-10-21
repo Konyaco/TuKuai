@@ -1,7 +1,8 @@
 """Generates TuKuai's pixel-art textures: the card atlas and the table block faces.
 
 Run from the repository root: python3 tools/gen_textures.py
-Needs Pillow. Output goes into common/src/main/resources/assets/tukuai/textures.
+Needs Pillow; without it, PYTHONPATH=tools/minipil python3 tools/gen_textures.py uses a
+small stand-in that writes the same pixels. Output goes into common/src/main/resources/assets/tukuai/textures.
 The card layout here must match client/CardAtlas.kt.
 """
 import math
