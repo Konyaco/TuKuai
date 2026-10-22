@@ -5,6 +5,7 @@ import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.client.TablePointer
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.gd.GdUi
 import io.github.konyaco.tukuai.client.render.CardFrame
@@ -211,7 +212,7 @@ class ImmersiveInputGameTest : FabricClientGameTest {
             context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
             context.setScreen { TableScreen(table) }
 
-            // Pass until there is a pair or three of a kind to play, lying side by side in the hand.
+            // Play on until there is a pair or three of a kind to play, lying side by side in the hand.
             var tries = 0
             var run: List<Int>
             while (true) {
@@ -225,8 +226,10 @@ class ImmersiveInputGameTest : FabricClientGameTest {
                     .filter { it.last() - it.first() == it.size - 1 }
                     .minByOrNull { it.size } ?: emptyList()
                 if (run.isNotEmpty()) break
-                // Without a pair to lead, lead the smallest single instead.
-                val action = if (turn.canPass) GdAction.Pass else GdAction.PlayCards(turn.plays.minBy { it.cards.size }.cards)
+                // Otherwise beat the play with the fewest cards there is, to lead the next trick
+                // and lead a pair then. Passing every time would let the others end the hand first.
+                val beat = turn.plays.filter { !it.pattern.isBomb }.minByOrNull { it.cards.size }
+                val action = if (beat != null) GdAction.PlayCards(beat.cards) else GdAction.Pass
                 val step = ClientTables[table]!!.snapshot.step
                 act(server, table, TableOp.ACT, data = GdCodecs.ACTION.encode(action))
                 context.waitFor({ (ClientTables[table]?.snapshot?.step ?: step) != step }, 100)
@@ -248,6 +251,16 @@ class ImmersiveInputGameTest : FabricClientGameTest {
             }
             val (x0, y0) = point(run.first())
             val (x1, y1) = point(run.last())
+            // The cards slide to their places after each change to the hand; sweep once the
+            // table pointer finds the same cards at both ends as the hand laid out here does.
+            fun under(mc: Minecraft, x: Double, y: Double): Int? {
+                val window = mc.window
+                return TablePointer.cardAt(
+                    table, x * window.guiScaledWidth / window.screenWidth, y * window.guiScaledHeight / window.screenHeight,
+                    window.guiScaledWidth, window.guiScaledHeight,
+                )?.key
+            }
+            context.waitFor({ mc -> under(mc, x0, y0) == keys[run.first()] && under(mc, x1, y1) == keys[run.last()] }, 200)
             context.input.setCursorPos(x0, y0)
             context.waitTicks(3)
             context.input.holdMouse(GLFW.GLFW_MOUSE_BUTTON_LEFT)
