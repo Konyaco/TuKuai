@@ -32,9 +32,9 @@ import org.lwjgl.glfw.GLFW
  *
  * The top right corner holds the rule book, the view, the menu with the looks of the
  * cards and stopping the match, and one button for the moment: auto play during a game,
- * the lobby after one. Popups (the menu, the leaderboard, the final standings, and a
- * proposal to stop) are drawn over everything else, and while one is open the buttons
- * under it are left out.
+ * the lobby after one, or taking a seat in a game everyone left. Popups (the menu, the
+ * leaderboard, the final standings, and making sure the player means to stop) are drawn
+ * over everything else, and while one is open the buttons under it are left out.
  *
  * In immersive mode nothing covers the world, so the table and the cards on it stay in view.
  * There the player turns their head by dragging with the right mouse button, and picks
@@ -48,7 +48,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     /** After a game ends, players may look at the lobby instead of the result. */
     private var showLobby = false
 
-    private enum class Popup { MENU, LEADERBOARD, STANDINGS }
+    private enum class Popup { MENU, LEADERBOARD, STANDINGS, END }
 
     /** A match that was stopped before anyone opened the screen ends on its standings. */
     private var popup: Popup? = table?.snapshot?.takeIf { it.matchOver && it.status == TableStatus.LOBBY }?.let { Popup.STANDINGS }
@@ -85,9 +85,10 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val now = updated.snapshot
         if (now.status == TableStatus.PLAYING || before?.status != now.status) showLobby = false
         // A new game closes what was about the last one; a match everyone stopped ends on its standings.
-        if (now.status == TableStatus.PLAYING && popup != Popup.MENU) popup = null
+        if (now.status == TableStatus.PLAYING && popup != Popup.MENU && popup != Popup.END) popup = null
         if (now.matchOver && before?.matchOver == false && now.status == TableStatus.LOBBY) popup = Popup.STANDINGS
         if (popup == Popup.STANDINGS && !now.matchOver) popup = null
+        if (popup == Popup.END && !mayEnd(now)) popup = null
     }
 
     /** Opens the rule book on this table's game; closing it comes back here. */
@@ -124,7 +125,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val t = table
         initCorner(t)
         if (t == null) return
-        val covered = endPrompt(t) || popup != null
+        val covered = popup != null
         if (inLobby(t)) {
             if (!covered) initLobby(t)
         } else {
@@ -133,15 +134,17 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
                 panelGame = t.snapshot.gameId
             }
             // The panel keeps up with the table even under a popup, so it still notices the player's turn.
-            hidePanelButtons = covered
+            // A game everyone left waits; the only way on is to sit down, so its own buttons are left out.
+            hidePanelButtons = covered || t.snapshot.paused
             panel?.rebuild(t)
             hidePanelButtons = false
         }
-        when {
-            endPrompt(t) -> initEndPrompt(t)
-            popup == Popup.MENU -> initMenu(t)
-            popup == Popup.LEADERBOARD -> initLeaderboard()
-            popup == Popup.STANDINGS -> initStandings(t)
+        when (popup) {
+            Popup.MENU -> initMenu(t)
+            Popup.LEADERBOARD -> initLeaderboard()
+            Popup.STANDINGS -> initStandings(t)
+            Popup.END -> initEndPrompt()
+            null -> {}
         }
     }
 
@@ -159,9 +162,15 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         button(Component.literal("☰"), width - CORNER, 26, 20) {
             openPopup(if (popup == Popup.MENU) null else Popup.MENU)
         }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.menu")))
-        if (t == null || endPrompt(t)) return
+        if (t == null || popup == Popup.END) return
         val s = t.snapshot
-        if (s.status == TableStatus.PLAYING && s.you != null && !inLobby(t)) {
+        if (s.paused && s.you == null) {
+            // Everyone in the game left: a watcher may sit down to play on or end it.
+            button(Component.translatable("tukuai.table.take_seat"), width - 74, 26, 70) { send(TableOp.SIT, -1) }
+                .setTooltip(Tooltip.create(Component.translatable("tukuai.table.take_seat.tip")))
+        } else if (s.paused) {
+            button(Component.translatable("tukuai.table.sit_back"), width - 74, 26, 70) { send(TableOp.SIT, s.you ?: 0) }
+        } else if (s.status == TableStatus.PLAYING && s.you != null && !inLobby(t)) {
             val auto = s.seats.getOrNull(s.you)?.auto == true
             button(Component.translatable(if (auto) "tukuai.table.auto.off" else "tukuai.table.auto.on"), width - 74, 26, 70) {
                 send(TableOp.AUTO, if (auto) 0 else 1)
@@ -389,14 +398,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     // ---- Popups --------------------------------------------------------------------------------
 
-    /** Someone proposed to stop the match, and this player, who is in it, has not said yes yet. */
-    private fun endPrompt(t: ClientTable): Boolean {
-        val s = t.snapshot
-        val me = s.you ?: return false
-        return !s.matchOver && s.seats.any { it.endVote } && me in s.voters && s.seats.getOrNull(me)?.endVote != true
-    }
-
-    /** Whether this player may propose to stop the match now: a game is on or at least one was played. */
+    /** Whether this player may stop the match now: they are in it, and a game is on or at least one was played. */
     private fun mayEnd(s: TableSnapshot): Boolean = s.you != null && !s.matchOver && (s.status == TableStatus.PLAYING || s.rounds > 0)
 
     // The menu: under its button in the top right corner.
@@ -411,21 +413,9 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     private val menuBottom get() = menuButtonY + 26
 
     private fun initMenu(t: ClientTable) {
-        val s = t.snapshot
-        val me = s.you
-        val proposed = me != null && s.seats.getOrNull(me)?.endVote == true
-        val b = if (proposed) {
-            button(Component.translatable("tukuai.table.end.withdraw"), menuLeft() + 8, menuButtonY, MENU_WIDTH - 16) {
-                send(TableOp.KEEP)
-                openPopup(null)
-            }
-        } else {
-            button(Component.translatable("tukuai.table.end"), menuLeft() + 8, menuButtonY, MENU_WIDTH - 16, mayEnd(s)) {
-                send(TableOp.END)
-                openPopup(null)
-            }
-        }
-        b.setTooltip(Tooltip.create(Component.translatable(if (s.voters.size > 1) "tukuai.table.end.tip_shared" else "tukuai.table.end.tip_alone")))
+        button(Component.translatable("tukuai.table.end"), menuLeft() + 8, menuButtonY, MENU_WIDTH - 16, mayEnd(t.snapshot)) {
+            openPopup(Popup.END)
+        }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.end.tip")))
     }
 
     private fun renderMenu(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
@@ -545,15 +535,18 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         }
     }
 
-    // Someone proposed to stop: agree or keep playing.
+    // Stopping the match, which any one player may do for everyone: one more click to be sure.
     private val promptWidth = 240
     private fun promptTop() = (height - PROMPT_HEIGHT) / 2 - 20
 
-    private fun initEndPrompt(t: ClientTable) {
+    private fun initEndPrompt() {
         val left = (width - promptWidth) / 2
         val y = promptTop() + PROMPT_HEIGHT - 26
-        button(Component.translatable("tukuai.table.end.agree"), left + 10, y, 106) { send(TableOp.END) }
-        button(Component.translatable("tukuai.table.end.keep"), left + promptWidth - 116, y, 106) { send(TableOp.KEEP) }
+        button(Component.translatable("tukuai.table.end.confirm"), left + 10, y, 106) {
+            send(TableOp.END)
+            openPopup(null)
+        }
+        button(Component.translatable("tukuai.table.end.keep"), left + promptWidth - 116, y, 106) { openPopup(null) }
     }
 
     private fun renderEndPrompt(g: GuiGraphicsExtractor, t: ClientTable) {
@@ -561,18 +554,17 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         val left = (width - promptWidth) / 2
         val top = promptTop()
         panelBox(g, left, top, left + promptWidth, top + PROMPT_HEIGHT)
-        val who = s.seats.filter { it.endVote }.joinToString(", ") { seatName(it.occupant).string }
-        g.centeredText(font, Component.translatable("tukuai.table.end.proposed", who), width / 2, top + 8, YELLOW)
+        g.centeredText(font, Component.translatable("tukuai.table.end.ask"), width / 2, top + 8, YELLOW)
         val detail = when {
             s.status == TableStatus.PLAYING && s.rounds == 0 -> Component.translatable("tukuai.table.end.detail_none")
             s.status == TableStatus.PLAYING -> Component.translatable("tukuai.table.end.detail_drop", s.rounds)
             else -> Component.translatable("tukuai.table.end.detail", s.rounds)
         }
+        val others = s.seats.indices.count { it != s.you && s.seats[it].occupant is Occupant.Human }
+        if (others > 0) detail.append(" ").append(Component.translatable("tukuai.table.end.for_all"))
         font.split(detail, promptWidth - 20).forEachIndexed { i, line ->
-            g.centeredText(font, line, width / 2, top + 22 + i * 10, GRAY)
+            g.centeredText(font, line, width / 2, top + 24 + i * 10, GRAY)
         }
-        val agreed = s.voters.count { s.seats[it].endVote }
-        g.centeredText(font, Component.translatable("tukuai.table.end.count", agreed, s.voters.size), width / 2, top + 44, WHITE)
     }
 
     // ---- Drawing -------------------------------------------------------------------------------
@@ -585,8 +577,8 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
 
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) {
         val t = table
-        val covered = t != null && (endPrompt(t) || (popup != null && popup != Popup.MENU))
-        TablePointer.hovered = if (t != null && !inLobby(t) && !covered && popup == null && turnFrom == null &&
+        val covered = t != null && popup != null && popup != Popup.MENU
+        TablePointer.hovered = if (t != null && !inLobby(t) && !covered && popup == null && !t.snapshot.paused && turnFrom == null &&
             children().none { it.isMouseOver(mouseX.toDouble(), mouseY.toDouble()) }
         ) {
             tableCardAt(mouseX.toDouble(), mouseY.toDouble())
@@ -596,16 +588,20 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
         when {
             t == null -> g.centeredText(font, Component.translatable("tukuai.table.loading"), width / 2, height / 2, WHITE)
             inLobby(t) -> if (popup == null || popup == Popup.MENU) renderLobby(g, t)
-            else -> panel?.render(g, t, mouseX, mouseY)
+            else -> {
+                panel?.render(g, t, mouseX, mouseY)
+                if (t.snapshot.paused) renderPaused(g, t)
+            }
         }
         if (t != null) {
             // Popups dim what is under them, except the menu, which only drops down.
             if (covered) g.fill(0, 0, width, height, DIM)
-            when {
-                endPrompt(t) -> renderEndPrompt(g, t)
-                popup == Popup.MENU -> renderMenu(g, mouseX, mouseY)
-                popup == Popup.LEADERBOARD -> renderLeaderboard(g, t)
-                popup == Popup.STANDINGS -> renderStandings(g, t)
+            when (popup) {
+                Popup.MENU -> renderMenu(g, mouseX, mouseY)
+                Popup.LEADERBOARD -> renderLeaderboard(g, t)
+                Popup.STANDINGS -> renderStandings(g, t)
+                Popup.END -> renderEndPrompt(g, t)
+                null -> {}
             }
         }
         super.extractRenderState(g, mouseX, mouseY, partialTick)
@@ -614,9 +610,8 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
         if (super.mouseClicked(event, doubleClick)) return true
         val t = table
-        if (t != null && endPrompt(t)) return true
         if (popup == Popup.MENU) return clickMenu(event.x(), event.y())
-        if (popup != null) return true
+        if (popup != null || t?.snapshot?.paused == true) return true
         if (inWorld && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             startTurning()
             return true
@@ -674,7 +669,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             return true
         }
         val t = table
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && t != null && !inLobby(t) && popup == null && !endPrompt(t)) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && t != null && !inLobby(t) && popup == null) {
             if (sweeping) {
                 // Sampled along the way, so a quick sweep does not skip the cards it passes.
                 val steps = maxOf(1, (kotlin.math.hypot(dragX, dragY) / 3).toInt())
@@ -721,7 +716,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             openPopup(null)
             return true
         }
-        val free = t != null && !inLobby(t) && popup == null && !endPrompt(t)
+        val free = t != null && !inLobby(t) && popup == null && !t.snapshot.paused
         if (free && panel?.keyPressed(t!!, event.key()) == true) return true
         if (event.key() == GLFW.GLFW_KEY_TAB) {
             stopTurning()
@@ -738,6 +733,21 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     override fun tick() {
         val player = minecraft.player
         if (player == null || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos)) > 10.0 * 10.0) onClose()
+    }
+
+    /** In the middle, over the game: it waits because its players all left, and what anyone may do about it. */
+    private fun renderPaused(g: GuiGraphicsExtractor, t: ClientTable) {
+        val text = Component.translatable(if (t.snapshot.you == null) "tukuai.table.paused.watcher" else "tukuai.table.paused.player")
+        val w = minOf(320, width - 40)
+        val lines = font.split(text, w - 16)
+        val h = 28 + lines.size * 10
+        val left = (width - w) / 2
+        // Below the scoreboard, which grows by a line or two for a watcher.
+        val top = height / 2 - h / 2 - 10
+        g.fill(0, 0, width, height, DIM)
+        panelBox(g, left, top, left + w, top + h)
+        g.centeredText(font, Component.translatable("tukuai.table.paused"), width / 2, top + 7, GOLD)
+        lines.forEachIndexed { i, line -> g.centeredText(font, line, width / 2, top + 21 + i * 10, GRAY) }
     }
 
     // ---- Drawing bits --------------------------------------------------------------------------

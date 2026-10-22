@@ -37,8 +37,8 @@ import org.lwjgl.glfw.GLFW
 /**
  * A short match of Dou Dizhu from start to final standings: the scoreboard during play,
  * the menu with the card looks, the leaderboard, picking a run of cards by dragging
- * across the hand, the result of the last game of a match, the standings, and a match
- * stopped halfway. Also the table and stool from the side and from the stool, at their
+ * across the hand, the result of the last game of a match, the standings, a game that
+ * waits while we are out of our seat, and a match stopped halfway. Also the table and stool from the side and from the stool, at their
  * new heights. `TUKUAI_LANG=zh_cn` takes the pictures in another language.
  */
 class MatchGameTest : FabricClientGameTest {
@@ -146,10 +146,26 @@ class MatchGameTest : FabricClientGameTest {
             context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.PLAYING && it.rounds == 1 } == true }, 200)
             context.waitTicks(10)
 
-            // Ending the match halfway: alone with computers, it ends at once, and the screen shows the standings.
+            // Standing up leaves nobody in the game, so it waits for us instead of the computers playing on.
+            act(server, table, TableOp.STAND)
+            context.waitFor({ ClientTables[table]?.snapshot?.paused == true }, 100)
+            val pausedAt = ClientTables[table]!!.snapshot.step
+            context.waitTicks(60)
+            check(ClientTables[table]!!.snapshot.let { it.paused && it.step == pausedAt }) { "The computers went on playing after we stood up" }
+            context.waitTicks(10)
+            shot(context, "match-9b-paused")
+            act(server, table, TableOp.SIT, 0)
+            context.waitFor({ ClientTables[table]?.snapshot?.paused == false }, 100)
+            context.waitTicks(10)
+
+            // Ending the match halfway takes one more click to be sure; then the screen shows the standings.
             clickLiteral(context, "☰")
             context.waitTicks(3)
             click(context, "tukuai.table.end")
+            context.waitTicks(5)
+            shot(context, "match-9c-end-confirm")
+            check(ClientTables[table]!!.snapshot.status == TableStatus.PLAYING) { "The match ended before we were sure" }
+            click(context, "tukuai.table.end.confirm")
             context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.LOBBY && it.matchOver } == true }, 200)
             context.waitTicks(10)
             shot(context, "match-10-ended-standings")

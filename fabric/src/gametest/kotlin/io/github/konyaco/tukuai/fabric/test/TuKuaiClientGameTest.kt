@@ -152,6 +152,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             }
             context.runOnClient<RuntimeException> { ClientConfig.cardFace = 0 }
 
+            checkPause(context, server, table)
             // Let the computer play for us until the round ends.
             act(server, table, TableOp.AUTO, 1)
             context.runOnClient<RuntimeException> {
@@ -255,6 +256,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.waitTicks(10)
         shot(context, "15-uno-screen")
 
+        checkPause(context, server, table)
         act(server, table, TableOp.AUTO, 1)
         context.waitTicks(200)
         shot(context, "16-uno-screen-midgame")
@@ -336,6 +338,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.waitTicks(10)
         shot(context, "tutu-3-screen-turn")
 
+        checkPause(context, server, table)
         // Let the computer play for us until TNT is lit, or failing that a cactus is planted, or the hand ends.
         act(server, table, TableOp.AUTO, 1)
         context.waitFor({ (ClientTables[table]?.view as? TutuView)?.let { it.finished || it.bombs > 0 || it.cacti.isNotEmpty() } == true }, 6000)
@@ -430,6 +433,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             (it.screen as? TableScreen)?.refresh()
         }
 
+        checkPause(context, server, table)
         act(server, table, TableOp.AUTO, 1)
         context.waitTicks(200)
         shot(context, "24-pdk-screen-midgame")
@@ -516,6 +520,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             (it.screen as? TableScreen)?.refresh()
         }
 
+        checkPause(context, server, table)
         act(server, table, TableOp.AUTO, 1)
         context.waitTicks(400)
         shot(context, "34-gd-screen-midgame")
@@ -735,6 +740,25 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             val table = s.overworld().getBlockEntity(pos) as CardTableBlockEntity
             table.handle(player, TableActionPayload(pos, op, a, b, text, data))
         }
+    }
+
+    /**
+     * Stands up mid-game: with only computers left in it, the game waits instead of them
+     * playing it out. Sitting back down picks it up again.
+     */
+    private fun checkPause(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        val seat = server.computeOnServer<Int, RuntimeException> { s ->
+            (s.overworld().getBlockEntity(table) as CardTableBlockEntity).seatOf(s.playerList.players.first().uuid) ?: -1
+        }
+        check(status(server, table) == TableStatus.PLAYING && seat >= 0) { "No game of ours to pause" }
+        act(server, table, TableOp.STAND)
+        context.waitFor({ ClientTables[table]?.snapshot?.paused == true }, 100)
+        val step = ClientTables[table]!!.snapshot.step
+        context.waitTicks(60)
+        val now = ClientTables[table]!!.snapshot
+        check(now.paused && now.step == step && now.status == TableStatus.PLAYING) { "The ${now.gameId} game went on with nobody at the table" }
+        act(server, table, TableOp.SIT, seat)
+        context.waitFor({ ClientTables[table]?.snapshot?.paused == false }, 100)
     }
 
     /** Stands the player in the middle of the block at [pos] and waits for the client to follow. */

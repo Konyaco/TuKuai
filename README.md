@@ -19,7 +19,7 @@ TuKuai adds a card table to Minecraft that you can craft and place, and play car
 ## Features
 
 - **A real table in the world**: the cards lie on the table itself. Each hand stands up facing its owner, played cards go to the middle, and anyone nearby can watch.
-- **Multiplayer, with computers**: computers can fill empty seats at three levels, easy, normal and hard, and take over for players who leave or disconnect.
+- **Multiplayer, with computers**: computers can fill empty seats at three levels, easy, normal and hard, and take over for players who leave or disconnect. If every player has left, the game pauses until someone sits down to play on or end the match.
 - **Replays and records**: every game is saved and can be replayed from any seat. The table keeps a record for each player.
 - **Custom looks**: tables and stools come in every kind of wood, the cloth and cushions can be dyed, and there are several card backs and card faces.
 - **Immersive view**: the screen stays clear of the world, and you pick and play cards straight from the table.

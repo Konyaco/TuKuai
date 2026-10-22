@@ -24,11 +24,14 @@ import java.util.concurrent.TimeUnit
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext
+import net.minecraft.client.gui.components.Button
 import net.minecraft.core.BlockPos
 import net.minecraft.core.UUIDUtil
 import net.minecraft.core.Direction
+import net.minecraft.network.chat.contents.TranslatableContents
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.level.block.Blocks
+import org.lwjgl.glfw.GLFW
 
 /**
  * Two people at one table over a real network: a dedicated server, this test's client
@@ -38,7 +41,10 @@ import net.minecraft.world.level.block.Blocks
  *
  * In the first round this client drops off partway: the computer plays its turns until
  * it is back, and then it plays them again. In the second, the other client's process
- * is killed outright and a new one joins as the same player and picks up its seat.
+ * is killed outright and a new one joins as the same player and picks up its seat. The
+ * other player stops the third halfway on their own. Last, they start a game with two
+ * computers and walk off: it waits, and this client, which was only watching, takes
+ * their seat, plays on and stops the match.
  *
  * It opens a second game window, so it only runs when asked: `./gradlew :fabric:runMultiplayerTest`.
  */
@@ -163,24 +169,66 @@ class MultiplayerGameTest : FabricClientGameTest {
                 shot(context, "mp-3-second-result")
                 context.setScreen { null }
 
-                // Round three is stopped halfway, which takes both players' agreement.
+                // Round three is stopped halfway by the other player alone; nobody has to agree.
                 context.runOnClient<RuntimeException> { SeatPlayer.send(table, TableOp.START) }
                 peer.command(context, "START")
                 context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.PLAYING && it.rounds == 2 } == true }, 200)
-                peer.command(context, "END")
-                context.waitFor({ ClientTables[table]?.snapshot?.seats?.get(PEER_SEAT)?.endVote == true }, 200)
                 context.setScreen { TableScreen(table) }
-                context.waitTicks(10)
-                shot(context, "mp-4-end-proposed")
-                check(ClientTables[table]!!.snapshot.status == TableStatus.PLAYING) { "The match ended before we agreed" }
-                context.runOnClient<RuntimeException> { SeatPlayer.send(table, TableOp.END) }
+                peer.command(context, "END")
                 context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.LOBBY && it.matchOver && it.rounds == 2 } == true }, 200)
                 waitPeer(context, peer, 200, "The other client did not see the match end") { it["status"] == "LOBBY" }
                 context.waitTicks(10)
-                shot(context, "mp-5-standings")
+                shot(context, "mp-4-ended-by-other")
+                context.setScreen { null }
+
+                // A new match that the other player starts with two computers while we only watch.
+                context.runOnClient<RuntimeException> {
+                    SeatPlayer.send(table, TableOp.STAND)
+                    SeatPlayer.send(table, TableOp.ADD_BOT, MY_SEAT, BotLevel.NORMAL.ordinal)
+                }
+                context.waitFor({ ClientTables[table]?.snapshot?.let { it.you == null && it.seats[MY_SEAT].occupant != null } == true }, 200)
+                peer.command(context, "START")
+                context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.PLAYING && it.rounds == 0 } == true }, 200)
+
+                // They stand up too, so nobody is left in the game: it waits instead of the computers playing it out.
+                peer.command(context, "STAND")
+                context.waitFor({ ClientTables[table]?.snapshot?.paused == true }, 200)
+                val pausedAt = ClientTables[table]!!.snapshot.step
+                context.waitTicks(100)
+                check(ClientTables[table]!!.snapshot.let { it.paused && it.step == pausedAt && it.status == TableStatus.PLAYING }) { "The computers went on playing with nobody at the table" }
+                waitPeer(context, peer, 200, "The other client did not see the game wait") { it["paused"] == "true" }
+                context.setScreen { TableScreen(table) }
+                context.waitTicks(10)
+                shot(context, "mp-5-paused-watcher")
+
+                // We sit down in their place with the screen's button, get their cards, and the game goes on.
+                clickButton(context, "tukuai.table.take_seat")
+                context.waitFor({ ClientTables[table]?.snapshot?.let { it.you == PEER_SEAT && !it.paused } == true }, 200)
+                context.waitFor({ (ClientTables[table]?.view as? DdzView)?.seat == PEER_SEAT }, 200)
+                waitPeer(context, peer, 200, "The other player still had their seat") { it["you"] == "-1" }
+                var played = 0
+                while (ClientTables[table]!!.snapshot.let { it.step < pausedAt + 3 && it.status == TableStatus.PLAYING }) {
+                    context.runOnClient<RuntimeException> { player.tick() }
+                    check(played++ < 2400) { "The game did not go on after we sat down" }
+                    context.waitTicks(1)
+                }
+                context.waitTicks(10)
+                shot(context, "mp-6-taken-over")
+
+                // Now ours to stop, with one more click to be sure.
+                clickButton(context, null, "☰")
+                clickButton(context, "tukuai.table.end")
+                context.waitTicks(5)
+                shot(context, "mp-7-end-confirm")
+                clickButton(context, "tukuai.table.end.confirm")
+                // No game of it was finished, so it is back to the lobby with nothing to settle.
+                context.waitFor({ ClientTables[table]?.snapshot?.let { it.status == TableStatus.LOBBY && it.rounds == 0 && !it.paused } == true }, 200)
+                waitPeer(context, peer, 200, "The other client did not see the match end") { it["status"] == "LOBBY" }
+                context.waitTicks(10)
+                shot(context, "mp-8-back-in-lobby")
                 context.setScreen { null }
                 connection.close()
-                TuKuai.LOGGER.info("Two players finished two rounds")
+                TuKuai.LOGGER.info("Two players finished two rounds, and a game everyone left was taken over")
             } finally {
                 peer.stop()
             }
@@ -250,6 +298,23 @@ class MultiplayerGameTest : FabricClientGameTest {
             context.waitTicks(10)
             waited += 10
         }
+    }
+
+    /** Clicks the button on the table screen with the text [key] (or [literal]), as a player would. */
+    private fun clickButton(context: ClientGameTestContext, key: String?, literal: String? = null) {
+        val (x, y) = context.computeOnClient<Pair<Double, Double>, RuntimeException> { mc ->
+            val screen = mc.screen as? TableScreen ?: error("No table screen to click ${key ?: literal} on")
+            val button = screen.children().filterIsInstance<Button>().firstOrNull {
+                if (key != null) (it.message.contents as? TranslatableContents)?.key == key else it.message.string == literal
+            } ?: error("No button ${key ?: literal} on the table screen")
+            check(button.active) { "The button ${key ?: literal} is off" }
+            val scale = mc.window.screenWidth.toDouble() / mc.window.guiScaledWidth
+            (button.x + button.width / 2.0) * scale to (button.y + button.height / 2.0) * scale
+        }
+        context.input.setCursorPos(x, y)
+        context.waitTicks(2)
+        context.input.pressMouse(GLFW.GLFW_MOUSE_BUTTON_LEFT)
+        context.waitTicks(3)
     }
 
     private fun tableAt(s: MinecraftServer, pos: BlockPos) = s.overworld().getBlockEntity(pos) as CardTableBlockEntity

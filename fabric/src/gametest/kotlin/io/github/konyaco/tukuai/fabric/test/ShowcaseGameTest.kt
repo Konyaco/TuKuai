@@ -166,7 +166,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         playUntilBeating(context, server, ddz) { myGdTurn(ddz)?.let { it.toBeat != null } }
         shot("gd-table")
         context.setScreen { null }
-        // Alone with computers, ending the match is our call.
+        // Any one player may end the match.
         act(server, ddz, TableOp.END)
         context.waitFor({ ClientTables[ddz]?.snapshot?.status != TableStatus.PLAYING }, 100)
 
@@ -250,7 +250,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         act(server, uno, TableOp.START)
         context.waitFor({ ClientTables[uno]?.snapshot?.let { it.gameId == "uno" && it.status == TableStatus.PLAYING } == true }, 200)
 
-        // Hand both tables over to the computers and take the wide shots.
+        // Leave both tables mid-game, where they wait for us, and take the wide shots.
         act(server, uno, TableOp.AUTO, 1)
         act(server, uno, TableOp.STAND)
         teleport(server, 0.5, 0.0, 0.5, ddz)

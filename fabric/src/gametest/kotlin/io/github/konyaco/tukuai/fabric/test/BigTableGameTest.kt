@@ -120,6 +120,9 @@ class BigTableGameTest : FabricClientGameTest {
             context.runOnClient<RuntimeException> { it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(table)) }
             context.waitTicks(10)
             shot(context, "bigtable-5-world-above")
+            // Leaving the seat for that picture paused the game; back in it, the computer plays on for us.
+            act(server, table, TableOp.SIT, 0)
+            act(server, table, TableOp.AUTO, 1)
 
             var waited = 0
             while (status(server, table) != TableStatus.FINISHED) {
