@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.table
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
 import io.github.konyaco.tukuai.content.SeatSpot
@@ -36,10 +37,7 @@ import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.item.DyeColor
 import net.minecraft.world.level.block.Block
-import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.BlockState
-import net.minecraft.world.level.storage.ValueInput
-import net.minecraft.world.level.storage.ValueOutput
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 
@@ -51,7 +49,7 @@ import net.minecraft.world.phys.Vec3
  * The match is saved as a replay (rules, seed and moves), so a game survives a restart.
  */
 class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
-    BlockEntity(TuKuaiContent.CARD_TABLE_ENTITY, pos, state) {
+    CompatBlockEntity(TuKuaiContent.CARD_TABLE_ENTITY, pos, state) {
 
     var gameId: String = DouDizhu.id
         private set

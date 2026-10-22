@@ -1,12 +1,12 @@
 package io.github.konyaco.tukuai
 
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.engine.guandan.Guandan
 import io.github.konyaco.tukuai.engine.paodekuai.PaoDeKuai
 import io.github.konyaco.tukuai.engine.tutu.Tutu
 import io.github.konyaco.tukuai.engine.uno.Uno
-import net.minecraft.resources.Identifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

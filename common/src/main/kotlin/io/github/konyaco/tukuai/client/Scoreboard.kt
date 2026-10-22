@@ -1,9 +1,9 @@
 package io.github.konyaco.tukuai.client
 
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.network.chat.Component
 
 /**

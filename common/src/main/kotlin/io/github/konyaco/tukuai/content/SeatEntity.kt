@@ -1,15 +1,13 @@
 package io.github.konyaco.tukuai.content
 
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import net.minecraft.core.BlockPos
 import net.minecraft.network.syncher.SynchedEntityData
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.level.Level
-import net.minecraft.world.level.storage.ValueInput
-import net.minecraft.world.level.storage.ValueOutput
 
 /**
  * An invisible seat at a card table, or on a stool that is no table's seat ([table] is
@@ -17,7 +15,7 @@ import net.minecraft.world.level.storage.ValueOutput
  * It is saved with the world (the game refuses to let players ride entities that
  * cannot be saved), so a seated player is still seated after a restart.
  */
-class SeatEntity(type: EntityType<*>, level: Level) : Entity(type, level) {
+class SeatEntity(type: EntityType<*>, level: Level) : CompatEntity(type, level) {
     var table: BlockPos? = null
 
     init {

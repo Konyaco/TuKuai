@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.Decks
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.tutu.TutuCard
@@ -13,9 +14,6 @@ import io.github.konyaco.tukuai.engine.uno.UnoColor
 import io.github.konyaco.tukuai.engine.uno.UnoDeck
 import io.github.konyaco.tukuai.engine.uno.UnoFace
 import io.github.konyaco.tukuai.engine.uno.UnoKind
-import net.minecraft.client.gui.GuiGraphicsExtractor
-import net.minecraft.client.renderer.RenderPipelines
-import net.minecraft.resources.Identifier
 
 /**
  * The card atlas `textures/gui/cards.png`, made by `tools/gen_textures.py`: 32×44 cards
@@ -115,18 +113,18 @@ object CardArt {
     fun draw(g: GuiGraphicsExtractor, sprite: Int, x: Int, y: Int, scale: Float = 1f) {
         val w = (WIDTH * scale).toInt()
         val h = (HEIGHT * scale).toInt()
-        g.blit(RenderPipelines.GUI_TEXTURED, ATLAS, x, y, u(sprite).toFloat(), v(sprite).toFloat(), w, h, WIDTH, HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT)
+        g.blitTexture(ATLAS, x, y, u(sprite).toFloat(), v(sprite).toFloat(), w, h, WIDTH, HEIGHT, TEXTURE_WIDTH, TEXTURE_HEIGHT)
     }
 
     fun drawCard(g: GuiGraphicsExtractor, card: PlayingCard, x: Int, y: Int, scale: Float = 1f) = draw(g, face(card), x, y, scale)
 
     /** The side of a TNT block, [size] GUI pixels square. */
     fun drawTnt(g: GuiGraphicsExtractor, x: Int, y: Int, size: Int) {
-        g.blit(RenderPipelines.GUI_TEXTURED, ATLAS, x, y, u(TNT_SIDE).toFloat(), v(TNT_SIDE).toFloat(), size, size, WIDTH, WIDTH, TEXTURE_WIDTH, TEXTURE_HEIGHT)
+        g.blitTexture(ATLAS, x, y, u(TNT_SIDE).toFloat(), v(TNT_SIDE).toFloat(), size, size, WIDTH, WIDTH, TEXTURE_WIDTH, TEXTURE_HEIGHT)
     }
 
     /** The landlord's hat, or the farmer's straw hat when [landlord] is false. */
     fun drawHat(g: GuiGraphicsExtractor, landlord: Boolean, x: Int, y: Int) {
-        g.blit(RenderPipelines.GUI_TEXTURED, ATLAS, x, y, if (landlord) 0f else 16f, ICON_Y.toFloat(), ICON_SIZE, ICON_SIZE, TEXTURE_WIDTH, TEXTURE_HEIGHT)
+        g.blitTexture(ATLAS, x, y, if (landlord) 0f else 16f, ICON_Y.toFloat(), ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE, TEXTURE_WIDTH, TEXTURE_HEIGHT)
     }
 }

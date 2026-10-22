@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "tukuai:card_table",
+  "key": {
+    "W": {
+      "tag": "minecraft:wool"
+    },
+    "P": {
+      "item": "minecraft:jungle_planks"
+    },
+    "L": {
+      "tag": "minecraft:logs"
+    }
+  },
+  "pattern": [
+    "WWW",
+    "PPP",
+    "L L"
+  ],
+  "result": {
+    "count": 1,
+    "id": "tukuai:card_table",
+    "components": {
+      "minecraft:block_state": {
+        "wood": "jungle"
+      }
+    }
+  }
+}

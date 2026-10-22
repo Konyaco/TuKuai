@@ -1,0 +1,1237 @@
+{
+  "parent": "tukuai:item/stool_oak_red",
+  "overrides": [
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_oak_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_oak_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_oak_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_oak_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_oak_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_oak_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_oak_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_oak_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_oak_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_oak_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_oak_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_oak_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_oak_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_oak_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_oak_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_oak_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_spruce_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_spruce_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_spruce_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_spruce_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_spruce_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_spruce_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_spruce_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_spruce_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_spruce_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_spruce_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_spruce_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_spruce_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_spruce_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_spruce_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_spruce_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_spruce_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_birch_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_birch_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_birch_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_birch_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_birch_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_birch_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_birch_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_birch_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_birch_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_birch_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_birch_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_birch_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_birch_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_birch_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_birch_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_birch_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_jungle_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_jungle_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_jungle_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_jungle_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_jungle_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_jungle_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_jungle_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_jungle_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_jungle_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_jungle_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_jungle_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_jungle_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_jungle_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_jungle_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_jungle_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_jungle_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_acacia_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_acacia_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_acacia_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_acacia_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_acacia_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_acacia_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_acacia_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_acacia_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_acacia_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_acacia_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_acacia_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_acacia_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_acacia_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_acacia_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_acacia_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_acacia_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_dark_oak_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_dark_oak_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_dark_oak_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_dark_oak_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_dark_oak_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_dark_oak_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_dark_oak_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_dark_oak_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_dark_oak_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_dark_oak_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_dark_oak_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_dark_oak_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_dark_oak_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_dark_oak_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_dark_oak_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_dark_oak_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_mangrove_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_mangrove_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_mangrove_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_mangrove_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_mangrove_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_mangrove_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_mangrove_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_mangrove_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_mangrove_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_mangrove_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_mangrove_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_mangrove_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_mangrove_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_mangrove_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_mangrove_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_mangrove_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_cherry_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_cherry_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_cherry_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_cherry_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_cherry_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_cherry_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_cherry_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_cherry_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_cherry_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_cherry_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_cherry_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_cherry_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_cherry_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_cherry_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_cherry_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_cherry_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_bamboo_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_bamboo_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_bamboo_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_bamboo_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_bamboo_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_bamboo_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_bamboo_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_bamboo_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_bamboo_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_bamboo_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_bamboo_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_bamboo_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_bamboo_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_bamboo_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_bamboo_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_bamboo_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_crimson_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_crimson_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_crimson_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_crimson_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_crimson_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_crimson_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_crimson_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_crimson_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_crimson_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_crimson_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_crimson_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_crimson_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_crimson_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_crimson_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_crimson_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_crimson_black"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.0
+      },
+      "model": "tukuai:item/stool_warped_white"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.0625
+      },
+      "model": "tukuai:item/stool_warped_orange"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.125
+      },
+      "model": "tukuai:item/stool_warped_magenta"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.1875
+      },
+      "model": "tukuai:item/stool_warped_light_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.25
+      },
+      "model": "tukuai:item/stool_warped_yellow"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.3125
+      },
+      "model": "tukuai:item/stool_warped_lime"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.375
+      },
+      "model": "tukuai:item/stool_warped_pink"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.4375
+      },
+      "model": "tukuai:item/stool_warped_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.5
+      },
+      "model": "tukuai:item/stool_warped_light_gray"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.5625
+      },
+      "model": "tukuai:item/stool_warped_cyan"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.625
+      },
+      "model": "tukuai:item/stool_warped_purple"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.6875
+      },
+      "model": "tukuai:item/stool_warped_blue"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.75
+      },
+      "model": "tukuai:item/stool_warped_brown"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.8125
+      },
+      "model": "tukuai:item/stool_warped_green"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.875
+      },
+      "model": "tukuai:item/stool_warped_red"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875,
+        "tukuai:color": 0.9375
+      },
+      "model": "tukuai:item/stool_warped_black"
+    }
+  ]
+}

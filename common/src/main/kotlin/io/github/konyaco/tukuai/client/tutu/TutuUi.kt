@@ -9,7 +9,7 @@ import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
-import io.github.konyaco.tukuai.client.render.CardTableRenderer
+import io.github.konyaco.tukuai.client.render.TableArt
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.engine.tutu.Tutu
@@ -108,7 +108,7 @@ object TutuUi : GameUi {
                 ((depth * 31) % 7 - 3) * TOSS_SHIFT,
                 ((depth * 17) % 7 - 3) * TOSS_SHIFT,
                 tossX, tossZ, CardArt.tutu(view.shownFace(card), named[card]), DISCARD_SCALE, layer = i,
-                lift = CardTableRenderer.DISPLAY_HEIGHT + 0.002f,
+                lift = TableArt.DISPLAY_HEIGHT + 0.002f,
                 fromX = from?.let { it.side.stepX * HAND_DISTANCE + it.shiftX } ?: pileX,
                 fromZ = from?.let { it.side.stepZ * HAND_DISTANCE + it.shiftZ } ?: pileZ,
                 key = card.id,
@@ -302,7 +302,7 @@ object TutuUi : GameUi {
     private const val PILE_DISTANCE = 0.62f
     private const val PILE_SCALE = 0.75f
     private const val PILE_CARDS_PER_LAYER = 4
-    private const val LAYER_HEIGHT = CardTableRenderer.CARD_THICKNESS * PILE_SCALE
+    private const val LAYER_HEIGHT = TableArt.CARD_THICKNESS * PILE_SCALE
 
     /** How far a planted cactus sticks out of the pile towards the middle, as a share of the pile's distance. */
     private const val CACTUS_OUT = 0.22f

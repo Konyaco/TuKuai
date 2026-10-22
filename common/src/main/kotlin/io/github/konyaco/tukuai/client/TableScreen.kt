@@ -1,6 +1,6 @@
 package io.github.konyaco.tukuai.client
 
-import com.mojang.blaze3d.platform.InputConstants
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.card.Rank
 import io.github.konyaco.tukuai.engine.card.Suit
@@ -14,12 +14,9 @@ import io.github.konyaco.tukuai.table.Occupant
 import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.Tooltip
 import net.minecraft.client.gui.screens.Screen
-import net.minecraft.client.input.KeyEvent
-import net.minecraft.client.input.MouseButtonEvent
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.DyeColor
@@ -40,7 +37,7 @@ import org.lwjgl.glfw.GLFW
  * There the player turns their head by dragging with the right mouse button, and picks
  * their cards by clicking them on the table; see [TablePointer].
  */
-class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.table.title")), PanelHost {
+class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tukuai.table.title")), PanelHost {
     private var table: ClientTable? = ClientTables[pos]
     private var panel: GamePanel? = null
     private var panelGame: String? = null
@@ -639,32 +636,32 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
      * view can turn as far as the player likes, as in the world without a screen.
      */
     private fun startTurning() {
-        val mouse = minecraft.mouseHandler
+        val mouse = mc.mouseHandler
         turnFrom = mouse.xpos() to mouse.ypos()
         turned = 0.0
-        InputConstants.grabOrReleaseMouse(minecraft.window, GLFW.GLFW_CURSOR_DISABLED, mouse.xpos(), mouse.ypos())
+        grabMouse(mc, GLFW.GLFW_CURSOR_DISABLED, mouse.xpos(), mouse.ypos())
     }
 
     /** Shows the cursor again where it was when turning started. */
     private fun stopTurning() {
         val (x, y) = turnFrom ?: return
         turnFrom = null
-        InputConstants.grabOrReleaseMouse(minecraft.window, GLFW.GLFW_CURSOR_NORMAL, x, y)
+        grabMouse(mc, GLFW.GLFW_CURSOR_NORMAL, x, y)
     }
 
     override fun mouseDragged(event: MouseButtonEvent, dragX: Double, dragY: Double): Boolean {
         if (turnFrom != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             // Back to screen pixels, then turned as much as the same move would in the world.
-            val window = minecraft.window
+            val window = mc.window
             val dx = dragX * window.screenWidth / window.guiScaledWidth
             val dy = dragY * window.screenHeight / window.guiScaledHeight
             turned += kotlin.math.abs(dx) + kotlin.math.abs(dy)
-            val options = minecraft.options
+            val options = mc.options
             val s = options.sensitivity().get() * 0.6 + 0.2
             val k = s * s * s * 8.0
-            minecraft.player?.turn(
-                if (options.invertMouseX().get()) -dx * k else dx * k,
-                if (options.invertMouseY().get()) -dy * k else dy * k,
+            mc.player?.turn(
+                if (invertMouseX(options)) -dx * k else dx * k,
+                if (invertMouseY(options)) -dy * k else dy * k,
             )
             return true
         }
@@ -692,7 +689,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
             // such as putting back the picked cards.
             val t = table
             if (turned < CLICK_SLOP && t != null && !inLobby(t)) {
-                val window = minecraft.window
+                val window = mc.window
                 panel?.mouseClicked(t, x * window.guiScaledWidth / window.screenWidth, y * window.guiScaledHeight / window.screenHeight, event.button())
             }
             return true
@@ -731,7 +728,7 @@ class TableScreen(val pos: BlockPos) : Screen(Component.translatable("tukuai.tab
     override fun isPauseScreen(): Boolean = false
 
     override fun tick() {
-        val player = minecraft.player
+        val player = mc.player
         if (player == null || player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos)) > 10.0 * 10.0) onClose()
     }
 

@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="最新版本"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.1.2-62B47A" alt="Minecraft 26.1.2">
+  <img src="https://img.shields.io/badge/Minecraft-26.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.1.2 / 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge 和 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 许可证"></a>
 </p>
@@ -55,12 +55,15 @@
 
 ### 下载
 
-从 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下载对应加载器的 jar。需要 Minecraft 26.1.2，以及：
+从 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下载对应 Minecraft 版本和加载器的 jar，例如 `tukuai-fabric-1.21.1-<版本>.jar`。支持 Minecraft 26.1.2 和 1.21.1，还需要：
 
 | 加载器 | 前置模组 |
 | --- | --- |
 | NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 或更新 |
+| NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 或更新 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 或更新 |
+
+苍白橡木的牌桌和凳子只有 26.1.2 有，1.21.1 还没有苍白橡木。
 
 ### 合成
 
@@ -102,19 +105,20 @@
 <details>
 <summary><b>开发</b></summary>
 
-需要 JDK 25。
+需要 JDK 25；Minecraft 1.21.1 要用的 JDK 21 由 Gradle 自动下载。
 
 ```sh
-./gradlew build                 # 编译、测试，并打出两个加载器的 jar
-./gradlew :fabric:runClient     # 用 Fabric 启动游戏
-./gradlew :neoforge:runClient   # 用 NeoForge 启动游戏
+./gradlew build                        # 编译、测试，并打出每个加载器、每个 Minecraft 版本的 jar
+./gradlew :fabric-26.1.2:runClient     # 用 Fabric 启动 Minecraft 26.1.2
+./gradlew :neoforge-1.21.1:runClient   # 用 NeoForge 启动 Minecraft 1.21.1
 ```
 
 | 目录 | 内容 |
 | --- | --- |
 | `engine` | 规则、电脑和回放，纯 Kotlin，不依赖 Minecraft |
-| `common` | 两个加载器共用的 Minecraft 代码和资源 |
-| `fabric`、`neoforge` | 各加载器的入口和注册 |
+| `common` | 所有加载器和 Minecraft 版本共用的 Minecraft 代码和资源，按最新版 Minecraft 写 |
+| `versions/<minecraft>` | 某个 Minecraft 版本独有的部分：`gradle.properties` 里的各项版本，让旧版本用上最新版 Minecraft 名字的 `compat` 包，渲染器、物品模型和配方 |
+| `versions/<minecraft>/fabric`、`versions/<minecraft>/neoforge` | 该版本下各加载器的入口和注册 |
 
 加入新游戏：
 
@@ -125,13 +129,14 @@
 测试：
 
 ```sh
-./gradlew :engine:test                  # 规则与电脑的单元测试
-./gradlew :fabric:runClientGameTest     # 启动游戏实际打几局并截图
-./gradlew :fabric:runMultiplayerTest    # 专用服务器加两个客户端的联机测试
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest   # 拍摄本文的截图
+./gradlew :engine:test                         # 规则与电脑的单元测试
+./gradlew :fabric-26.1.2:runClientGameTest     # 启动游戏实际打几局并截图
+./gradlew :fabric-26.1.2:runMultiplayerTest    # 专用服务器加两个客户端的联机测试
+./gradlew :fabric-1.21.1:runSmokeTest          # 在 Minecraft 1.21.1 上每种玩法各打一局并截图
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # 拍摄本文的截图
 ```
 
-提交信息格式为 `[type](scope) Title`。依赖版本见 `gradle.properties`。
+提交信息格式为 `[type](scope) Title`。依赖版本见 `gradle.properties` 和 `versions/<minecraft>/gradle.properties`。
 
 </details>
 

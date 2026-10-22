@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client
 
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.core.GuideBlock
@@ -8,10 +9,8 @@ import io.github.konyaco.tukuai.engine.core.guide
 import io.github.konyaco.tukuai.engine.tutu.TutuFace
 import io.github.konyaco.tukuai.engine.uno.UnoFace
 import io.github.konyaco.tukuai.table.TableStatus
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
-import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.CommonComponents
@@ -30,7 +29,7 @@ class RulesScreen(
     /** The table it was opened from, for its rules and to tell the player when it's their turn. */
     private val tablePos: BlockPos?,
     gameId: String,
-) : Screen(Component.translatable("tukuai.guide.title")) {
+) : CompatScreen(Component.translatable("tukuai.guide.title")) {
     private val games = GameRegistry.all.map { it.id }.filter { GameUis[it] != null && GameRegistry[it]!!.guide(null).isNotEmpty() }
     private var game = gameId.takeIf { it in games } ?: games.firstOrNull() ?: gameId
     private var sections: List<GuideSection> = emptyList()
@@ -297,7 +296,7 @@ class RulesScreen(
 
     override fun tick() {
         val mine = myTurn()
-        if (mine && !wasMyTurn) minecraft.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.4f))
+        if (mine && !wasMyTurn) mc.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.4f))
         wasMyTurn = mine
     }
 
@@ -339,7 +338,7 @@ class RulesScreen(
     }
 
     override fun onClose() {
-        minecraft.setScreen(parent)
+        mc.setScreen(parent)
     }
 
     override fun isPauseScreen(): Boolean = false

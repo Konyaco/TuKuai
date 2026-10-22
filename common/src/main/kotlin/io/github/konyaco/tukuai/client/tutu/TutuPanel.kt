@@ -8,6 +8,7 @@ import io.github.konyaco.tukuai.client.PanelText
 import io.github.konyaco.tukuai.client.PlayingCardHand
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.engine.tutu.Tutu
 import io.github.konyaco.tukuai.engine.tutu.TutuAction
@@ -23,7 +24,6 @@ import io.github.konyaco.tukuai.table.Occupant
 import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents

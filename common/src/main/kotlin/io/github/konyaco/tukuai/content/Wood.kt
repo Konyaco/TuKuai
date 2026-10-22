@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.content
 
+import io.github.konyaco.tukuai.compat.HAS_PALE_OAK
 import net.minecraft.util.StringRepresentable
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.state.properties.EnumProperty
@@ -29,6 +30,9 @@ enum class Wood(private val id: String, val mapColor: MapColor) : StringRepresen
 
     companion object {
         val PROPERTY: EnumProperty<Wood> = EnumProperty.create("wood", Wood::class.java)
+
+        /** The woods this Minecraft version has; pale oak stays a block state everywhere, so worlds load the same. */
+        val available: List<Wood> = entries.filter { it != PALE_OAK || HAS_PALE_OAK }
 
         /** The map colour of a block with a [PROPERTY], which follows its wood like planks do. */
         fun mapColorOf(state: BlockState): MapColor = state.getValue(PROPERTY).mapColor

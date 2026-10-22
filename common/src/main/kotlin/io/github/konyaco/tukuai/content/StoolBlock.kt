@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.content
 
 import com.mojang.serialization.MapCodec
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import net.minecraft.core.BlockPos
@@ -33,7 +34,7 @@ import net.minecraft.world.phys.shapes.VoxelShape
  * and at a big table also one a block either side of the middle: sitting on it takes the
  * seat and opens the table. Right-click with a dye to change the cushion.
  */
-class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
+class StoolBlock(properties: BlockBehaviour.Properties) : CompatBlock(properties) {
     init {
         registerDefaultState(stateDefinition.any().setValue(COLOR, DyeColor.RED).setValue(WOOD, Wood.OAK))
     }
@@ -58,7 +59,7 @@ class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
         return InteractionResult.SUCCESS
     }
 
-    override fun useItemOn(
+    override fun useItem(
         stack: ItemStack,
         state: BlockState,
         level: Level,
@@ -66,15 +67,15 @@ class StoolBlock(properties: BlockBehaviour.Properties) : Block(properties) {
         player: Player,
         hand: InteractionHand,
         hit: BlockHitResult,
-    ): InteractionResult {
-        val color = Dyes.colorOf(stack) ?: return InteractionResult.TRY_WITH_EMPTY_HAND
-        if (state.getValue(COLOR) == color) return InteractionResult.TRY_WITH_EMPTY_HAND
+    ): Boolean {
+        val color = Dyes.colorOf(stack) ?: return false
+        if (state.getValue(COLOR) == color) return false
         if (!level.isClientSide()) {
             level.setBlock(pos, state.setValue(COLOR, color), UPDATE_ALL)
             level.playSound(null, pos, SoundEvents.WOOL_PLACE, SoundSource.BLOCKS, 1f, 1f)
             if (!player.abilities.instabuild) stack.shrink(1)
         }
-        return InteractionResult.SUCCESS
+        return true
     }
 
     /** Sits on a stool that is not a table's seat, unless someone is already on it. */

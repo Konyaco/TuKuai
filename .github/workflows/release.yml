@@ -1,9 +1,9 @@
 name: Release
 
-# Builds both loaders and publishes a GitHub release with the two jars, either when a tag
-# such as v0.1.0 is pushed or when the workflow is started by hand on a branch (it then
-# tags that commit itself). The tag is always v<mod_version> from gradle.properties, and
-# the release text comes from .github/release-notes/<tag>.md.
+# Builds every loader for every Minecraft version and publishes a GitHub release with the
+# jars, either when a tag such as v0.1.0 is pushed or when the workflow is started by hand on
+# a branch (it then tags that commit itself). The tag is always v<mod_version> from
+# gradle.properties, and the release text comes from .github/release-notes/<tag>.md.
 on:
   push:
     tags: ['v*']
@@ -27,16 +27,19 @@ jobs:
             echo "Tag ${GITHUB_REF_NAME} does not match mod_version ${version}" >&2
             exit 1
           fi
+          minecraft="$(ls versions | sort -t. -k1,1nr -k2,2nr -k3,3nr | paste -sd/ - | sed 's|/| / |g')"
           echo "tag=v${version}" >> "$GITHUB_OUTPUT"
-          echo "java=$(sed -n 's/^java_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
-          echo "minecraft=$(sed -n 's/^minecraft_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+          echo "minecraft=${minecraft}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      # Gradle runs on the newest Java; older Minecraft versions build with their own from a toolchain.
       - name: Setup Java
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: ${{ steps.versions.outputs.java }}
+          java-version: |
+            21
+            25
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -52,7 +55,6 @@ jobs:
           TAG: ${{ steps.versions.outputs.tag }}
         run: |
           gh release create "${TAG}" --target "${GITHUB_SHA}" \
-            "fabric/build/libs/tukuai-fabric-${MC}-${VERSION}.jar" \
-            "neoforge/build/libs/tukuai-neoforge-${MC}-${VERSION}.jar" \
+            versions/*/*/build/libs/tukuai-*-"${VERSION}".jar \
             --title "土块棋牌室 TuKuai ${VERSION} (Minecraft ${MC})" \
             --notes-file ".github/release-notes/${TAG}.md"

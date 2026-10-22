@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="최신 릴리스"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.1.2-62B47A" alt="Minecraft 26.1.2">
+  <img src="https://img.shields.io/badge/Minecraft-26.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.1.2 / 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge와 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 라이선스"></a>
 </p>
@@ -55,12 +55,15 @@ TuKuai(土块棋牌室)는 만들어서 설치할 수 있는 카드 테이블을
 
 ### 다운로드
 
-[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 로더에 맞는 jar를 받으세요. Minecraft 26.1.2와 다음 모드가 필요합니다.
+[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 Minecraft 버전과 로더에 맞는 jar(예: `tukuai-fabric-1.21.1-<버전>.jar`)를 받으세요. Minecraft 26.1.2와 1.21.1을 지원하며, 다음 모드가 필요합니다.
 
 | 로더 | 필수 모드 |
 | --- | --- |
 | NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 이상 |
+| NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 이상 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api), [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 이상 |
+
+1.21.1에는 창백한 참나무가 없어서, 창백한 참나무 카드 테이블과 의자는 26.1.2에서만 쓸 수 있습니다.
 
 ### 조합법
 
@@ -102,19 +105,20 @@ TuKuai(土块棋牌室)는 만들어서 설치할 수 있는 카드 테이블을
 <details>
 <summary><b>개발</b></summary>
 
-JDK 25가 필요합니다.
+JDK 25가 필요합니다. Minecraft 1.21.1에 쓰는 JDK 21은 Gradle이 알아서 받습니다.
 
 ```sh
-./gradlew build                 # 컴파일, 테스트, 두 로더의 jar 생성
-./gradlew :fabric:runClient     # Fabric으로 게임 실행
-./gradlew :neoforge:runClient   # NeoForge로 게임 실행
+./gradlew build                        # 컴파일, 테스트, 모든 로더와 Minecraft 버전의 jar 생성
+./gradlew :fabric-26.1.2:runClient     # Fabric으로 Minecraft 26.1.2 실행
+./gradlew :neoforge-1.21.1:runClient   # NeoForge로 Minecraft 1.21.1 실행
 ```
 
 | 디렉터리 | 내용 |
 | --- | --- |
 | `engine` | 규칙, 컴퓨터, 다시 보기. Minecraft에 의존하지 않는 Kotlin 코드 |
-| `common` | 두 로더가 함께 쓰는 Minecraft 코드와 리소스 |
-| `fabric`, `neoforge` | 각 로더의 진입점과 등록 |
+| `common` | 모든 로더와 Minecraft 버전이 함께 쓰는 Minecraft 코드와 리소스. 최신 Minecraft에 맞춰 작성 |
+| `versions/<minecraft>` | 그 Minecraft 버전에만 있는 부분: `gradle.properties`의 각 버전, 이전 버전에서 최신 Minecraft의 이름을 쓰게 해 주는 `compat` 패키지, 렌더러, 아이템 모델, 조합법 |
+| `versions/<minecraft>/fabric`, `versions/<minecraft>/neoforge` | 그 버전의 각 로더 진입점과 등록 |
 
 새 게임 추가:
 
@@ -125,13 +129,14 @@ JDK 25가 필요합니다.
 테스트:
 
 ```sh
-./gradlew :engine:test                  # 규칙과 컴퓨터의 단위 테스트
-./gradlew :fabric:runClientGameTest     # 게임을 실행해 몇 판 진행하고 스크린샷을 찍음
-./gradlew :fabric:runMultiplayerTest    # 전용 서버와 클라이언트 두 개로 하는 멀티플레이 테스트
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest   # 이 README의 스크린샷을 찍음
+./gradlew :engine:test                         # 규칙과 컴퓨터의 단위 테스트
+./gradlew :fabric-26.1.2:runClientGameTest     # 게임을 실행해 몇 판 진행하고 스크린샷을 찍음
+./gradlew :fabric-26.1.2:runMultiplayerTest    # 전용 서버와 클라이언트 두 개로 하는 멀티플레이 테스트
+./gradlew :fabric-1.21.1:runSmokeTest          # Minecraft 1.21.1에서 게임마다 한 판씩 하고 스크린샷을 찍음
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # 이 README의 스크린샷을 찍음
 ```
 
-커밋 메시지는 `[type](scope) Title` 형식입니다. 의존성 버전은 `gradle.properties`에 있습니다.
+커밋 메시지는 `[type](scope) Title` 형식입니다. 의존성 버전은 `gradle.properties`와 `versions/<minecraft>/gradle.properties`에 있습니다.
 
 </details>
 

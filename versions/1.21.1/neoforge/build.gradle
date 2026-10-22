@@ -1,0 +1,54 @@
+plugins {
+    id 'net.neoforged.moddev'
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+apply from: rootProject.file('gradle/loader.gradle')
+
+repositories {
+    exclusiveContent {
+        forRepository { maven { name = 'Kotlin for Forge'; url = 'https://thedarkcolour.github.io/KotlinForForge/' } }
+        filter { includeGroup 'thedarkcolour' }
+    }
+}
+
+// A second mod that plays through a world by itself and takes screenshots, see SmokeTest.
+// ./gradlew :neoforge-1.21.1:runSmokeTest
+sourceSets {
+    smoke {
+        kotlin.srcDir file('../src/smoke/kotlin')
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
+neoForge {
+    version = neoforge_version
+    mods {
+        "${mod_id}" { sourceSet sourceSets.main }
+        tukuai_smoke { sourceSet sourceSets.smoke }
+    }
+    runs {
+        client {
+            client()
+            gameDirectory = file('runs/client')
+        }
+        server {
+            server()
+            programArgument '--nogui'
+            gameDirectory = file('runs/server')
+        }
+        smokeTest {
+            client()
+            gameDirectory = file('build/run/smoke')
+            sourceSet = sourceSets.smoke
+            loadedMods = [mods.tukuai, mods.tukuai_smoke]
+        }
+    }
+}
+
+dependencies {
+    implementation "thedarkcolour:kotlinforforge-neoforge:${kotlin_for_forge_version}"
+}
+
+apply from: file('../smoke.gradle')

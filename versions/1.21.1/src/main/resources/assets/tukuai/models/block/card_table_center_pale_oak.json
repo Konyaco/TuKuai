@@ -1,0 +1,10 @@
+{
+  "parent": "tukuai:block/card_table_center",
+  "textures": {
+    "particle": "tukuai:block/card_table_side_pale_oak",
+    "top": "minecraft:block/birch_planks",
+    "side": "tukuai:block/card_table_side_pale_oak",
+    "bottom": "minecraft:block/birch_planks",
+    "leg": "minecraft:block/stripped_birch_log"
+  }
+}

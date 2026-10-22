@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gen_textures import face, joker  # noqa: E402
 
 ICON_OUT = "common/src/main/resources/assets/tukuai/icon.png"
-LOGO_OUT = "neoforge/src/main/resources/tukuai_logo.png"
+LOGO_OUT = "common/src/neoforge/resources/tukuai_logo.png"
 README_OUT = "docs/logo.png"
 CJK_FONT = "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"
 

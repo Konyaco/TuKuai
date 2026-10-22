@@ -1,13 +1,13 @@
 package io.github.konyaco.tukuai.content
 
 import com.mojang.serialization.MapCodec
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.util.RandomSource
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.LivingEntity
@@ -18,7 +18,6 @@ import net.minecraft.world.item.context.BlockPlaceContext
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.LevelReader
-import net.minecraft.world.level.ScheduledTickAccess
 import net.minecraft.world.level.block.BaseEntityBlock
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.Blocks
@@ -46,7 +45,7 @@ import net.minecraft.world.phys.shapes.VoxelShape
  * cloth. [FACING] points at seat 0, the side the placer stood on. [WOOD] is the wood of
  * the frame and legs; the item keeps it, and placing the item gives it to all the parts.
  */
-open class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(properties) {
+open class CardTableBlock(properties: BlockBehaviour.Properties) : CompatBaseEntityBlock(properties) {
     /**
      * Blocks from the middle to the edge: 1 for 3x3. These are getters with no field behind
      * them, since the block's states are made in the superclass constructor, which reads them.
@@ -115,16 +114,14 @@ open class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlo
     }
 
     /** A part whose neighbour inside the table is gone goes too, so the whole table comes down together. */
-    override fun updateShape(
+    override fun shapeAfterNeighbor(
         state: BlockState,
         level: LevelReader,
-        ticks: ScheduledTickAccess,
         pos: BlockPos,
         direction: Direction,
         neighborPos: BlockPos,
         neighborState: BlockState,
-        random: RandomSource,
-    ): BlockState {
+    ): BlockState? {
         if (direction.axis.isHorizontal) {
             val part = state.getValue(partProperty)
             val dx = dxOf(part) + direction.stepX
@@ -133,7 +130,7 @@ open class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlo
                 return Blocks.AIR.defaultBlockState()
             }
         }
-        return super.updateShape(state, level, ticks, pos, direction, neighborPos, neighborState, random)
+        return null
     }
 
     /** Only the middle part drops the table, so in creative mode take it away first without a drop. */
@@ -189,7 +186,7 @@ open class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlo
         return InteractionResult.SUCCESS
     }
 
-    override fun useItemOn(
+    override fun useItem(
         stack: ItemStack,
         state: BlockState,
         level: Level,
@@ -197,15 +194,15 @@ open class CardTableBlock(properties: BlockBehaviour.Properties) : BaseEntityBlo
         player: Player,
         hand: InteractionHand,
         hit: BlockHitResult,
-    ): InteractionResult {
-        val color: DyeColor = Dyes.colorOf(stack) ?: return InteractionResult.TRY_WITH_EMPTY_HAND
-        val table = level.getBlockEntity(centerOf(pos, state)) as? CardTableBlockEntity ?: return InteractionResult.TRY_WITH_EMPTY_HAND
-        if (table.felt == color) return InteractionResult.TRY_WITH_EMPTY_HAND
+    ): Boolean {
+        val color: DyeColor = Dyes.colorOf(stack) ?: return false
+        val table = level.getBlockEntity(centerOf(pos, state)) as? CardTableBlockEntity ?: return false
+        if (table.felt == color) return false
         if (!level.isClientSide()) {
             table.dye(color)
             if (!player.abilities.instabuild) stack.shrink(1)
         }
-        return InteractionResult.SUCCESS
+        return true
     }
 
     companion object {

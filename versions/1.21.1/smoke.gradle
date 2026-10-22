@@ -1,0 +1,10 @@
+// Starts the smoke test with an empty run folder each time, see SmokeTest.
+tasks.matching { it.name == 'runSmokeTest' }.configureEach {
+    doFirst {
+        delete file('build/run/smoke/saves'), file('build/run/smoke/screenshots')
+        // No tutorial toasts or narrator prompt over the screenshots.
+        def options = file('build/run/smoke/options.txt')
+        options.parentFile.mkdirs()
+        options.text = 'tutorialStep:none\nonboardAccessibility:false\nskipMultiplayerWarning:true\npauseOnLostFocus:false\n'
+    }
+}
