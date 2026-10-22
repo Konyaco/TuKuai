@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.content
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import net.minecraft.core.component.DataComponents
@@ -58,10 +59,10 @@ object TuKuaiContent {
      * stool in every colour and a red one in every other wood.
      */
     fun creativeStacks(): List<ItemStack> =
-        Wood.entries.map { wood -> withState(ItemStack(CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
-            Wood.entries.map { wood -> withState(ItemStack(BIG_CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
+        Wood.available.map { wood -> withState(ItemStack(CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
+            Wood.available.map { wood -> withState(ItemStack(BIG_CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
             DyeColor.entries.map { color -> withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, color)) } +
-            Wood.entries.drop(1).map { wood ->
+            Wood.available.drop(1).map { wood ->
                 withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, DyeColor.RED).with(StoolBlock.WOOD, wood))
             }
 

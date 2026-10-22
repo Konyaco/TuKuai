@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.command
 
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.StringArgumentType
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.network.ReplayPayload
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.PlayerStats
@@ -12,9 +13,7 @@ import net.minecraft.ChatFormatting
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.commands.SharedSuggestionProvider
-import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
-import net.minecraft.network.chat.HoverEvent
 
 /**
  * `/tukuai replays` lists the saved games, newest first, each one clickable;
@@ -65,8 +64,8 @@ object TuKuaiCommands {
                 Component.literal(name).withStyle { style ->
                     style.withColor(ChatFormatting.AQUA)
                         .withUnderlined(true)
-                        .withClickEvent(ClickEvent.RunCommand("/tukuai replay $name"))
-                        .withHoverEvent(HoverEvent.ShowText(Component.translatable("tukuai.command.replays.hover")))
+                        .withRunCommand("/tukuai replay $name")
+                        .withShowText(Component.translatable("tukuai.command.replays.hover"))
                 },
             )
             source.sendSuccess({ line }, false)

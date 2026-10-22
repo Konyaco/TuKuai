@@ -9,6 +9,7 @@ import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.card.Suit
 import io.github.konyaco.tukuai.engine.core.Seat
@@ -20,7 +21,6 @@ import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdValue
 import io.github.konyaco.tukuai.engine.guandan.GdView
 import io.github.konyaco.tukuai.engine.guandan.Guandan
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents

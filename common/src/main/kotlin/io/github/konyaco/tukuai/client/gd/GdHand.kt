@@ -4,8 +4,8 @@ import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PlayingCardHand
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import org.lwjgl.glfw.GLFW
 
 /**

@@ -1,8 +1,8 @@
 package io.github.konyaco.tukuai.client
 
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.content.TableSeats
 import io.github.konyaco.tukuai.table.TableOp
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component

@@ -17,19 +17,19 @@ jobs:
 
       - name: Read versions
         id: versions
-        run: |
-          echo "java=$(sed -n 's/^java_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
-          echo "minecraft=$(sed -n 's/^minecraft_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
-          echo "version=$(sed -n 's/^mod_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(sed -n 's/^mod_version=//p' gradle.properties)" >> "$GITHUB_OUTPUT"
 
       - name: Check language files
         run: .github/scripts/check-lang.py
 
+      # Gradle runs on the newest Java; the 1.21.1 projects build with Java 21 from a toolchain.
       - name: Setup Java
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: ${{ steps.versions.outputs.java }}
+          java-version: |
+            21
+            25
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -37,25 +37,24 @@ jobs:
       - name: Build and test
         run: ./gradlew build --no-daemon --stacktrace
 
-      - name: Upload Fabric jar
+      - name: Upload jars
         uses: actions/upload-artifact@v7
         with:
-          name: tukuai-fabric-${{ steps.versions.outputs.minecraft }}-${{ steps.versions.outputs.version }}
-          path: fabric/build/libs/tukuai-fabric-${{ steps.versions.outputs.minecraft }}-${{ steps.versions.outputs.version }}.jar
+          name: tukuai-${{ steps.versions.outputs.version }}
+          path: versions/*/*/build/libs/tukuai-*-${{ steps.versions.outputs.version }}.jar
           if-no-files-found: error
 
-      - name: Upload NeoForge jar
-        uses: actions/upload-artifact@v7
-        with:
-          name: tukuai-neoforge-${{ steps.versions.outputs.minecraft }}-${{ steps.versions.outputs.version }}
-          path: neoforge/build/libs/tukuai-neoforge-${{ steps.versions.outputs.minecraft }}-${{ steps.versions.outputs.version }}.jar
-          if-no-files-found: error
+      - name: Start Fabric 26.1.2 server
+        run: .github/scripts/server-smoke.sh fabric 26.1.2
 
-      - name: Start Fabric server
-        run: .github/scripts/server-smoke.sh fabric
+      - name: Start NeoForge 26.1.2 server
+        run: .github/scripts/server-smoke.sh neoforge 26.1.2
 
-      - name: Start NeoForge server
-        run: .github/scripts/server-smoke.sh neoforge
+      - name: Start Fabric 1.21.1 server
+        run: .github/scripts/server-smoke.sh fabric 1.21.1
+
+      - name: Start NeoForge 1.21.1 server
+        run: .github/scripts/server-smoke.sh neoforge 1.21.1
 
       - name: Upload diagnostics
         if: failure()
@@ -64,14 +63,14 @@ jobs:
           name: diagnostics
           path: |
             **/build/reports/tests/**
-            */runs/server/logs/**
+            versions/*/*/runs/server/logs/**
           if-no-files-found: ignore
 
   client:
-    # Starts a real Fabric client under a virtual display, plays a round at a card table
-    # and prints the screenshots into the log as base64 so they can be read back. On pull
-    # requests it also force-pushes them to the ci-screenshots branch, which is easier to
-    # fetch than the log.
+    # Starts a real Fabric 26.1.2 client under a virtual display, plays a round at a card
+    # table and prints the screenshots into the log as base64 so they can be read back. On
+    # pull requests it also force-pushes them to the ci-screenshots branch, which is easier
+    # to fetch than the log.
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -83,7 +82,9 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 25
+          java-version: |
+            21
+            25
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -92,26 +93,45 @@ jobs:
         run: sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri mesa-utils
 
       - name: Run client game tests
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric:runClientGameTest --no-daemon --stacktrace
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-26.1.2:runClientGameTest --no-daemon --stacktrace
 
       # The two-player test runs in the same run folder, which Loom clears first.
       - name: Keep the game test's screenshots
         if: always()
         run: |
           mkdir -p "${RUNNER_TEMP}/screenshots"
-          find fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
+          find versions/26.1.2/fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
 
       - name: Run the two-player game test
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric:runMultiplayerTest --no-daemon --stacktrace
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-26.1.2:runMultiplayerTest --no-daemon --stacktrace
 
       - name: Keep the two-player test's screenshots
         if: always()
         run: |
           mkdir -p "${RUNNER_TEMP}/screenshots"
-          find fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
+          find versions/26.1.2/fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
 
-      - name: Start NeoForge client
-        run: xvfb-run -a -s "-screen 0 1280x720x24" .github/scripts/client-smoke.sh
+      # Fabric's client game tests start with 1.21.4, so 1.21.1 plays through a world with
+      # its own smoke test on each loader.
+      - name: Run the Fabric 1.21.1 smoke test
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-1.21.1:runSmokeTest --no-daemon --stacktrace
+
+      - name: Run the NeoForge 1.21.1 smoke test
+        if: always()
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :neoforge-1.21.1:runSmokeTest --no-daemon --stacktrace
+
+      - name: Keep the 1.21.1 smoke tests' screenshots
+        if: always()
+        run: |
+          mkdir -p "${RUNNER_TEMP}/screenshots"
+          for loader in fabric neoforge; do
+            find "versions/1.21.1/${loader}/build/run/smoke/screenshots" -name 'tukuai-*.png' 2>/dev/null | while read -r f; do
+              cp "$f" "${RUNNER_TEMP}/screenshots/1.21.1-${loader}-$(basename "$f")"
+            done
+          done
+
+      - name: Start NeoForge 26.1.2 client
+        run: xvfb-run -a -s "-screen 0 1280x720x24" .github/scripts/client-smoke.sh neoforge 26.1.2
 
       - name: Print screenshots
         if: always()
@@ -144,8 +164,9 @@ jobs:
         with:
           name: client-diagnostics
           path: |
-            fabric/build/run/**/logs/**
-            fabric/build/run/clientGameTest/peer-*/output.log
-            fabric/run/**/logs/**
-            neoforge/runs/client/logs/**
+            versions/*/fabric/build/run/**/logs/**
+            versions/*/fabric/build/run/clientGameTest/peer-*/output.log
+            versions/*/fabric/runs/**/logs/**
+            versions/*/neoforge/runs/client/logs/**
+            versions/*/neoforge/build/run/smoke/logs/**
           if-no-files-found: ignore

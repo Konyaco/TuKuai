@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="最新リリース"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.1.2-62B47A" alt="Minecraft 26.1.2">
+  <img src="https://img.shields.io/badge/Minecraft-26.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.1.2 / 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge と Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT ライセンス"></a>
 </p>
@@ -55,12 +55,15 @@ TuKuai（土块棋牌室）は、クラフトして設置できるカードテ�
 
 ### ダウンロード
 
-[Releases](https://github.com/Konyaco/TuKuai/releases/latest) から使っているローダー用の jar をダウンロードしてください。Minecraft 26.1.2 と、次の Mod が必要です。
+[Releases](https://github.com/Konyaco/TuKuai/releases/latest) から Minecraft のバージョンとローダーに合った jar（例：`tukuai-fabric-1.21.1-<バージョン>.jar`）をダウンロードしてください。Minecraft 26.1.2 と 1.21.1 に対応しており、次の Mod が必要です。
 
 | ローダー | 前提 Mod |
 | --- | --- |
 | NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 以降 |
+| NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 以降 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 以降 |
+
+1.21.1 にはペールオークがないため、ペールオークのテーブルとスツールは 26.1.2 のみです。
 
 ### レシピ
 
@@ -102,19 +105,20 @@ TuKuai（土块棋牌室）は、クラフトして設置できるカードテ�
 <details>
 <summary><b>開発</b></summary>
 
-JDK 25 が必要です。
+JDK 25 が必要です。Minecraft 1.21.1 用の JDK 21 は Gradle が自動で取得します。
 
 ```sh
-./gradlew build                 # コンパイル、テスト、両ローダーの jar の作成
-./gradlew :fabric:runClient     # Fabric でゲームを起動
-./gradlew :neoforge:runClient   # NeoForge でゲームを起動
+./gradlew build                        # コンパイル、テスト、全ローダー・全 Minecraft バージョンの jar の作成
+./gradlew :fabric-26.1.2:runClient     # Fabric で Minecraft 26.1.2 を起動
+./gradlew :neoforge-1.21.1:runClient   # NeoForge で Minecraft 1.21.1 を起動
 ```
 
 | ディレクトリ | 内容 |
 | --- | --- |
 | `engine` | ルール、CPU、リプレイ。Minecraft に依存しない Kotlin コード |
-| `common` | 両ローダー共通の Minecraft コードとリソース |
-| `fabric`、`neoforge` | 各ローダーのエントリポイントと登録処理 |
+| `common` | 全ローダー・全 Minecraft バージョン共通の Minecraft コードとリソース。最新の Minecraft に合わせて書かれています |
+| `versions/<minecraft>` | その Minecraft バージョンだけの部分：`gradle.properties` の各バージョン、古いバージョンで最新の Minecraft の名前を使えるようにする `compat` パッケージ、レンダラー、アイテムモデル、レシピ |
+| `versions/<minecraft>/fabric`、`versions/<minecraft>/neoforge` | そのバージョンの各ローダーのエントリポイントと登録処理 |
 
 新しいゲームの追加：
 
@@ -125,13 +129,14 @@ JDK 25 が必要です。
 テスト：
 
 ```sh
-./gradlew :engine:test                  # ルールと CPU の単体テスト
-./gradlew :fabric:runClientGameTest     # ゲームを起動して数局遊び、スクリーンショットを撮る
-./gradlew :fabric:runMultiplayerTest    # 専用サーバーと 2 つのクライアントによる対戦テスト
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest   # この README のスクリーンショットを撮る
+./gradlew :engine:test                         # ルールと CPU の単体テスト
+./gradlew :fabric-26.1.2:runClientGameTest     # ゲームを起動して数局遊び、スクリーンショットを撮る
+./gradlew :fabric-26.1.2:runMultiplayerTest    # 専用サーバーと 2 つのクライアントによる対戦テスト
+./gradlew :fabric-1.21.1:runSmokeTest          # Minecraft 1.21.1 で各ゲームを 1 局ずつ遊び、スクリーンショットを撮る
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # この README のスクリーンショットを撮る
 ```
 
-コミットメッセージは `[type](scope) Title` の形式です。依存関係のバージョンは `gradle.properties` にあります。
+コミットメッセージは `[type](scope) Title` の形式です。依存関係のバージョンは `gradle.properties` と `versions/<minecraft>/gradle.properties` にあります。
 
 </details>
 

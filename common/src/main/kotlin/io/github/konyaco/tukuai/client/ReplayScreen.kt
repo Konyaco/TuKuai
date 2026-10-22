@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.core.MatchHandle
@@ -13,10 +14,8 @@ import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import java.util.UUID
-import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.Screen
-import net.minecraft.client.input.KeyEvent
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.DyeColor
@@ -27,7 +26,7 @@ import org.lwjgl.glfw.GLFW
  * with every hand shown. The viewer can step back and forth and switch whose seat to watch from.
  */
 class ReplayScreen(private val name: String, private val replay: Replay, startSeat: Int = 0) :
-    Screen(Component.translatable("tukuai.replay.title")), PanelHost {
+    CompatScreen(Component.translatable("tukuai.replay.title")), PanelHost {
 
     private val ui = GameUis[replay.gameId]
     private val presetId = GameRegistry[replay.gameId]?.let { it.presetIdOf(replay.rules) ?: it.presets.first().id } ?: ""

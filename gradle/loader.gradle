@@ -1,8 +1,16 @@
-// Shared setup for the fabric and neoforge projects, applied after their plugins.
-// Each loader compiles the engine and common sources itself, so a release is one jar
-// per loader and the engine never needs its own jar-in-jar packaging.
+// Shared setup for every loader project, applied after their plugins. A loader project
+// lives in versions/<minecraft>/<loader>; the Minecraft, Java and loader versions come from
+// versions/<minecraft>/gradle.properties. Each one compiles the engine, the common sources
+// and its Minecraft version's own sources itself, so a release is one jar per loader and
+// version, and the engine never needs its own jar-in-jar packaging.
+def versionDir = projectDir.parentFile
+def versionProperties = new Properties()
+new File(versionDir, 'gradle.properties').withInputStream { versionProperties.load(it) }
+versionProperties.each { key, value -> ext.set(key, value) }
+ext.loader = projectDir.name
+
 base {
-    archivesName = "${mod_id}-${project.name}-${minecraft_version}"
+    archivesName = "${mod_id}-${loader}-${minecraft_version}"
 }
 
 java {
@@ -15,10 +23,16 @@ kotlin {
     jvmToolchain(java_version.toInteger())
 }
 
+// The common sources are written against the newest Minecraft; versions/<minecraft>/src has
+// what differs for this version, mostly in the compat package.
 sourceSets.main {
     kotlin.srcDir rootProject.file('engine/src/main/kotlin')
     kotlin.srcDir rootProject.file('common/src/main/kotlin')
+    kotlin.srcDir new File(versionDir, 'src/main/kotlin')
     resources.srcDir rootProject.file('common/src/main/resources')
+    resources.srcDir new File(versionDir, 'src/main/resources')
+    // fabric.mod.json or neoforge.mods.toml, the same for every Minecraft version.
+    resources.srcDir rootProject.file("common/src/${loader}/resources")
 }
 
 dependencies {
@@ -34,6 +48,7 @@ processResources {
         mod_author                    : mod_author,
         license                       : license,
         minecraft_version             : minecraft_version,
+        fabric_minecraft_range        : fabric_minecraft_range,
         java_version                  : java_version,
         fabric_loader_version         : fabric_loader_version,
         fabric_language_kotlin_version: fabric_language_kotlin_version,

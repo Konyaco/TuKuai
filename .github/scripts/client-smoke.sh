@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
-# Starts the NeoForge client under a virtual display and passes once it has loaded past
-# the loading screen with TuKuai in it and nothing from TuKuai went wrong. The Fabric
-# client is covered more fully by its game test. Run it inside xvfb-run.
+# Starts a client under a virtual display and passes once it has loaded past the loading
+# screen with TuKuai in it and nothing from TuKuai went wrong. The Fabric 26.1.2 client is
+# covered more fully by its game test. Run it inside xvfb-run.
+# Usage: client-smoke.sh fabric|neoforge <minecraft>
 set -euo pipefail
 
-run_dir="neoforge/runs/client"
+loader="$1"
+minecraft="$2"
+project="${loader}-${minecraft}"
+run_dir="versions/${minecraft}/${loader}/runs/client"
 log="${run_dir}/logs/latest.log"
-out="${RUNNER_TEMP:-/tmp}/neoforge-client.out"
+out="${RUNNER_TEMP:-/tmp}/${project}-client.out"
 mkdir -p "${run_dir}"
 rm -f "${log}"
 
-setsid ./gradlew ":neoforge:runClient" --no-daemon > "${out}" 2>&1 &
+setsid ./gradlew ":${project}:runClient" --no-daemon > "${out}" 2>&1 &
 pid=$!
 trap 'kill -- -"${pid}" 2>/dev/null || true' EXIT
 
@@ -22,20 +26,20 @@ fail() {
 }
 
 for _ in $(seq 1 120); do
-    kill -0 "${pid}" 2>/dev/null || fail "The NeoForge client exited before it finished loading"
+    kill -0 "${pid}" 2>/dev/null || fail "The ${project} client exited before it finished loading"
     if [[ -f "${log}" ]] && grep -q "TuKuai client ready" "${log}"; then
         # Give anything that runs after the first screen a moment to complain.
         sleep 10
         if grep -E "/(ERROR|FATAL)\]" "${log}" | grep -qi "tukuai"; then
-            fail "The NeoForge client logged an error from TuKuai"
+            fail "The ${project} client logged an error from TuKuai"
         fi
         if grep -q "Crash report\|---- Minecraft Crash Report" "${log}" "${out}"; then
-            fail "The NeoForge client crashed"
+            fail "The ${project} client crashed"
         fi
-        echo "NeoForge client loaded with TuKuai"
+        echo "${project} client loaded with TuKuai"
         exit 0
     fi
     sleep 5
 done
 
-fail "The NeoForge client did not finish loading in 10 minutes"
+fail "The ${project} client did not finish loading in 10 minutes"

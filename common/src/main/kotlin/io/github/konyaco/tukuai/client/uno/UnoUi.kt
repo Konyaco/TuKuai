@@ -9,7 +9,7 @@ import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
-import io.github.konyaco.tukuai.client.render.CardTableRenderer
+import io.github.konyaco.tukuai.client.render.TableArt
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.engine.uno.Uno
 import io.github.konyaco.tukuai.engine.uno.UnoCard
@@ -50,7 +50,7 @@ object UnoUi : GameUi {
         repeat(pileCards) { i ->
             cards += TableCard(
                 pileX, pileZ, -first.stepX.toFloat(), -first.stepZ.toFloat(), CardArt.back(), PILE_SCALE,
-                lift = i * CardTableRenderer.CARD_THICKNESS * PILE_SCALE,
+                lift = i * TableArt.CARD_THICKNESS * PILE_SCALE,
             )
         }
 
@@ -89,7 +89,7 @@ object UnoUi : GameUi {
                 ((depth * 31) % 7 - 3) * TOSS_SHIFT,
                 ((depth * 17) % 7 - 3) * TOSS_SHIFT,
                 upX, upZ, CardArt.uno(card, named[card]), DISCARD_SCALE, layer = i,
-                lift = CardTableRenderer.DISPLAY_HEIGHT + 0.002f,
+                lift = TableArt.DISPLAY_HEIGHT + 0.002f,
                 fromX = from?.let { it.side.stepX * HAND_DISTANCE + it.shiftX } ?: pileX,
                 fromZ = from?.let { it.side.stepZ * HAND_DISTANCE + it.shiftZ } ?: pileZ,
                 key = card.id,

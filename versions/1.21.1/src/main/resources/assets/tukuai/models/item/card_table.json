@@ -1,0 +1,65 @@
+{
+  "parent": "tukuai:block/card_table_oak",
+  "overrides": [
+    {
+      "predicate": {
+        "tukuai:wood": 0.0625
+      },
+      "model": "tukuai:block/card_table_spruce"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.125
+      },
+      "model": "tukuai:block/card_table_birch"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.1875
+      },
+      "model": "tukuai:block/card_table_jungle"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.25
+      },
+      "model": "tukuai:block/card_table_acacia"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.3125
+      },
+      "model": "tukuai:block/card_table_dark_oak"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.375
+      },
+      "model": "tukuai:block/card_table_mangrove"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.4375
+      },
+      "model": "tukuai:block/card_table_cherry"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.5625
+      },
+      "model": "tukuai:block/card_table_bamboo"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.625
+      },
+      "model": "tukuai:block/card_table_crimson"
+    },
+    {
+      "predicate": {
+        "tukuai:wood": 0.6875
+      },
+      "model": "tukuai:block/card_table_warped"
+    }
+  ]
+}

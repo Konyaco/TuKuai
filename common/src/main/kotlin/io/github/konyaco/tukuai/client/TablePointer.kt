@@ -1,6 +1,7 @@
 package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.client.render.CardFrame
+import io.github.konyaco.tukuai.compat.*
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import org.joml.Matrix4f
@@ -60,7 +61,7 @@ object TablePointer {
     fun cardAt(pos: BlockPos, mouseX: Double, mouseY: Double, width: Int, height: Int): TableCard? {
         if (drawnAt != pos || drawn.none { it.mine } || width <= 0 || height <= 0) return null
         val camera = Minecraft.getInstance().gameRenderer.mainCamera
-        val inverse = camera.getViewRotationProjectionMatrix(Matrix4f()).invert()
+        val inverse = camera.viewRotationProjection(Matrix4f()).invert()
         val x = (mouseX / width * 2 - 1).toFloat()
         val y = (1 - mouseY / height * 2).toFloat()
         // The camera sits at the origin of this matrix, so the near and far points are on the ray from it.
