@@ -408,7 +408,13 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.setScreen { TableScreen(table) }
         var passes = 0
         while (true) {
-            context.waitFor({ (ClientTables[table]?.view as? PdkView)?.isMyTurn == true }, 1200)
+            context.waitFor({ ClientTables[table]?.let { (it.view as? PdkView)?.isMyTurn == true || it.snapshot.status == TableStatus.FINISHED } == true }, 1200)
+            // Now and then someone goes out while we pass: deal again.
+            if (ClientTables[table]!!.snapshot.status == TableStatus.FINISHED) {
+                act(server, table, TableOp.START)
+                context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
+                continue
+            }
             val canPlay = context.computeOnClient<Boolean, RuntimeException> {
                 (ClientTables[table]?.view as? PdkView)?.turnRules()?.plays?.isNotEmpty() == true
             }

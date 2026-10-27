@@ -177,13 +177,13 @@ object TutuUi : GameUi {
         val view = table.view as? TutuView ?: return emptyList()
         val settlement = view.settlement
         if (settlement != null) return listOf(wonLine(table, settlement.winners))
-        val turn = TableScreen.seatName(table.snapshot.seats.getOrNull(view.turn)?.occupant)
+        val turn = TableScreen.seatName(table.snapshot.seats.getOrNull(view.turn)?.occupant, view.turn)
         return listOf(stateLine(view), Component.translatable("tukuai.table.turn", turn))
     }
 
     fun wonLine(table: ClientTable, winners: Set<Seat>): Component {
         val separator = Component.translatable("tukuai.tutu.separator").string
-        val names = winners.joinToString(separator) { TableScreen.seatName(table.snapshot.seats.getOrNull(it)?.occupant).string }
+        val names = winners.joinToString(separator) { TableScreen.seatName(table.snapshot.seats.getOrNull(it)?.occupant, it).string }
         return Component.translatable("tukuai.tutu.won", names)
     }
 

@@ -16,6 +16,7 @@ import io.github.konyaco.tukuai.engine.guandan.GdAction
 import io.github.konyaco.tukuai.engine.guandan.GdCodecs
 import io.github.konyaco.tukuai.engine.guandan.GdEvent
 import io.github.konyaco.tukuai.engine.guandan.GdEventKind
+import io.github.konyaco.tukuai.engine.guandan.GdPatterns
 import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdTurn
 import io.github.konyaco.tukuai.engine.guandan.GdView
@@ -57,8 +58,21 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
 
     private fun live(table: ClientTable) = screen.interactive && table.snapshot.status == TableStatus.PLAYING
 
-    /** What you may play now, when it is your turn to play. */
-    private fun turn(table: ClientTable, view: GdView): GdTurn? = if (live(table)) view.turnRules() else null
+    private var turnOf: Any? = null
+    private var cachedTurn: GdTurn? = null
+
+    /**
+     * What you may play now, when it is your turn to play. Kept for the update it came with,
+     * as the screen asks every frame and working out every play in a hand takes a while.
+     */
+    private fun turn(table: ClientTable, view: GdView): GdTurn? {
+        if (!live(table)) return null
+        if (turnOf !== table.snapshot) {
+            turnOf = table.snapshot
+            cachedTurn = view.turnRules()
+        }
+        return cachedTurn
+    }
 
     private fun owesReturn(table: ClientTable, view: GdView): Boolean = live(table) && view.owedReturn != null
 
@@ -184,6 +198,7 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
             recent[me]?.let { renderEvent(g, view, it, width / 2, buttonY() - 28, PanelText.Align.CENTER, scale = 0.5f, step = 9) }
             renderTributes(g, table, view)
             renderNote(g, table, view)
+            turn(table, view)?.let { renderPicked(g, it, view) }
         }
         renderSelf(g, table, view, me)
         picker.render(g, mouseX, mouseY) { it.isWild(view.levelRank) }
@@ -357,10 +372,22 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
             view.owedReturn != null -> Component.translatable("tukuai.guandan.note.give_back", GdUi.name(table, view.owedReturn!!.from))
             view.phase == GdPhase.RETURN -> Component.translatable("tukuai.guandan.giving_back", GdUi.name(table, view.turn))
             view.isMyTurn && view.log.lastOrNull()?.kind == GdEventKind.PARTNER_LEADS -> Component.translatable("tukuai.guandan.note.partner_leads")
-            view.isMyTurn && view.toBeat != null && view.turnRules()?.plays?.isEmpty() == true -> Component.translatable("tukuai.guandan.note.nothing")
+            view.toBeat != null && turn(table, view)?.plays?.isEmpty() == true -> Component.translatable("tukuai.guandan.note.nothing")
             else -> return emptyList()
         }
         return font.split(note, width - 40)
+    }
+
+    /** Beside the buttons, what the picked cards make, or why they cannot go out. */
+    private fun renderPicked(g: GuiGraphicsExtractor, turn: GdTurn, view: GdView) {
+        if (selected.isEmpty()) return
+        val pattern = turn.reading(selected)
+        val text = when {
+            pattern != null -> Component.translatable("tukuai.guide.guandan.pattern.${pattern.type.name.lowercase()}")
+            GdPatterns.classify(selected, view.levelRank).isNotEmpty() -> Component.translatable("tukuai.play.too_small")
+            else -> Component.translatable("tukuai.play.no_pattern")
+        }
+        PanelText.picked(g, text, pattern != null, width / 2 + 98, buttonY() + 6)
     }
 
     /** Where line [i] of a note [lines] long goes; the last one sits just over the buttons. */

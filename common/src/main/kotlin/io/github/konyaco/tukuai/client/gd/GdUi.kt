@@ -123,7 +123,7 @@ object GdUi : GameUi {
     /** The level as it is printed on the cards: 2 to 10, J, Q, K or A. */
     fun levelName(level: Int): String = GdValue.label(GdValue.natural(GdValue.LADDER[level]))
 
-    fun name(table: ClientTable, seat: Seat): Component = TableScreen.seatName(table.snapshot.seats.getOrNull(seat)?.occupant)
+    fun name(table: ClientTable, seat: Seat): Component = TableScreen.seatName(table.snapshot.seats.getOrNull(seat)?.occupant, seat)
 
     /** For example "Level 7 · 1st Bob": the level, and who is out so far. */
     private fun levelLine(table: ClientTable, view: GdView): Component {

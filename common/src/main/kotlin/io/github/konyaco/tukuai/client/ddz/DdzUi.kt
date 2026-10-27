@@ -86,7 +86,7 @@ object DdzUi : GameUi {
                 Component.translatable("tukuai.ddz.stake", view.rules.baseScore, settlement.multiplier),
             )
         }
-        val turn = TableScreen.seatName(table.snapshot.seats.getOrNull(view.turn)?.occupant)
+        val turn = TableScreen.seatName(table.snapshot.seats.getOrNull(view.turn)?.occupant, view.turn)
         return listOf(
             Component.translatable("tukuai.ddz.stake", view.rules.baseScore, DdzPanel.multiplier(view)),
             Component.translatable("tukuai.table.turn", turn),

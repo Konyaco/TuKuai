@@ -161,7 +161,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
             GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_ENTER -> {
                 if (selected.isNotEmpty() && Patterns.readingFor(selected, view.toBeat, view.rules) != null) {
                     send(DdzAction.PlayCards(selected.toList()))
-                } else if (view.toBeat != null) {
+                } else if (selected.isEmpty() && view.toBeat != null) {
                     send(DdzAction.Pass)
                 }
                 true
@@ -189,13 +189,41 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         renderOpponent(g, table, view, left, recent[left], onLeft = true)
         renderOpponent(g, table, view, right, recent[right], onLeft = false)
 
-        // Your own last move, above your hand.
+        // Your own last move above your hand, or on your turn, whether anything beats the table and what you picked.
         if (!finished) {
             recent[me]?.let { renderEvent(g, view, it, width / 2, buttonY() - 40, PanelText.Align.CENTER) }
+            if (screen.interactive && view.isMyTurn && view.phase == DdzPhase.PLAYING) renderTurnNote(g, table, view)
         }
         renderSelf(g, table, view, me)
         picker.render(g, sortedHand(view), mouseX, mouseY)
         if (finished) renderResult(g, table, view)
+    }
+
+    /** Over the buttons when nothing in hand beats the table; beside them, what the picked cards make. */
+    private fun renderTurnNote(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView) {
+        if (view.toBeat != null && nothingBeats(table, view)) {
+            g.centeredText(font, Component.translatable("tukuai.ddz.note.nothing"), width / 2, buttonY() - 12, TableScreen.YELLOW)
+        }
+        if (selected.isEmpty()) return
+        val pattern = Patterns.readingFor(selected, view.toBeat, view.rules)
+        val text = when {
+            pattern != null -> Component.translatable("tukuai.guide.doudizhu.pattern.${pattern.type.name.lowercase()}")
+            Patterns.classify(selected, view.rules).isNotEmpty() -> Component.translatable("tukuai.play.too_small")
+            else -> Component.translatable("tukuai.play.no_pattern")
+        }
+        PanelText.picked(g, text, pattern != null, width / 2 + 98, buttonY() + 6)
+    }
+
+    private var nothingOf: Any? = null
+    private var nothing = false
+
+    /** Whether no play in hand beats the table, worked out once an update rather than every frame. */
+    private fun nothingBeats(table: ClientTable, view: DdzView): Boolean {
+        if (nothingOf !== table.snapshot) {
+            nothingOf = table.snapshot
+            nothing = Patterns.options(view.hand, view.toBeat, view.rules).isEmpty()
+        }
+        return nothing
     }
 
     private fun renderTitle(g: GuiGraphicsExtractor, table: ClientTable) = PanelText.title(g, table, screen.interactive, width)

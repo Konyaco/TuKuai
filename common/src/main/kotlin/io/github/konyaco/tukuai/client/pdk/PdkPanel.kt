@@ -19,6 +19,7 @@ import io.github.konyaco.tukuai.engine.paodekuai.PdkAction
 import io.github.konyaco.tukuai.engine.paodekuai.PdkCodecs
 import io.github.konyaco.tukuai.engine.paodekuai.PdkEvent
 import io.github.konyaco.tukuai.engine.paodekuai.PdkEventKind
+import io.github.konyaco.tukuai.engine.paodekuai.PdkPatterns
 import io.github.konyaco.tukuai.engine.paodekuai.PdkTurn
 import io.github.konyaco.tukuai.engine.paodekuai.PdkView
 import io.github.konyaco.tukuai.engine.paodekuai.bot.PdkBot
@@ -53,9 +54,21 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
     private fun sortedHand(view: PdkView): List<PlayingCard> =
         (if (view.seat == null) view.revealedHands.getOrNull(0).orEmpty() else view.hand).sortedWith(DDZ_ORDER.reversed())
 
-    /** What you may do now, when it is your turn at a game that is on. */
-    private fun turn(table: ClientTable, view: PdkView): PdkTurn? =
-        if (screen.interactive && table.snapshot.status == TableStatus.PLAYING) view.turnRules() else null
+    private var turnOf: Any? = null
+    private var cachedTurn: PdkTurn? = null
+
+    /**
+     * What you may do now, when it is your turn at a game that is on. Kept for the update it
+     * came with, as the screen asks every frame and working out every play takes a while.
+     */
+    private fun turn(table: ClientTable, view: PdkView): PdkTurn? {
+        if (!screen.interactive || table.snapshot.status != TableStatus.PLAYING) return null
+        if (turnOf !== table.snapshot) {
+            turnOf = table.snapshot
+            cachedTurn = view.turnRules()
+        }
+        return cachedTurn
+    }
 
     // ---- Buttons -------------------------------------------------------------------------------
 
@@ -162,7 +175,10 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
         if (!finished) {
             // Your own last move above your hand, or on your turn, what the rules ask of you.
             recent[me]?.let { renderEvent(g, it, width / 2, buttonY() - 40, PanelText.Align.CENTER) }
-            turn(table, view)?.let { renderTurnNote(g, view, it) }
+            turn(table, view)?.let {
+                renderTurnNote(g, view, it)
+                renderPicked(g, it)
+            }
         }
         renderSelf(g, table, view, me)
         picker.render(g, sortedHand(view), mouseX, mouseY)
@@ -183,6 +199,21 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
         lines.forEachIndexed { i, line ->
             g.centeredText(font, line, width / 2, buttonY() - 12 - (lines.size - 1 - i) * 10, color)
         }
+    }
+
+    /** Beside the buttons, what the picked cards make, or why they cannot go out. */
+    private fun renderPicked(g: GuiGraphicsExtractor, turn: PdkTurn) {
+        if (selected.isEmpty()) return
+        val pattern = turn.reading(selected)
+        val last = selected.size == turn.hand.size
+        val text = when {
+            pattern != null -> Component.translatable("tukuai.guide.paodekuai.pattern.${pattern.type.name.lowercase()}")
+            // A play that beats the table but breaks this turn's own rule, which the note above says.
+            PdkPatterns.readingFor(selected, turn.toBeat, turn.rules, last) != null -> Component.translatable("tukuai.play.not_now")
+            PdkPatterns.classify(selected, turn.rules, last).isNotEmpty() -> Component.translatable("tukuai.play.too_small")
+            else -> Component.translatable("tukuai.play.no_pattern")
+        }
+        PanelText.picked(g, text, pattern != null, width / 2 + 98, buttonY() + 6)
     }
 
     private fun renderOpponent(g: GuiGraphicsExtractor, table: ClientTable, view: PdkView, seat: Seat, recent: PdkEvent?, onLeft: Boolean) {

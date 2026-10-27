@@ -88,7 +88,7 @@ object PdkUi : GameUi {
     /** For example "Left: 12 · 5 · 9", in seat order. */
     fun cardsLeft(view: PdkView): Component = Component.translatable("tukuai.pdk.left", view.handCounts.joinToString(" · "))
 
-    private fun name(table: ClientTable, seat: Int): Component = TableScreen.seatName(table.snapshot.seats.getOrNull(seat)?.occupant)
+    private fun name(table: ClientTable, seat: Int): Component = TableScreen.seatName(table.snapshot.seats.getOrNull(seat)?.occupant, seat)
 
     override fun turnSeat(table: ClientTable): Int? {
         val view = table.view as? PdkView ?: return null
