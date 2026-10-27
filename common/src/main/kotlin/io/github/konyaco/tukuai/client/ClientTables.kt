@@ -1,15 +1,18 @@
 package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import net.minecraft.client.Minecraft
+import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Holder
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvent
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.Level
 
@@ -91,8 +94,35 @@ object ClientTables {
         val previous = tables.put(table.pos, table)
         table.ui?.onUpdate(previous?.takeIf { it.snapshot.gameId == snapshot.gameId }, table)
         val screen = Minecraft.getInstance().screen
-        if (screen is TableScreen && screen.pos == table.pos) screen.onTableChanged(table)
+        if (screen is TableScreen && screen.pos == table.pos) screen.onTableChanged(table) else remindTurn(previous, table)
     }
+
+    /**
+     * A player who closed the table screen mid-game would not notice their turn come round:
+     * they get the chime the screen plays and a line over the hotbar saying how to get back.
+     */
+    private fun remindTurn(previous: ClientTable?, table: ClientTable) {
+        val s = table.snapshot
+        val me = s.you ?: return
+        if (s.status != TableStatus.PLAYING || s.paused || s.seats.getOrNull(me)?.auto == true) return
+        if (!table.isTurnOf(me) || previous?.isTurnOf(me) == true) return
+        val mc = Minecraft.getInstance()
+        mc.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.4f))
+        mc.player?.sendOverlayMessage(Component.translatable("tukuai.table.your_turn"))
+        reminded = true
+    }
+
+    /** Set while the line over the hotbar may still say it is the player's turn. */
+    private var reminded = false
+
+    /** Clears the reminder once the player is back at the table, so it does not linger over their cards. */
+    fun forgetReminder() {
+        if (!reminded) return
+        reminded = false
+        Minecraft.getInstance().player?.sendOverlayMessage(Component.empty())
+    }
+
+    private fun ClientTable.isTurnOf(seat: Int) = snapshot.status == TableStatus.PLAYING && ui?.turnSeat(this) == seat
 
     /**
      * Tables belong to the level they were sent in, so a new level (joining a server,

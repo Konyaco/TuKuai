@@ -46,7 +46,7 @@ object Scoreboard {
                 nameX += 8
             }
             val color = if (seat == s.you) TableScreen.YELLOW else TableScreen.WHITE
-            val name = font.plainSubstrByWidth(TableScreen.seatName(info.occupant).string, pointsX - nameX - 3)
+            val name = font.plainSubstrByWidth(TableScreen.seatName(info.occupant, seat).string, pointsX - nameX - 3)
             g.text(font, name, nameX, y, color, false)
             g.text(font, text, pointsX, y, pointsColor(points), false)
             y += LINE

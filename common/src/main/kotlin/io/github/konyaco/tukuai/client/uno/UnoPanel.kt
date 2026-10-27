@@ -240,7 +240,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
 
     private fun seatLabel(table: ClientTable, seat: Seat): Component {
         val info = table.snapshot.seats.getOrNull(seat)
-        val name = TableScreen.seatName(info?.occupant)
+        val name = TableScreen.seatName(info?.occupant, seat)
         return when {
             info?.occupant is Occupant.Human && !info.present -> Component.translatable("tukuai.table.name_away", name)
             info?.auto == true -> Component.translatable("tukuai.table.name_auto", name)
@@ -397,7 +397,7 @@ class UnoPanel(private val screen: PanelHost) : GamePanel {
         val top = resultTop()
         g.fill(x, top, x + w, top + resultHeight(view), 0xE0101010.toInt())
         val me = table.snapshot.you
-        val winner = TableScreen.seatName(table.snapshot.seats.getOrNull(settlement.winner)?.occupant)
+        val winner = TableScreen.seatName(table.snapshot.seats.getOrNull(settlement.winner)?.occupant, settlement.winner)
         val color = when {
             me == null -> TableScreen.WHITE
             me == settlement.winner -> TableScreen.GREEN

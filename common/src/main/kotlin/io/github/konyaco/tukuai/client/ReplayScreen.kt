@@ -146,7 +146,7 @@ class ReplayScreen(private val name: String, private val replay: Replay, startSe
         val p = panel ?: return
         p.rebuild(t)
 
-        button(Component.translatable("tukuai.replay.seat", TableScreen.seatName(occupantOf(replay.players[seat]))), width - 134, 4, 130) {
+        button(Component.translatable("tukuai.replay.seat", TableScreen.seatName(occupantOf(replay.players[seat]), seat)), width - 134, 4, 130) {
             setSeat(seat + 1)
         }
 

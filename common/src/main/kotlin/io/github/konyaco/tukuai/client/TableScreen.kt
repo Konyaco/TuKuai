@@ -119,6 +119,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
     override fun init() {
         // Updates that came while another screen (the rule book) was open.
         ClientTables[pos]?.takeIf { it !== table }?.let(::update)
+        ClientTables.forgetReminder()
         val t = table
         initCorner(t)
         if (t == null) return
@@ -218,7 +219,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             send(if (mine) TableOp.UNREADY else TableOp.START)
         }
         if (shared) {
-            val waiting = voters.filter { !s.seats[it].ready }.joinToString(", ") { seatName(s.seats[it].occupant).string }
+            val waiting = voters.filter { !s.seats[it].ready }.joinToString(", ") { seatName(s.seats[it].occupant, it).string }
             val tip = Component.translatable("tukuai.table.ready.tip")
             if (waiting.isNotEmpty()) tip.append("\n").append(Component.translatable("tukuai.table.ready.waiting", waiting))
             b.setTooltip(Tooltip.create(tip))
@@ -320,7 +321,8 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
                 send(TableOp.SIT, s.you ?: 0)
             }
         } else {
-            readyButton(s, left + 200, bottom, 100, again = false)
+            // Mid-match the next game goes on with the same scores, so it is not a fresh start.
+            readyButton(s, left + 200, bottom, 100, again = s.rounds > 0)
         }
     }
 
@@ -525,7 +527,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             val color = Scoreboard.placeColor(place)
             if (place <= 3) g.fill(left + 8, y - 3, left + standingsWidth - 8, y + 11, (color and 0xFFFFFF) or 0x30000000)
             g.text(font, Component.translatable("tukuai.table.place", place), left + 14, y, color, true)
-            val name = seatName(s.seats[seat].occupant)
+            val name = seatName(s.seats[seat].occupant, seat)
             g.text(font, font.plainSubstrByWidth(name.string, 110), left + 60, y, if (seat == s.you) YELLOW else WHITE, true)
             val points = s.tally.getOrElse(seat) { 0 }
             rightText(g, Component.literal(Scoreboard.signed(points)), left + standingsWidth - 14, y, Scoreboard.pointsColor(points))
@@ -813,10 +815,16 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             if (mc.screen !is TableScreen) mc.setScreen(TableScreen(pos))
         }
 
-        fun seatName(occupant: Occupant?): Component = when (occupant) {
+        /**
+         * Who sits in a seat. Given the [seat], a computer gets its seat number too, so that
+         * several of them at one table can be told apart.
+         */
+        fun seatName(occupant: Occupant?, seat: Int = -1): Component = when (occupant) {
             null -> Component.translatable("tukuai.table.empty")
             is Occupant.Human -> Component.literal(occupant.name)
-            is Occupant.Computer -> Component.translatable("tukuai.table.bot", botLevelName(occupant.level))
+            is Occupant.Computer ->
+                if (seat >= 0) Component.translatable("tukuai.table.bot_seat", botLevelName(occupant.level), seat + 1)
+                else Component.translatable("tukuai.table.bot", botLevelName(occupant.level))
         }
 
         fun botLevelName(level: BotLevel): Component = Component.translatable("tukuai.bot.${level.name.lowercase()}")

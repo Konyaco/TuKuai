@@ -181,7 +181,7 @@ object PanelText {
     /** A seat's name, marked when its player is away or the computer is playing for them. */
     fun seatLabel(table: ClientTable, seat: Seat): Component {
         val info = table.snapshot.seats.getOrNull(seat)
-        val name = TableScreen.seatName(info?.occupant)
+        val name = TableScreen.seatName(info?.occupant, seat)
         return when {
             info?.occupant is Occupant.Human && !info.present -> Component.translatable("tukuai.table.name_away", name)
             info?.auto == true -> Component.translatable("tukuai.table.name_auto", name)
@@ -223,6 +223,13 @@ object PanelText {
         val s = table.snapshot
         g.text(font, TableScreen.presetName(s.gameId, s.presetId), 6, 6, TableScreen.GRAY, true)
     }
+
+    /**
+     * Beside the turn buttons while cards are picked: what they make, in green, or in red
+     * why they cannot go out, so a greyed out play button says why.
+     */
+    fun picked(g: GuiGraphicsExtractor, text: Component, ok: Boolean, x: Int, y: Int) =
+        text(g, text, x, y, if (ok) TableScreen.GREEN else TableScreen.RED, Align.LEFT)
 
     /** One line of text lined up on [x] as [align] says. */
     fun text(g: GuiGraphicsExtractor, text: Component, x: Int, y: Int, color: Int, align: Align) {

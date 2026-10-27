@@ -142,9 +142,9 @@ object UnoUi : GameUi {
         val view = table.view as? UnoView ?: return emptyList()
         val settlement = view.settlement
         if (settlement != null) {
-            return listOf(Component.translatable("tukuai.uno.won", TableScreen.seatName(table.snapshot.seats.getOrNull(settlement.winner)?.occupant)))
+            return listOf(Component.translatable("tukuai.uno.won", TableScreen.seatName(table.snapshot.seats.getOrNull(settlement.winner)?.occupant, settlement.winner)))
         }
-        val turn = TableScreen.seatName(table.snapshot.seats.getOrNull(view.turn)?.occupant)
+        val turn = TableScreen.seatName(table.snapshot.seats.getOrNull(view.turn)?.occupant, view.turn)
         return listOf(stateLine(view), Component.translatable("tukuai.table.turn", turn))
     }
 
