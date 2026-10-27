@@ -3,6 +3,7 @@ package io.github.konyaco.tukuai.fabric.test
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientConfig
+import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TablePointer
@@ -188,6 +189,12 @@ class ImmersiveInputGameTest : FabricClientGameTest {
     private fun handCard(table: BlockPos, card: PlayingCard): TableCard? =
         ClientTables[table]!!.let { it.scene(it.seatPlaces()) }.firstOrNull { it.mine && it.sprite == CardArt.face(card) }
 
+    private fun myPlay(t: ClientTable): Boolean = (t.view as? GdView)?.let { it.isMyTurn && it.phase == GdPhase.PLAYING } == true
+
+    /** A Guandan hand that ended and waits for us to go on: the next hand of the match, or a new game. */
+    private fun handOver(t: ClientTable): Boolean =
+        t.snapshot.status == TableStatus.FINISHED || (t.view as? GdView)?.let { it.isMyTurn && it.phase == GdPhase.ROUND_OVER } == true
+
     /** The side of the table each seat sits at, as the renderer has it. */
     private fun sides(table: BlockPos): List<Direction> = ClientTables[table]!!.seatPlaces().map { it.side }
 
@@ -217,7 +224,16 @@ class ImmersiveInputGameTest : FabricClientGameTest {
             var run: List<Int>
             while (true) {
                 check(++tries < 40) { "Never got a Guandan turn with a pair to play" }
-                context.waitFor({ (ClientTables[table]?.view as? GdView)?.let { it.isMyTurn && it.phase == GdPhase.PLAYING } == true }, 2400)
+                context.waitFor({ ClientTables[table]?.let { myPlay(it) || handOver(it) } == true }, 2400)
+                // Now and then the others end the hand before a pair comes up: deal another.
+                val ended = ClientTables[table]!!
+                if (handOver(ended)) {
+                    val step = ended.snapshot.step
+                    if (ended.snapshot.status == TableStatus.FINISHED) act(server, table, TableOp.START)
+                    else act(server, table, TableOp.ACT, data = GdCodecs.ACTION.encode(GdAction.Next))
+                    context.waitFor({ (ClientTables[table]?.snapshot?.step ?: step) != step }, 200)
+                    continue
+                }
                 val view = ClientTables[table]!!.view as GdView
                 val turn = view.turnRules()!!
                 val hand = GdUi.sorted(view, view.hand)
