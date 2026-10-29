@@ -461,6 +461,12 @@ class TuKuaiClientGameTest : FabricClientGameTest {
      */
     private fun playMahjong(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
         context.setScreen { null }
+        // The long Guandan game before may still be going; any player may end it.
+        act(server, table, TableOp.AUTO, 0)
+        if (status(server, table) == TableStatus.PLAYING) {
+            act(server, table, TableOp.END)
+            context.waitFor({ ClientTables[table]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        }
         act(server, table, TableOp.GAME, text = "mahjong")
         repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
         context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "mahjong" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
