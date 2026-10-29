@@ -29,7 +29,7 @@ TuKuai adds a card table to Minecraft that you can craft and place, and play car
 <table>
   <tr>
     <td width="55%"><img src="docs/images/en/ddz-table.webp" alt="Dou Dizhu"></td>
-    <td><b>Dou Dizhu</b><br>Three players: one landlord against two farmers. Rule sets: classic bidding, rob the landlord, and unshuffled.</td>
+    <td><b>Dou Dizhu</b><br>Three players: one landlord against two farmers. Rule sets: classic bidding, rob the landlord, and unshuffled; or four players with two decks, one landlord against three farmers, with bombs of up to eight cards.</td>
   </tr>
   <tr>
     <td><img src="docs/images/en/uno-table.webp" alt="UNO"></td>

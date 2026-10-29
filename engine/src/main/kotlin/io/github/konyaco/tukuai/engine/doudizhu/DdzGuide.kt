@@ -75,11 +75,15 @@ object DdzGuide {
     private fun table(rules: DdzRules): List<GuideBlock> {
         val t = "$K.table"
         fun on(name: String, on: Boolean) = Point("$t.$name.${if (on) "on" else "off"}")
-        return listOf(
+        return listOfNotNull(
+            // Four players change the deal, the bombs and the rocket, which the rest of the book tells for three.
+            if (rules.players == 4) Point("$t.four") else null,
+            if (rules.players == 4) Point("$t.four.bombs") else null,
             Point("$t.bidding.${rules.bidding.name.lowercase()}"),
             on("doubling", rules.doubling),
             Point("$t.deal.${rules.deal.name.lowercase()}"),
             on("four_two", rules.allowFourWithTwo),
+            on("trio_singles", rules.trioSingles),
             Point("$t.base", listOf(rules.baseScore)),
             on("bombs", rules.bombsDouble),
             on("spring", rules.springDoubles),

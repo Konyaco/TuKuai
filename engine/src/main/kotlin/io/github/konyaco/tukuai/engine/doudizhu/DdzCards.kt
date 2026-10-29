@@ -61,6 +61,16 @@ object DdzCards {
     fun fromIndex(index: Int): PlayingCard =
         Decks.STANDARD_54.getOrNull(index) ?: throw IllegalArgumentException("No card $index")
 
+    /** One deck for three players, or two with every card twice for four. */
+    fun deck(decks: Int): List<PlayingCard> = List(decks) { Decks.STANDARD_54 }.flatten()
+
+    /** [hand] without [cards], one copy for each card; null when the hand doesn't hold them all. */
+    fun minus(hand: List<PlayingCard>, cards: Collection<PlayingCard>): List<PlayingCard>? {
+        val rest = hand.toMutableList()
+        for (card in cards) if (!rest.remove(card)) return null
+        return rest
+    }
+
     /** How many cards of each value, indexed by value. */
     fun counts(cards: Collection<PlayingCard>): IntArray {
         val counts = IntArray(DdzValue.SLOTS)

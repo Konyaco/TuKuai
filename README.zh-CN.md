@@ -29,7 +29,7 @@
 <table>
   <tr>
     <td width="55%"><img src="docs/images/zh-CN/ddz-table.webp" alt="斗地主"></td>
-    <td><b>斗地主</b><br>三人游戏，一名地主对两名农民。规则可选经典叫分、抢地主和不洗牌。</td>
+    <td><b>斗地主</b><br>三人游戏，一名地主对两名农民。规则可选经典叫分、抢地主和不洗牌；也能玩四人斗地主：两副牌，一名地主对三名农民，炸弹最多八张。</td>
   </tr>
   <tr>
     <td><img src="docs/images/zh-CN/uno-table.webp" alt="UNO"></td>

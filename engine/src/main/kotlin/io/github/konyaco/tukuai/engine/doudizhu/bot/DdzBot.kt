@@ -1,6 +1,5 @@
 package io.github.konyaco.tukuai.engine.doudizhu.bot
 
-import io.github.konyaco.tukuai.engine.card.Decks
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.Bot
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -9,9 +8,9 @@ import io.github.konyaco.tukuai.engine.doudizhu.BiddingMode
 import io.github.konyaco.tukuai.engine.doudizhu.DdzAction
 import io.github.konyaco.tukuai.engine.doudizhu.DdzCards
 import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
+import io.github.konyaco.tukuai.engine.doudizhu.DdzRules
 import io.github.konyaco.tukuai.engine.doudizhu.DdzValue
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
-import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.engine.doudizhu.Pattern
 import io.github.konyaco.tukuai.engine.doudizhu.PatternType
 import io.github.konyaco.tukuai.engine.doudizhu.Patterns
@@ -40,7 +39,7 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
         val seat = requireNotNull(view.seat) { "A bot needs a seat" }
         return when (view.phase) {
             DdzPhase.BIDDING -> bid(view)
-            DdzPhase.DOUBLING -> DdzAction.Double(strength(view.hand) + noise() >= if (view.isLandlord(seat)) 10 else 8)
+            DdzPhase.DOUBLING -> DdzAction.Double(strength(view.hand, view.rules) + noise() >= if (view.isLandlord(seat)) 10 else 8)
             DdzPhase.PLAYING -> play(view, seat)
             DdzPhase.FINISHED -> error("The game is over")
         }
@@ -55,7 +54,8 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
     // ---- Bidding -------------------------------------------------------------------------------
 
     /** Rough strength of a hand for bidding: big cards and bombs, and how few turns it needs. */
-    fun strength(hand: List<PlayingCard>): Int {
+    fun strength(hand: List<PlayingCard>, rules: DdzRules = DdzRules.CLASSIC): Int {
+        if (rules.decks > 1) return strengthTwoDecks(hand, rules)
         val counts = DdzCards.counts(hand)
         var s = 0
         if (counts[DdzValue.RED_JOKER] == 1 && counts[DdzValue.BLACK_JOKER] == 1) {
@@ -66,13 +66,32 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
         s += 2 * counts[DdzValue.TWO]
         s += 6 * DdzValue.ALL.count { it <= DdzValue.TWO && counts[it] == 4 }
         s += counts[DdzValue.ACE]
-        val turns = HandAnalysis.split(hand).plays.size
+        val turns = HandAnalysis.split(hand, rules).plays.size
         s += (7 - turns).coerceIn(-3, 3)
         return s
     }
 
+    /**
+     * The same on the scale of [strength], for 25 cards out of two decks, where bombs are
+     * common and only the big ones and the four jokers stand out.
+     */
+    private fun strengthTwoDecks(hand: List<PlayingCard>, rules: DdzRules): Int {
+        val counts = DdzCards.counts(hand)
+        var s = 0
+        if (counts[DdzValue.RED_JOKER] == 2 && counts[DdzValue.BLACK_JOKER] == 2) {
+            s += 10
+        } else {
+            s += 2 * counts[DdzValue.RED_JOKER] + counts[DdzValue.BLACK_JOKER]
+        }
+        s += counts[DdzValue.TWO]
+        for (v in DdzValue.THREE..DdzValue.TWO) if (counts[v] >= 4) s += 2 * (counts[v] - 3)
+        val turns = HandAnalysis.split(hand, rules).plays.size
+        s += (10 - turns).coerceIn(-3, 3)
+        return s
+    }
+
     private fun bid(view: DdzView): DdzAction {
-        val s = strength(view.hand) + noise()
+        val s = strength(view.hand, view.rules) + noise()
         return when (view.rules.bidding) {
             BiddingMode.SCORE -> {
                 val wanted = when {
@@ -109,7 +128,7 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
         options.firstOrNull { it.cards.size == view.hand.size }?.let { return listOf(DdzAction.PlayCards(it.cards)) }
         val plain = compareBy<Play>({ it.pattern.isBomb }, { HandAnalysis.value(it.pattern) }, { -it.cards.size })
         val plays = if (toBeat == null) {
-            HandAnalysis.split(view.hand).plays.sortedWith(plain) + options.sortedWith(plain)
+            HandAnalysis.split(view.hand, view.rules).plays.sortedWith(plain) + options.sortedWith(plain)
         } else {
             options.sortedWith(plain)
         }
@@ -142,51 +161,54 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
     }
 
     private fun enemies(view: DdzView, seat: Seat): List<Seat> =
-        (0 until DouDizhu.SEATS).filter { it != seat && !view.isTeammate(it, seat) }
+        view.handCounts.indices.filter { it != seat && !view.isTeammate(it, seat) }
 
-    private fun teammate(view: DdzView, seat: Seat): Seat? =
-        (0 until DouDizhu.SEATS).firstOrNull { it != seat && view.isTeammate(it, seat) }
+    /** The other farmers: one with three players, two with four. */
+    private fun teammates(view: DdzView, seat: Seat): List<Seat> =
+        view.handCounts.indices.filter { it != seat && view.isTeammate(it, seat) }
 
     /** Fewest cards any opponent holds. */
     private fun enemyMin(view: DdzView, seat: Seat): Int = enemies(view, seat).minOf { view.handCounts[it] }
 
     /** Cards no one has shown yet, from this seat's point of view. */
     private fun unseen(view: DdzView): IntArray {
-        val counts = DdzCards.counts(Decks.STANDARD_54)
+        val counts = DdzCards.counts(DdzCards.deck(view.rules.decks))
         (view.hand + view.playedCards).forEach { counts[it.ddzValue]-- }
         return counts
     }
 
     /** True when, as far as this seat can tell, nobody else can beat [play] (ignoring bombs they might hold). */
-    private fun isControl(play: Play, unseen: IntArray): Boolean {
+    private fun isControl(play: Play, unseen: IntArray, decks: Int): Boolean {
         val p = play.pattern
         return when (p.type) {
             PatternType.ROCKET -> true
-            PatternType.BOMB -> DdzValue.ALL.none { it > p.main && unseen[it] == 4 } &&
-                !(unseen[DdzValue.BLACK_JOKER] == 1 && unseen[DdzValue.RED_JOKER] == 1)
+            PatternType.BOMB -> (DdzValue.THREE..DdzValue.TWO).none { v ->
+                unseen[v] > p.length || (unseen[v] == p.length && v > p.main)
+            } && !(unseen[DdzValue.BLACK_JOKER] == decks && unseen[DdzValue.RED_JOKER] == decks)
+            // One deck has a single joker of each colour, so jokers never pair up there.
             PatternType.SINGLE -> DdzValue.ALL.none { it > p.main && unseen[it] >= 1 }
-            PatternType.PAIR -> DdzValue.ALL.none { it > p.main && it < DdzValue.BLACK_JOKER && unseen[it] >= 2 }
+            PatternType.PAIR -> DdzValue.ALL.none { it > p.main && unseen[it] >= 2 }
             PatternType.TRIO, PatternType.TRIO_SINGLE, PatternType.TRIO_PAIR ->
-                DdzValue.ALL.none { it > p.main && it < DdzValue.BLACK_JOKER && unseen[it] >= 3 }
+                DdzValue.ALL.none { it > p.main && unseen[it] >= 3 }
             else -> p.main + p.length - 1 >= DdzValue.HIGHEST_IN_SEQUENCE
         }
     }
 
     private fun lead(view: DdzView, seat: Seat): Play {
-        val plays = HandAnalysis.split(view.hand).plays
+        val plays = HandAnalysis.split(view.hand, view.rules).plays
         if (plays.size == 1) return plays[0]
 
         val unseen = unseen(view)
         val counting = level == BotLevel.HARD
         // With two plays left and one of them unbeatable, play that one and then win with the other.
         if (plays.size == 2 && counting) {
-            plays.firstOrNull { isControl(it, unseen) }?.let { return it }
+            plays.firstOrNull { isControl(it, unseen, view.rules.decks) }?.let { return it }
         }
 
         val danger = enemyMin(view, seat)
-        val mate = teammate(view, seat)
+        val next = (seat + 1) % view.handCounts.size
         // A teammate about to win gets the lowest single, which they can surely beat.
-        if (mate != null && view.handCounts[mate] == 1 && (mate == (seat + 1) % DouDizhu.SEATS || counting)) {
+        if (teammates(view, seat).any { view.handCounts[it] == 1 && (it == next || counting) }) {
             val single = view.hand.minBy { it.ddzValue }
             return Play(listOf(single), Pattern(PatternType.SINGLE, single.ddzValue))
         }
@@ -200,7 +222,7 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
         }
         // Lead the weakest play; long plays first because they shed more cards for one turn.
         val ordered = pool.sortedWith(
-            compareBy<Play> { counting && isControl(it, unseen) }
+            compareBy<Play> { counting && isControl(it, unseen, view.rules.decks) }
                 .thenBy { HandAnalysis.value(it.pattern) - it.cards.size }
                 .thenBy { it.pattern.main },
         )
@@ -215,11 +237,11 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
         val lead = view.lead!!
         val fromTeammate = view.isTeammate(lead.seat, seat)
         val danger = enemyMin(view, seat)
-        val before = HandAnalysis.score(view.hand)
+        val before = HandAnalysis.score(view.hand, view.rules)
 
         data class Scored(val play: Play, val gain: Int, val turnsAfter: Int)
         val scored = options.map { option ->
-            val after = HandAnalysis.split(view.hand - option.cards.toSet())
+            val after = HandAnalysis.split(DdzCards.minus(view.hand, option.cards)!!, view.rules)
             Scored(option, after.score - before, after.plays.size)
         }
 
@@ -235,7 +257,7 @@ class DdzBot(private val level: BotLevel, seed: Long, private val playouts: Int 
         val urgent = danger <= 2 || view.handCounts[lead.seat] <= 3
         val plain = scored.filter { !it.play.pattern.isBomb }.maxByOrNull { it.gain }
         val bomb = scored.filter { it.play.pattern.isBomb }.maxByOrNull { it.gain }
-        val turnsNow = HandAnalysis.split(view.hand).plays.size
+        val turnsNow = HandAnalysis.split(view.hand, view.rules).plays.size
         // Early on, a 2 or a joker is worth more kept than spent on an ordinary play.
         val bar = if (!urgent && turnsNow > 4 && plain != null && plain.play.pattern.main >= DdzValue.TWO) 3 else -2
         return when {

@@ -22,7 +22,11 @@ enum class PatternType {
     PLANE_PAIRS,
     FOUR_TWO_SINGLES,
     FOUR_TWO_PAIRS,
+
+    /** Four or more cards of one value; with two decks, up to eight. */
     BOMB,
+
+    /** Every joker: the two of one deck, or the four of two decks. */
     ROCKET,
 }
 
@@ -30,15 +34,16 @@ enum class PatternType {
  * One reading of a play.
  *
  * @param main the value that decides who wins: the single, the trio, or the lowest step of a sequence
- * @param length how many steps a sequence has; 1 for everything else
+ * @param length how many steps a sequence has, or how many cards a bomb or rocket has; 1 for everything else
  */
 data class Pattern(val type: PatternType, val main: Int, val length: Int = 1) {
     val cardCount: Int
         get() = when (type) {
             PatternType.SINGLE -> 1
-            PatternType.PAIR, PatternType.ROCKET -> 2
+            PatternType.PAIR -> 2
             PatternType.TRIO -> 3
-            PatternType.TRIO_SINGLE, PatternType.BOMB -> 4
+            PatternType.TRIO_SINGLE -> 4
+            PatternType.BOMB, PatternType.ROCKET -> length
             PatternType.TRIO_PAIR -> 5
             PatternType.STRAIGHT -> length
             PatternType.PAIR_STRAIGHT -> 2 * length
@@ -55,7 +60,9 @@ data class Pattern(val type: PatternType, val main: Int, val length: Int = 1) {
     fun beats(other: Pattern): Boolean = when {
         type == PatternType.ROCKET -> true
         other.type == PatternType.ROCKET -> false
-        type == PatternType.BOMB && other.type == PatternType.BOMB -> main > other.main
+        // More cards make the bigger bomb; among bombs of as many cards, the higher value.
+        type == PatternType.BOMB && other.type == PatternType.BOMB ->
+            length > other.length || (length == other.length && main > other.main)
         type == PatternType.BOMB -> true
         other.type == PatternType.BOMB -> false
         else -> type == other.type && length == other.length && main > other.main
@@ -79,19 +86,20 @@ object Patterns {
         val found = LinkedHashSet<Pattern>()
         val present = DdzValue.ALL.filter { counts[it] > 0 }
 
-        if (total == 2 && counts[DdzValue.BLACK_JOKER] == 1 && counts[DdzValue.RED_JOKER] == 1) {
-            found += Pattern(PatternType.ROCKET, DdzValue.RED_JOKER)
+        val jokers = rules.decks
+        if (total == 2 * jokers && counts[DdzValue.BLACK_JOKER] == jokers && counts[DdzValue.RED_JOKER] == jokers) {
+            found += Pattern(PatternType.ROCKET, DdzValue.RED_JOKER, total)
         }
         if (present.size == 1) {
             val value = present[0]
-            when (counts[value]) {
+            when (val n = counts[value]) {
                 1 -> found += Pattern(PatternType.SINGLE, value)
                 2 -> found += Pattern(PatternType.PAIR, value)
                 3 -> found += Pattern(PatternType.TRIO, value)
-                4 -> found += Pattern(PatternType.BOMB, value)
+                else -> found += Pattern(PatternType.BOMB, value, n)
             }
         }
-        if (total == 4 && present.size == 2) {
+        if (total == 4 && present.size == 2 && rules.trioSingles) {
             present.firstOrNull { counts[it] == 3 }?.let { found += Pattern(PatternType.TRIO_SINGLE, it) }
         }
         if (total == 5 && present.size == 2) {
@@ -110,7 +118,7 @@ object Patterns {
         sequenceOf(present, counts, 1, 5)?.let { found += Pattern(PatternType.STRAIGHT, it.first, it.second) }
         sequenceOf(present, counts, 2, 3)?.let { found += Pattern(PatternType.PAIR_STRAIGHT, it.first, it.second) }
         sequenceOf(present, counts, 3, 2)?.let { found += Pattern(PatternType.PLANE, it.first, it.second) }
-        addPlanesWithKickers(counts, total, found)
+        addPlanesWithKickers(counts, total, rules, found)
 
         return found.sortedWith(
             compareByDescending<Pattern> { it.isBomb }.thenByDescending { it.length }.thenByDescending { it.main },
@@ -125,9 +133,9 @@ object Patterns {
         return present.first() to present.size
     }
 
-    private fun addPlanesWithKickers(counts: IntArray, total: Int, found: MutableSet<Pattern>) {
+    private fun addPlanesWithKickers(counts: IntArray, total: Int, rules: DdzRules, found: MutableSet<Pattern>) {
         for (length in 2..6) {
-            val singles = total == 4 * length
+            val singles = total == 4 * length && rules.trioSingles
             val pairs = total == 5 * length
             if (!singles && !pairs) continue
             for (start in DdzValue.THREE..DdzValue.HIGHEST_IN_SEQUENCE - length + 1) {
@@ -172,7 +180,7 @@ object Patterns {
             if (c >= 3) {
                 val trio = listOf(v, v, v)
                 if (wants(PatternType.TRIO)) add(Pattern(PatternType.TRIO, v), trio)
-                if (wants(PatternType.TRIO_SINGLE)) {
+                if (wants(PatternType.TRIO_SINGLE) && rules.trioSingles) {
                     kickers(counts, setOf(v), 1, false)?.let { add(Pattern(PatternType.TRIO_SINGLE, v), trio + it) }
                 }
                 if (wants(PatternType.TRIO_PAIR)) {
@@ -198,7 +206,7 @@ object Patterns {
                 val run = (start until start + length).toList()
                 if (run.any { counts[it] < 3 }) continue
                 val body = run.flatMap { listOf(it, it, it) }
-                if (wants(PatternType.PLANE_SINGLES) && hand.size >= 4 * length) {
+                if (wants(PatternType.PLANE_SINGLES) && rules.trioSingles && hand.size >= 4 * length) {
                     kickers(counts, run.toSet(), length, false)?.let {
                         add(Pattern(PatternType.PLANE_SINGLES, start, length), body + it)
                     }
@@ -211,9 +219,11 @@ object Patterns {
             }
         }
 
-        for (v in DdzValue.ALL) if (counts[v] == 4) add(Pattern(PatternType.BOMB, v), listOf(v, v, v, v))
-        if (counts[DdzValue.BLACK_JOKER] == 1 && counts[DdzValue.RED_JOKER] == 1) {
-            add(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER), listOf(DdzValue.BLACK_JOKER, DdzValue.RED_JOKER))
+        // With two decks a value may be held five to eight times: each size is its own bomb.
+        for (v in DdzValue.ALL) for (n in 4..counts[v]) add(Pattern(PatternType.BOMB, v, n), List(n) { v })
+        val jokers = rules.decks
+        if (counts[DdzValue.BLACK_JOKER] == jokers && counts[DdzValue.RED_JOKER] == jokers) {
+            add(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER, 2 * jokers), List(jokers) { DdzValue.BLACK_JOKER } + List(jokers) { DdzValue.RED_JOKER })
         }
         return result
     }
