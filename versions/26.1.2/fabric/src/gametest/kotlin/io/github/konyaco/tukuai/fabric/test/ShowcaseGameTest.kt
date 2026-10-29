@@ -8,6 +8,7 @@ import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
+import io.github.konyaco.tukuai.engine.bluff.BluffView
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
@@ -18,6 +19,7 @@ import io.github.konyaco.tukuai.engine.tutu.TutuView
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.TableOp
+import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -26,6 +28,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
 import net.minecraft.core.BlockPos
 import net.minecraft.client.gui.screens.inventory.CraftingScreen
+import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceKey
@@ -44,6 +47,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.RotatedPillarBlock
+import net.minecraft.world.phys.Vec3
 import net.minecraft.world.level.block.state.BlockState
 import org.lwjgl.glfw.GLFW
 
@@ -242,6 +246,51 @@ class ShowcaseGameTest : FabricClientGameTest {
         context.setScreen { null }
         context.waitTicks(10)
         shot("tutu-seated")
+
+        // Creeper Bluff at the UNO table, harmless here, until it is our turn with a play to
+        // call and a fuse already lit at the table.
+        act(server, uno, TableOp.END)
+        context.waitFor({ ClientTables[uno]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        act(server, uno, TableOp.GAME, text = "bluff")
+        act(server, uno, TableOp.HURT, TableSnapshot.HARM_OFF)
+        act(server, uno, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
+        context.waitFor({ ClientTables[uno]?.snapshot?.let { it.gameId == "bluff" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(uno) }
+        fun calling() = (ClientTables[uno]?.view as? BluffView)?.let { it.isMyTurn && it.canCall && it.lit.any { n -> n > 0 } } == true
+        games@ for (game in 0 until 10) {
+            act(server, uno, TableOp.START)
+            context.waitFor({ (ClientTables[uno]?.view as? BluffView)?.finished == false }, 200)
+            while (true) {
+                act(server, uno, TableOp.AUTO, 1)
+                context.waitFor({ (ClientTables[uno]?.view as? BluffView)?.finished == true || calling() }, 6000)
+                if (context.computeOnClient<Boolean, RuntimeException> { (ClientTables[uno]?.view as? BluffView)?.finished == true }) break
+                act(server, uno, TableOp.AUTO, 0)
+                context.waitTicks(5)
+                if (context.computeOnClient<Boolean, RuntimeException> { calling() }) break@games
+            }
+        }
+        act(server, uno, TableOp.AUTO, 0)
+        context.input.setCursorPos(0.0, 0.0)
+        context.waitTicks(10)
+        shot("bluff-table")
+        // The creepers stand by each hand on the table, so the game shows best in the world:
+        // from over the player's shoulder, then back to the seat.
+        context.setScreen { null }
+        command(server, "gamemode spectator @a")
+        // Eyes a block over the table top, just behind the player's seat.
+        command(server, "tp @a ${uno.x + 1.3} ${uno.y + 0.35} ${uno.z + 2.4}")
+        setFov(context, 65)
+        context.waitTicks(10)
+        context.runOnClient<RuntimeException> {
+            it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3(uno.x + 0.5, uno.y + 0.8, uno.z + 0.2))
+        }
+        context.waitTicks(20)
+        world.clientLevel.waitForChunksRender()
+        shot("bluff-world")
+        setFov(context, 85)
+        command(server, "gamemode creative @a")
+        act(server, uno, TableOp.SIT, 0)
+        context.waitTicks(10)
         // Back to UNO for the wide shots.
         act(server, uno, TableOp.END)
         context.waitFor({ ClientTables[uno]?.snapshot?.status != TableStatus.PLAYING }, 100)
