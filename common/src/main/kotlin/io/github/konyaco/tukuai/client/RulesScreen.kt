@@ -6,6 +6,8 @@ import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.core.GuideBlock
 import io.github.konyaco.tukuai.engine.core.GuideSection
 import io.github.konyaco.tukuai.engine.core.guide
+import io.github.konyaco.tukuai.engine.mahjong.Tile
+import io.github.konyaco.tukuai.client.mahjong.MjArt
 import io.github.konyaco.tukuai.engine.tutu.TutuFace
 import io.github.konyaco.tukuai.engine.uno.UnoFace
 import io.github.konyaco.tukuai.table.TableStatus
@@ -216,15 +218,20 @@ class RulesScreen(
 
     private fun gap(block: GuideBlock.Example) = if (block.follows == null) 8 else 20
 
+    /** Mahjong tiles stand side by side, where cards overlap. */
+    private fun isTiles(block: GuideBlock.Example) = block.groups.firstOrNull()?.firstOrNull() is Tile
+
     /** How wide the example's cards are at their usual spacing for [scale]. */
     private fun cardsWidth(block: GuideBlock.Example, scale: Float, step: Int = step(scale)): Int {
         val cardW = (CardArt.WIDTH * scale).toInt()
+        if (isTiles(block)) return block.groups.sumOf { it.size } * cardW + (block.groups.size - 1) * gap(block)
         return block.groups.sumOf { cardW + (it.size - 1) * step } + (block.groups.size - 1) * gap(block)
     }
 
     private fun step(scale: Float) = if (scale >= 1f) 18 else 13
 
     private fun drawCards(g: GuiGraphicsExtractor, block: GuideBlock.Example, left: Int, top: Int, room: Int, scale: Float) {
+        if (isTiles(block)) return drawTiles(g, block, left, top, room, scale)
         val cardW = (CardArt.WIDTH * scale).toInt()
         val cardH = (CardArt.HEIGHT * scale).toInt()
         val overlaps = block.groups.sumOf { it.size - 1 }
@@ -246,6 +253,27 @@ class RulesScreen(
             }
             group.forEachIndexed { j, card -> sprite(card)?.let { CardArt.draw(g, it, x + j * step, top, scale) } }
             x += cardW + (group.size - 1) * step + gap(block)
+        }
+    }
+
+    /** Tiles side by side, smaller when the page is too narrow for them, each group a set. */
+    private fun drawTiles(g: GuiGraphicsExtractor, block: GuideBlock.Example, left: Int, top: Int, room: Int, scale: Float) {
+        val gaps = (block.groups.size - 1) * gap(block)
+        val count = block.groups.sumOf { it.size }.coerceAtLeast(1)
+        val tileScale = minOf(scale, (room - gaps).toFloat() / count / CardArt.WIDTH)
+        val tileW = MjArt.width(tileScale)
+        val cardH = (CardArt.HEIGHT * scale).toInt()
+        var x = left
+        block.groups.forEachIndexed { i, group ->
+            if (i > 0) {
+                val gap = gap(block)
+                if (block.follows == true) g.centeredText(font, Component.literal("→"), x - gap / 2, top + cardH / 2 - 4, TableScreen.GREEN)
+            }
+            for (tile in group) {
+                MjArt.draw(g, tile as Tile, x, top, tileScale)
+                x += tileW
+            }
+            x += gap(block)
         }
     }
 

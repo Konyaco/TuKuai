@@ -152,6 +152,13 @@ data class TableCard(
      * four sides and of [backSprite] on top, as for the TNT burning on a Tutu table.
      */
     val cube: Boolean = false,
+    /**
+     * Not a card but a mahjong tile: a thick block with [sprite] on its face, ivory sides and
+     * a back of [tileBack]'s colour, or [backSprite] when set. A [tilt] of 180 lays it face down.
+     */
+    val tile: Boolean = false,
+    /** The colour of a tile's back, as RGB. */
+    val tileBack: Int = 0x2E7D4F,
 )
 
 /**

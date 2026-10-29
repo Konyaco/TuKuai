@@ -51,6 +51,10 @@ TuKuai adds a card table to Minecraft that you can craft and place, and play car
     <td><img src="docs/images/en/bluff-world.webp" alt="Creeper Bluff"></td>
     <td><b>Creeper Bluff</b><br>A bluffing game like Liar's Bar, with a creeper instead of a revolver. Lay cards face down and say they are the called rank, or call the last play a lie; whoever is wrong lights their creeper's fuse, which blows on one of six lightings. Two to eight players. The host chooses whether a blown creeper hurts its player in the world.</td>
   </tr>
+  <tr>
+    <td><img src="docs/images/en/mj-table.webp" alt="Mahjong"></td>
+    <td><b>Mahjong</b><br>Four players, by the Sichuan rules as a blood battle: pass three tiles on, pick a suit to get rid of, and play on after a player wins until three have. The tiles stand on the table, with the wall in the middle.</td>
+  </tr>
 </table>
 
 The rules of each game are in the rule book in the game: click the **?** button at the table.
