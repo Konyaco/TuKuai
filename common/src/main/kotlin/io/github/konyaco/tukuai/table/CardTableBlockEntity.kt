@@ -62,8 +62,8 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     /** Whether players who are not in the game see every hand; only the [host] may change it. */
     private var spectators = true
 
-    /** Whether a game that may hurt its players does so in the world; only the [host] may change it. */
-    private var hurts = false
+    /** How much a game that may hurt its players does so in the world, see [TableSnapshot.harm]; only the [host] may change it. */
+    private var harm = TableSnapshot.HARM_LETHAL
 
     /** Seats to hurt, each with the tick it happens on, once the creeper on the table has hissed a while. */
     private val harms = ArrayList<Pair<Seat, Long>>()
@@ -487,7 +487,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             TableOp.HURT -> {
                 val host = host
                 if (!idle || (host != null && host != player.uuid)) return
-                hurts = request.a != 0
+                harm = request.a.coerceIn(TableSnapshot.HARM_OFF, TableSnapshot.HARM_LETHAL)
                 lobbyChanged()
             }
             TableOp.REPLAY -> {
@@ -666,7 +666,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private fun afterStep(level: ServerLevel, m: MatchHandle) {
         val harmed = m.takeHarmed()
-        if (hurts && m.mayHarm) harmed.mapTo(harms) { it to ticks + HARM_DELAY }
+        if (harm != TableSnapshot.HARM_OFF && m.mayHarm) harmed.mapTo(harms) { it to ticks + HARM_DELAY }
         resetTurnClock(level, m)
         changed()
         // Each client plays the sound for a move itself, since only the game's client side knows what kind of move it was.
@@ -687,8 +687,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     /**
-     * Hurts the players whose turn has come, as if the creeper had blown up in their face, by
-     * up to [HARM] but never below half a heart. Someone who has left the table is spared.
+     * Hurts the players whose turn has come, as if the creeper had blown up in their face: to
+     * death, or with light harm by up to [LIGHT_HARM] but never below half a heart. Someone who
+     * has left the table is spared.
      */
     private fun hurtPlayers(level: ServerLevel) {
         if (harms.isEmpty()) return
@@ -699,7 +700,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             val player = level.server.playerList.getPlayer(occupant.uuid) ?: continue
             val vehicle = player.vehicle
             if (vehicle !is SeatEntity || vehicle.table != worldPosition) continue
-            val amount = minOf(HARM, player.health - 1f)
+            val amount = if (harm == TableSnapshot.HARM_LETHAL) LETHAL_HARM else minOf(LIGHT_HARM, player.health - 1f)
             if (amount > 0f) player.hurtOnServer(level, player.damageSources().explosion(null, null), amount)
         }
     }
@@ -778,7 +779,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             timerTicks = if (timed) (turnSeconds * 20 - turnTicks).coerceAtLeast(0) else -1,
             view = view,
             spectators = spectators,
-            hurts = hurts,
+            harm = harm,
             host = host?.let(::seatOf),
             matchRounds = matchRounds,
             matchOver = matchOver,
@@ -796,7 +797,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         output.putInt("felt", felt.id)
         output.putInt("timer", turnSeconds)
         output.putInt("spectators", if (spectators) 1 else 0)
-        output.putInt("hurts", if (hurts) 1 else 0)
+        output.putInt("harm", harm)
         output.putString("arrivals", arrivals.filter { seatOf(it) != null }.joinToString(","))
         output.putInt("rounds", rounds)
         output.putInt("match_rounds", matchRounds)
@@ -816,7 +817,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         felt = DyeColor.byId(input.getIntOr("felt", DyeColor.GREEN.id))
         turnSeconds = input.getIntOr("timer", 30).takeIf { it in TIMER_CHOICES } ?: 30
         spectators = input.getIntOr("spectators", 1) != 0
-        hurts = input.getIntOr("hurts", 0) != 0
+        harm = input.getIntOr("harm", TableSnapshot.HARM_LETHAL).coerceIn(TableSnapshot.HARM_OFF, TableSnapshot.HARM_LETHAL)
         arrivals.clear()
         input.getStringOr("arrivals", "").split(',').mapNotNullTo(arrivals) { runCatching { UUID.fromString(it) }.getOrNull() }
         val count = input.getIntOr("seat_count", game.seatCount(presetId))
@@ -862,8 +863,11 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         /** Players this close are kept up to date so they can see the cards on the table. */
         const val SYNC_RANGE = 40.0
 
-        /** How much a game hurts a player when the table allows it, in health points: three hearts. */
-        const val HARM = 6f
+        /** How much light harm takes, in health points: two hearts. */
+        const val LIGHT_HARM = 4f
+
+        /** More than any armour lets through: only a totem of undying saves them. */
+        const val LETHAL_HARM = 1000f
 
         /** Ticks between a creeper being lit and it going off, as the clients show it; see BluffUi.HISS_TICKS. */
         const val HARM_DELAY = 30L

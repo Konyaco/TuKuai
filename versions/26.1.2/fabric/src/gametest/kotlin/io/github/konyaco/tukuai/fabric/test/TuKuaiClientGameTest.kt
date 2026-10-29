@@ -30,6 +30,7 @@ import io.github.konyaco.tukuai.table.ReplayStore
 import io.github.konyaco.tukuai.table.ServerSettings
 import io.github.konyaco.tukuai.table.StatsStore
 import io.github.konyaco.tukuai.table.TableOp
+import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -329,9 +330,10 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.setScreen { null }
         act(server, table, TableOp.GAME, text = "bluff")
         repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
-        // Creepers that really hurt, so the lobby shows the switch turned on.
-        act(server, table, TableOp.HURT, 1)
-        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "bluff" && it.hurts && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        // A table blows its players up for real unless told otherwise; ours only hurts, so the test lives on.
+        context.waitFor({ ClientTables[table]?.snapshot?.harm == TableSnapshot.HARM_LETHAL }, 100)
+        act(server, table, TableOp.HURT, TableSnapshot.HARM_LIGHT)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "bluff" && it.harm == TableSnapshot.HARM_LIGHT && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
         context.setScreen { TableScreen(table) }
         context.waitTicks(10)
         shot(context, "bluff-1-lobby")
@@ -386,6 +388,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         shot(context, "bluff-7-screen-hiss")
 
         // Play on, a game at a time, until our own creeper has blown, watching our health as it goes.
+        // From the second game we play ourselves, calling every play a lie, so we lose calls quickly.
         val health = { server.computeOnServer<Float, RuntimeException> { s -> s.playerList.players.first().health } }
         var lowest = health()
         var games = 1
@@ -393,6 +396,15 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             var waited = 0
             while (status(server, table) != TableStatus.FINISHED) {
                 check(waited < 12000) { "The creeper bluff game did not finish" }
+                val turn = bluff()?.takeIf { games > 1 && it.isMyTurn && !it.finished }
+                if (turn != null) {
+                    val action = when {
+                        turn.phase == BluffPhase.PENALTY -> BluffAction.Light
+                        turn.canCall -> BluffAction.Call
+                        else -> BluffAction.Play(turn.hand.take(turn.rules.maxPlay))
+                    }
+                    act(server, table, TableOp.ACT, data = BluffCodecs.ACTION.encode(action))
+                }
                 context.waitTicks(5)
                 waited += 5
                 lowest = minOf(lowest, health())
@@ -403,13 +415,14 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             val view = bluff()!!
             check(view.out.count { !it } == 1 && view.winner != null) { "The creeper bluff game ended oddly: $view" }
             if (view.out[0]) break
-            check(++games <= 8) { "Our creeper never blew in $games games" }
+            check(++games <= 6) { "Our creeper never blew in $games games" }
             act(server, table, TableOp.START)
             context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
+            act(server, table, TableOp.AUTO, 0)
         }
-        // With the switch on, our creeper blowing took three hearts.
-        check(lowest <= 20f - 6f + 0.5f) { "Our creeper blew but we were not hurt: lowest health $lowest" }
-        act(server, table, TableOp.HURT, 0)
+        // With light harm, our creeper blowing took two hearts.
+        check(lowest <= 20f - CardTableBlockEntity.LIGHT_HARM + 0.5f) { "Our creeper blew but we were not hurt: lowest health $lowest" }
+        act(server, table, TableOp.HURT, TableSnapshot.HARM_OFF)
         context.waitTicks(20)
         context.setScreen { TableScreen(table) }
         context.waitTicks(10)

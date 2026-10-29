@@ -338,13 +338,13 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             .setTooltip(Tooltip.create(tip))
     }
 
-    /** Whether the game hurts its players in the world, as a creeper going off does. Only the host changes it. */
+    /** How much the game hurts its players in the world, as a creeper going off does: not, a little, or to death. Only the host changes it. */
     private fun hurtButton(s: TableSnapshot, x: Int, y: Int, w: Int, canEdit: Boolean) {
         val mayChange = s.host == null || s.host == s.you
-        val text = Component.translatable(if (s.hurts) "tukuai.table.hurt.on" else "tukuai.table.hurt.off")
+        val text = Component.translatable("tukuai.table.hurt.${HARM_NAMES.getOrElse(s.harm) { HARM_NAMES.last() }}")
         val tip = Component.translatable("tukuai.table.hurt.tip")
         if (!mayChange) tip.append("\n").append(Component.translatable("tukuai.table.spectate.host_only", seatName(s.seats.getOrNull(s.host ?: -1)?.occupant)))
-        button(text, x, y, w, canEdit && mayChange, h = 14) { send(TableOp.HURT, if (s.hurts) 0 else 1) }
+        button(text, x, y, w, canEdit && mayChange, h = 14) { send(TableOp.HURT, (s.harm + 1).mod(HARM_NAMES.size)) }
             .setTooltip(Tooltip.create(tip))
     }
 
@@ -805,6 +805,9 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
 
         /** Where the rows of seats start in the lobby, below the game and rules buttons. */
         private const val SEATS_Y = 72
+
+        /** The language key ending for each harm setting, in [TableSnapshot.harm] order. */
+        private val HARM_NAMES = listOf("off", "light", "lethal")
 
         /** Left edge of the top-right buttons. */
         private const val CORNER = 98
