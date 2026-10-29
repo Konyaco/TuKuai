@@ -5,6 +5,8 @@ name: Publish
 # hand for a tag that is already released. It reads the secrets MODRINTH_TOKEN and
 # CURSEFORGE_TOKEN and the variables MODRINTH_PROJECT_ID (default tukuai) and
 # CURSEFORGE_PROJECT_ID; a site whose token or project id is not set is skipped with a notice.
+# The script and the files it reads come from the commit the workflow runs from, not the tag, so
+# a tag made before the script existed can still be uploaded by hand from main.
 on:
   workflow_dispatch:
     inputs:
@@ -35,8 +37,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.tag }}
 
       - name: Download the jars
         env:
