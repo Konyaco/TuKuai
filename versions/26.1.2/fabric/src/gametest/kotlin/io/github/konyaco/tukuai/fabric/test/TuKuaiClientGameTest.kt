@@ -420,8 +420,8 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
             act(server, table, TableOp.AUTO, 0)
         }
-        // With light harm, our creeper blowing took two hearts.
-        check(lowest <= 20f - CardTableBlockEntity.LIGHT_HARM + 0.5f) { "Our creeper blew but we were not hurt: lowest health $lowest" }
+        // With light harm, our creeper blowing took two hearts; we may have healed half a heart before we looked.
+        check(lowest <= 20f - CardTableBlockEntity.LIGHT_HARM + 1f) { "Our creeper blew but we were not hurt: lowest health $lowest" }
         act(server, table, TableOp.HURT, TableSnapshot.HARM_OFF)
         context.waitTicks(20)
         context.setScreen { TableScreen(table) }

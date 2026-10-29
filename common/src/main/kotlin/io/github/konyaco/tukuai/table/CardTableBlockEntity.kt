@@ -700,8 +700,14 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             val player = level.server.playerList.getPlayer(occupant.uuid) ?: continue
             val vehicle = player.vehicle
             if (vehicle !is SeatEntity || vehicle.table != worldPosition) continue
-            val amount = if (harm == TableSnapshot.HARM_LETHAL) LETHAL_HARM else minOf(LIGHT_HARM, player.health - 1f)
-            if (amount > 0f) player.hurtOnServer(level, player.damageSources().explosion(null, null), amount)
+            val sources = player.damageSources()
+            if (harm == TableSnapshot.HARM_LETHAL) {
+                player.hurtOnServer(level, sources.explosion(null, null), LETHAL_HARM)
+            } else {
+                // Explosions hit softer on easy difficulty; light harm takes the same on any.
+                val amount = minOf(LIGHT_HARM, player.health - 1f)
+                if (amount > 0f) player.hurtOnServer(level, sources.generic(), amount)
+            }
         }
     }
 
