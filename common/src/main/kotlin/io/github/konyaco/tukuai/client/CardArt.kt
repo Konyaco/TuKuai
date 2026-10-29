@@ -4,6 +4,7 @@ import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.Decks
 import io.github.konyaco.tukuai.engine.card.PlayingCard
+import io.github.konyaco.tukuai.engine.mahjong.Tile
 import io.github.konyaco.tukuai.engine.tutu.TutuCard
 import io.github.konyaco.tukuai.engine.tutu.TutuColor
 import io.github.konyaco.tukuai.engine.tutu.TutuDeck
@@ -19,8 +20,8 @@ import io.github.konyaco.tukuai.engine.uno.UnoKind
  * The card atlas `textures/gui/cards.png`, made by `tools/gen_textures.py`: 32×44 cards
  * in rows of 14. Faces 0..53 follow [Decks.STANDARD_54], then come the card backs,
  * and two 16×16 hats sit below them. The UNO cards start on row 6, see [uno], the
- * other face styles on row 11, see [face], the Tutu cards on row 19, see [tutu], and the creeper head of creeper
- * bluff on row 24, see [CREEPER_SIDE]. Right of the cards are a patch of plain paper
+ * other face styles on row 11, see [face], the Tutu cards on row 19, see [tutu], the creeper head of creeper
+ * bluff on row 24, see [CREEPER_SIDE], and mahjong tile faces from row 25, see [tile]. Right of the cards are a patch of plain paper
  * for the edges of cards on the table and a 16×16 tile of pale cloth for the table top.
  */
 object CardArt {
@@ -109,6 +110,15 @@ object CardArt {
     /** The face of the little creeper head before each player at creeper bluff; its top is the next sprite. */
     const val CREEPER_SIDE = 24 * COLUMNS
     const val CREEPER_TOP = CREEPER_SIDE + 1
+
+    /** Mahjong tile faces in [Tile.id] order, the three numbered suits; then a blank face. */
+    private const val MAHJONG_FIRST = 25 * COLUMNS
+
+    /** The face of a mahjong tile; only the numbered suits have one. */
+    fun tile(tile: Tile): Int = MAHJONG_FIRST + tile.id
+
+    /** A mahjong tile face with nothing on it, for tiles whose face nobody can see. */
+    const val TILE_BLANK = MAHJONG_FIRST + 27
 
     fun u(sprite: Int): Int = (sprite % COLUMNS) * WIDTH
 
