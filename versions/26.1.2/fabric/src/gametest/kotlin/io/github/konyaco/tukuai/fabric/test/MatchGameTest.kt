@@ -245,7 +245,7 @@ class MatchGameTest : FabricClientGameTest {
         val screen = mc.screen as TableScreen
         val panel = TableScreen::class.java.getDeclaredField("panel").apply { isAccessible = true }.get(screen)!!
         val picker = panel.javaClass.getDeclaredField("picker").apply { isAccessible = true }.get(panel)!!
-        return (picker.javaClass.getDeclaredField("selected").apply { isAccessible = true }.get(picker) as Set<PlayingCard>).toSet()
+        return (picker.javaClass.getMethod("getSelected").invoke(picker) as Collection<PlayingCard>).toSet()
     }
 
     /** Clicks the table screen's button whose text is [key], with the real mouse. */

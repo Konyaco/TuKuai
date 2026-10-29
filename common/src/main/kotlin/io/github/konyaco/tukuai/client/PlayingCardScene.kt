@@ -15,6 +15,7 @@ class PlayingCardScene {
      * middle, running left to right as the player there sees them. New cards fly in from
      * ([fromX], [fromZ]). A [standing] hand shows its faces on both sides when [bothSides]
      * is set. The player's own hand is [mine], so they can pick its cards on the table.
+     * [keys] tell apart cards that look the same, such as the two copies of two decks.
      */
     fun row(
         place: SeatPlace,
@@ -27,6 +28,7 @@ class PlayingCardScene {
         standing: Boolean = false,
         bothSides: Boolean = false,
         mine: Boolean = false,
+        keys: List<Int>? = null,
     ) {
         if (sprites.isEmpty()) return
         val side = place.side
@@ -48,10 +50,10 @@ class PlayingCardScene {
                     cx + rightX * offset + side.stepX * nearer,
                     cz + rightZ * offset + side.stepZ * nearer,
                     upX, upZ, sprite, scale, tilt = HAND_TILT, fromX = fromX, fromZ = fromZ,
-                    backSprite = if (bothSides) sprite else -1, mine = mine,
+                    key = keys?.get(i) ?: -1, backSprite = if (bothSides) sprite else -1, mine = mine,
                 )
             } else {
-                cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, i, fromX = fromX, fromZ = fromZ, mine = mine)
+                cards += TableCard(cx + rightX * offset, cz + rightZ * offset, upX, upZ, sprite, scale, i, fromX = fromX, fromZ = fromZ, key = keys?.get(i) ?: -1, mine = mine)
             }
         }
     }

@@ -14,8 +14,10 @@ import org.lwjgl.glfw.GLFW
  * than by card. A long hand is laid out in two rows, the first row behind the second,
  * showing the corners with the ranks. In the immersive view the hand is left out and its
  * cards are picked where they stand on the table instead, told apart by [GdUi.keys].
+ * Four-player Dou Dizhu, also two decks, uses it too, keeping up to [oneRowMost] cards in
+ * one row and [margin] clear at the sides, as three-player Dou Dizhu always did.
  */
-class GdHand(private val host: PanelHost) {
+class GdHand(private val host: PanelHost, private val oneRowMost: Int = ONE_ROW_MOST, private val margin: Int = 40) {
     private var cards: List<PlayingCard> = emptyList()
     private var keys: List<Int> = emptyList()
     private val picked = HashSet<Int>()
@@ -33,7 +35,7 @@ class GdHand(private val host: PanelHost) {
 
     private val width get() = host.panelWidth
 
-    private fun twoRows(n: Int = cards.size) = n > ONE_ROW_MOST
+    private fun twoRows(n: Int = cards.size) = n > oneRowMost
 
     /** Top of the front row of cards. */
     private fun frontY() = host.panelHeight - CardArt.HEIGHT - 8
@@ -53,7 +55,7 @@ class GdHand(private val host: PanelHost) {
 
     private fun rowSize(n: Int, row: Int): Int = if (!twoRows(n)) n else if (row == 0) (n + 1) / 2 else n / 2
 
-    private fun step(count: Int): Int = if (count <= 1) 0 else minOf(18, (width - 40 - CardArt.WIDTH) / (count - 1))
+    private fun step(count: Int): Int = if (count <= 1) 0 else minOf(18, (width - margin - CardArt.WIDTH) / (count - 1))
 
     private fun position(n: Int, i: Int): Pair<Int, Int> {
         val (row, place) = rows(n)[i]

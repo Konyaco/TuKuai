@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.engine.doudizhu.bot
 
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.doudizhu.DdzCards
+import io.github.konyaco.tukuai.engine.doudizhu.DdzRules
 import io.github.konyaco.tukuai.engine.doudizhu.DdzValue
 import io.github.konyaco.tukuai.engine.doudizhu.Pattern
 import io.github.konyaco.tukuai.engine.doudizhu.PatternType
@@ -12,7 +13,8 @@ import io.github.konyaco.tukuai.engine.doudizhu.Patterns
  * Splits a hand into the plays it would most like to make, and scores how good the
  * hand is. Higher scores mean fewer turns needed and stronger cards. The split is an
  * exact search over every way to cut the hand into singles, pairs, trios, bombs,
- * straights, pair straights and planes; kickers are attached afterwards.
+ * straights, pair straights and planes; kickers are attached afterwards, as many as
+ * the rules allow.
  */
 object HandAnalysis {
     /** Each extra turn the hand needs costs this much. */
@@ -22,16 +24,16 @@ object HandAnalysis {
 
     private class Node(val score: Int, val groups: List<Pattern>)
 
-    fun split(hand: List<PlayingCard>): Split {
+    fun split(hand: List<PlayingCard>, rules: DdzRules = DdzRules.CLASSIC): Split {
         if (hand.isEmpty()) return Split(0, emptyList())
         val counts = DdzCards.counts(hand)
         val memo = HashMap<Long, Node>()
-        val groups = best(counts, memo).groups
-        val plays = attachKickers(hand, groups)
+        val groups = best(counts, rules.decks, memo).groups
+        val plays = attachKickers(hand, groups, rules.trioSingles)
         return Split(plays.sumOf { value(it.pattern) - TURN_COST }, plays)
     }
 
-    fun score(hand: List<PlayingCard>): Int = split(hand).score
+    fun score(hand: List<PlayingCard>, rules: DdzRules = DdzRules.CLASSIC): Int = split(hand, rules).score
 
     /** How strong a single group is, before the cost of the turn it takes. */
     fun value(p: Pattern): Int {
@@ -44,18 +46,20 @@ object HandAnalysis {
             PatternType.PLANE -> top - 10 + 3 * p.length
             PatternType.PLANE_SINGLES, PatternType.PLANE_PAIRS -> top - 10 + TURN_COST * p.length
             PatternType.FOUR_TWO_SINGLES, PatternType.FOUR_TWO_PAIRS -> p.main - 10 + TURN_COST
-            PatternType.BOMB -> 12 + (p.main - 3) / 3
-            PatternType.ROCKET -> 20
+            // A bomb of more cards beats every bomb of fewer, so each card counts for more than the value.
+            PatternType.BOMB -> 12 + (p.main - 3) / 3 + 5 * (p.length - 4)
+            PatternType.ROCKET -> if (p.length > 2) 40 else 20
         }
     }
 
     private fun key(counts: IntArray): Long {
         var k = 0L
-        for (v in DdzValue.ALL) k = k * 5 + counts[v]
+        // Two decks hold up to eight of a value.
+        for (v in DdzValue.ALL) k = k * 9 + counts[v]
         return k
     }
 
-    private fun best(counts: IntArray, memo: HashMap<Long, Node>): Node {
+    private fun best(counts: IntArray, decks: Int, memo: HashMap<Long, Node>): Node {
         val low = DdzValue.ALL.firstOrNull { counts[it] > 0 } ?: return Node(0, emptyList())
         val k = key(counts)
         memo[k]?.let { return it }
@@ -63,24 +67,28 @@ object HandAnalysis {
         var bestNode: Node? = null
         fun consider(group: Pattern, values: List<Int>) {
             values.forEach { counts[it]-- }
-            val rest = best(counts, memo)
+            val rest = best(counts, decks, memo)
             values.forEach { counts[it]++ }
             val score = rest.score + value(group) - TURN_COST
             if (bestNode == null || score > bestNode!!.score) bestNode = Node(score, listOf(group) + rest.groups)
         }
 
         val c = counts[low]
-        if (low == DdzValue.BLACK_JOKER && counts[DdzValue.RED_JOKER] == 1) {
-            consider(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER), listOf(DdzValue.BLACK_JOKER, DdzValue.RED_JOKER))
+        if (low == DdzValue.BLACK_JOKER && c == decks && counts[DdzValue.RED_JOKER] == decks) {
+            val jokers = List(decks) { DdzValue.BLACK_JOKER } + List(decks) { DdzValue.RED_JOKER }
+            consider(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER, jokers.size), jokers)
         }
         val whole = when (c) {
-            1 -> PatternType.SINGLE
-            2 -> PatternType.PAIR
-            3 -> PatternType.TRIO
-            else -> PatternType.BOMB
+            1 -> Pattern(PatternType.SINGLE, low)
+            2 -> Pattern(PatternType.PAIR, low)
+            3 -> Pattern(PatternType.TRIO, low)
+            else -> Pattern(PatternType.BOMB, low, c)
         }
-        consider(Pattern(whole, low), List(c) { low })
-        if (c == 4) consider(Pattern(PatternType.TRIO, low), List(3) { low })
+        consider(whole, List(c) { low })
+        // Two decks: a bomb of four, the rest of the value left for later.
+        if (c > 4) consider(Pattern(PatternType.BOMB, low, 4), List(4) { low })
+        if (c >= 4) consider(Pattern(PatternType.TRIO, low), List(3) { low })
+        if (c >= 5) consider(Pattern(PatternType.PAIR, low), List(2) { low })
         if (c >= 2) consider(Pattern(PatternType.SINGLE, low), listOf(low))
 
         sequences(counts, low, 1, 5, PatternType.STRAIGHT, ::consider)
@@ -113,7 +121,7 @@ object HandAnalysis {
      * Gives trios and planes the lowest loose singles or pairs as kickers. A kicker is
      * only taken when it is weak (below A), because a strong single is better kept.
      */
-    private fun attachKickers(hand: List<PlayingCard>, groups: List<Pattern>): List<Play> {
+    private fun attachKickers(hand: List<PlayingCard>, groups: List<Pattern>, singlesAllowed: Boolean): List<Play> {
         val singles = groups.filter { it.type == PatternType.SINGLE && it.main < DdzValue.ACE }
             .sortedBy { it.main }.toMutableList()
         val pairs = groups.filter { it.type == PatternType.PAIR && it.main < DdzValue.ACE }
@@ -130,7 +138,7 @@ object HandAnalysis {
             // A kicker of the carrier's own value would turn a trio into a bomb, so skip those.
             val freeSingles = singles.filter { it.main !in span }
             val freePairs = pairs.filter { it.main !in span }
-            val withPairs = freeSingles.size < need
+            val withPairs = !singlesAllowed || freeSingles.size < need
             val kickers = (if (withPairs) freePairs else freeSingles).take(need)
             if (kickers.size < need) {
                 result += carrier to body
@@ -157,7 +165,7 @@ object HandAnalysis {
         val pool = hand.toMutableList()
         return result.map { (pattern, values) ->
             val cards = Patterns.take(pool, values)
-            pool.removeAll(cards.toSet())
+            cards.forEach { pool.remove(it) }
             Play(cards, pattern)
         }
     }
@@ -165,8 +173,8 @@ object HandAnalysis {
     private fun cardsFor(p: Pattern): List<Int> = when (p.type) {
         PatternType.SINGLE -> listOf(p.main)
         PatternType.PAIR -> listOf(p.main, p.main)
-        PatternType.BOMB -> List(4) { p.main }
-        PatternType.ROCKET -> listOf(DdzValue.BLACK_JOKER, DdzValue.RED_JOKER)
+        PatternType.BOMB -> List(p.length) { p.main }
+        PatternType.ROCKET -> List(p.length / 2) { DdzValue.BLACK_JOKER } + List(p.length / 2) { DdzValue.RED_JOKER }
         PatternType.STRAIGHT -> (p.main until p.main + p.length).toList()
         PatternType.PAIR_STRAIGHT -> (p.main until p.main + p.length).flatMap { listOf(it, it) }
         else -> error("Unexpected group $p")

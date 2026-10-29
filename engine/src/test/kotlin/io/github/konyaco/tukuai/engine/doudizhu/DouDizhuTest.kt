@@ -180,4 +180,71 @@ class DouDizhuTest {
             assertEquals(preset.id, DouDizhu.presetIdOf(DdzRules.CODEC.encode(preset.rules)))
         }
     }
+
+    @Test
+    fun `three-player rules are written as before the four-player game`() {
+        // The classic rules as 0.8.0 wrote them, so saved tables and replays still read and match.
+        val old = io.github.konyaco.tukuai.engine.core.WireWriter().int(0).bool(false).bool(true).int(0).int(1).int(0)
+            .bool(true).bool(true).int(3).toByteArray()
+        assertTrue(old.contentEquals(DdzRules.CODEC.encode(DdzRules.CLASSIC)))
+        assertEquals(DdzRules.CLASSIC, DdzRules.CODEC.decode(old))
+        assertEquals(DdzRules.FOUR, DdzRules.CODEC.decode(DdzRules.CODEC.encode(DdzRules.FOUR)))
+    }
+
+    // ---- Four players ---------------------------------------------------------------------------
+
+    @Test
+    fun `four players get 25 cards each from two decks and 8 go to the kitty`() {
+        for (mode in DealMode.entries) {
+            val rules = DdzRules.FOUR.copy(deal = mode)
+            assertEquals(4, DouDizhu.seatCount(rules))
+            val state = DouDizhu.start(rules, seed = 42)
+            assertEquals(List(4) { 25 }, state.hands.map { it.size })
+            assertEquals(8, state.kitty.size)
+            val all = (state.hands.flatten() + state.kitty).groupingBy { it }.eachCount()
+            assertEquals(Decks.STANDARD_54.toSet(), all.keys)
+            assertTrue(all.values.all { it == 2 })
+        }
+    }
+
+    @Test
+    fun `four players bid in turn and the landlord takes all 8 cards`() {
+        var state = DouDizhu.start(DdzRules.FOUR, 5)
+        val first = state.turn
+        state = state.act(DdzAction.Bid(1)).act(DdzAction.Bid(0)).act(DdzAction.Bid(2))
+        assertEquals(DdzPhase.BIDDING, state.phase)
+        state = state.act(DdzAction.Bid(0))
+        val landlord = (first + 2) % 4
+        assertEquals(landlord, state.landlord)
+        assertEquals(2, state.bidMultiplier)
+        assertEquals(33, state.hands[landlord].size)
+        assertEquals(landlord, state.turn)
+        assertEquals(DdzPhase.PLAYING, state.phase)
+    }
+
+    @Test
+    fun `playing one of two equal cards keeps the other`() {
+        val five = io.github.konyaco.tukuai.engine.card.PlayingCard.Regular(
+            io.github.konyaco.tukuai.engine.card.Rank.FIVE, io.github.konyaco.tukuai.engine.card.Suit.SPADES,
+        )
+        val hand = listOf(five, five) + cards2("9")
+        val state = DouDizhu.start(DdzRules.FOUR, 3).let { s ->
+            s.copy(phase = DdzPhase.PLAYING, landlord = 0, turn = 0, hands = s.hands.mapIndexed { i, h -> if (i == 0) hand else h })
+        }
+        val after = state.act(DdzAction.PlayCards(listOf(five)))
+        assertEquals(listOf(five, hand[2]), after.hands[0])
+        assertThrows<IllegalActionException> { state.act(DdzAction.PlayCards(listOf(five, five, five))) }
+    }
+
+    @Test
+    fun `the landlord settles with each of three farmers`() {
+        val start = DouDizhu.start(DdzRules.FOUR, 8)
+        val state = start.copy(
+            phase = DdzPhase.PLAYING, landlord = 1, turn = 1, bidMultiplier = 3,
+            hands = start.hands.mapIndexed { i, h -> if (i == 1) cards2("K") else h },
+            playCounts = listOf(1, 3, 2, 1),
+        )
+        val scores = state.act(DdzAction.PlayCards(cards2("K"))).settlement!!.scores
+        assertEquals(listOf(-3, 9, -3, -3), scores)
+    }
 }

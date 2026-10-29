@@ -96,7 +96,7 @@ class GuideTest {
     @Test
     fun `every Dou Dizhu rule changes what the table section says`() {
         // A new field in DdzRules needs a line in DdzGuide, and a case here.
-        assertEquals(9, fieldCount(DdzRules::class.java), "DdzRules changed; describe the new rule in DdzGuide.table")
+        assertEquals(11, fieldCount(DdzRules::class.java), "DdzRules changed; describe the new rule in DdzGuide.table")
         val base = DdzRules.CLASSIC
         val changed = listOf(
             base.copy(bidding = BiddingMode.ROB),
@@ -109,6 +109,8 @@ class GuideTest {
             base.copy(springDoubles = false),
             base.copy(redealLimit = 1),
             base.copy(redealLimit = 0),
+            base.copy(players = 4),
+            base.copy(trioSingles = false),
         )
         val before = keysOfTable(DdzGuide.sections(base))
         for (rules in changed) assertNotEquals(before, keysOfTable(DdzGuide.sections(rules)), "$rules reads like the classic rules")
