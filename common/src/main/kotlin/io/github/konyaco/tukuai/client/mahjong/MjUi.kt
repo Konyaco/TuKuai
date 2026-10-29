@@ -47,10 +47,10 @@ object MjUi : GameUi {
     fun ownKey(tile: Tile, copy: Int): Int = OWN_KEYS + tile.id * 4 + copy
 
     /**
-     * The table as at a real game: the wall, two tiles high, in a square round the display
-     * that shrinks as tiles are drawn; each hand standing at its owner's edge with the melds
-     * lying to its right; and the discards in rows of six in front of each player. A winner's
-     * hand lies face up, and once the hand is over every hand does.
+     * The table as at a real game: each hand standing at its owner's edge with the melds lying
+     * to its right, the wall two tiles high in front of it, shrinking as tiles are drawn, and
+     * the discards inside the square of the wall, in rows of six in front of each player. A
+     * winner's hand lies face up, and once the hand is over every hand does.
      */
     override fun scene(table: ClientTable, seats: List<SeatPlace>): List<TableCard> {
         val view = table.view as? ScView ?: return emptyList()
@@ -109,15 +109,14 @@ object MjUi : GameUi {
     private fun wall(cards: MutableList<TableCard>, view: ScView, seats: List<SeatPlace>, back: Int) {
         val ring = listOf(Direction.SOUTH, Direction.EAST, Direction.NORTH, Direction.WEST)
         val start = ring.indexOf(seats[view.dealer].side).coerceAtLeast(0)
-        val inner = WALL_DISTANCE - TILE_H / 2
         for (p in view.drawnFront until view.wallSize - view.drawnBack) {
             val side = ring[(start + p / PER_SIDE) % 4]
             val q = p % PER_SIDE
             val stack = q / 2
             // The top of each stack is drawn first; an odd tile at the end lies alone.
             val level = if (q == PER_SIDE - 1) 0 else 1 - q % 2
-            // Each side runs on to the corner of the next, in a pinwheel.
-            val along = -inner + TILE_W * (stack + 0.5f)
+            // Each side runs along its player's edge, towards the next side round the table.
+            val along = (stack - (WALL_STACKS - 1) / 2f) * TILE_W
             val tx = side.stepZ.toFloat()
             val tz = -side.stepX.toFloat()
             val x = side.stepX * WALL_DISTANCE + tx * along
@@ -196,7 +195,7 @@ object MjUi : GameUi {
             index == view.melds[seat].size - 1
     }
 
-    /** One seat's discards in rows of six, the first row nearest the wall. */
+    /** One seat's discards in rows of six, the first row nearest the display in the middle. */
     private fun discards(cards: MutableList<TableCard>, view: ScView, seat: Seat, place: SeatPlace, back: Int) {
         val f = Frame(place)
         val tiles = view.discards[seat]
@@ -255,25 +254,33 @@ object MjUi : GameUi {
         }
     }
 
-    /** Scale of a tile on the table: a quarter of a card's width. */
-    const val TILE_SCALE = 0.25f
+    /** Scale of a tile on the table: a bit over a third of a card's width. */
+    const val TILE_SCALE = 0.36f
 
     // Distances are from the middle of the 3-block table; its cloth reaches 1.375 out.
     private const val TILE_W = 0.3f * TILE_SCALE
     private const val TILE_H = TILE_W * 44f / 32f
     private const val TILE_T = 0.2f * TILE_SCALE
 
-    /** Distance of the middle of the wall from the middle of the table: 14 stacks make a side of a square. */
-    private const val WALL_DISTANCE = 14 * TILE_W / 2
+    /**
+     * Distance of the middle of each side of the wall from the middle of the table: just in
+     * front of the hand, leaving the square inside it for the discards.
+     */
+    private const val WALL_DISTANCE = 1.05f
     private const val PER_SIDE = 27
-    private const val DISCARD_START = WALL_DISTANCE + TILE_H / 2 + 0.015f
+    private const val WALL_STACKS = 14
+
+    /** The discards start just past the display in the middle, see [io.github.konyaco.tukuai.client.render.TableArt.DISPLAY_HALF_WIDTH]. */
+    private const val DISCARD_START = 0.36f
     private const val DISCARD_ROW = 6
     private const val MAX_ROWS = 4
     private const val ROW_GAP = 0.004f
 
-    /** How deep the discards may reach before they would touch the hand. */
-    private const val DISCARD_DEPTH = 0.43f
-    private const val HAND_DISTANCE = 1.12f
+    /** How deep the discards may reach before they would touch the wall. */
+    private const val DISCARD_DEPTH = WALL_DISTANCE - TILE_H / 2 - DISCARD_START - 0.012f
+
+    /** The hand stands just behind the wall; flat melds and a winner's hand reach towards the edge. */
+    private const val HAND_DISTANCE = 1.27f
     private const val HAND_TILT = 65f
     private const val APART = 0.03f
     private const val MELD_GAP = 0.02f

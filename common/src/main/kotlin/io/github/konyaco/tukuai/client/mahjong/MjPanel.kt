@@ -338,7 +338,8 @@ class MjPanel(private val screen: PanelHost) : GamePanel {
             Place.TOP -> width / 2 - boxW / 2
             Place.RIGHT -> width - margin - boxW
         }
-        val y = if (place == Place.TOP) TOP_BOX_Y else SIDE_BOX_Y
+        // In the immersive view the side boxes sit a little lower, leaving the prompt room under the top one.
+        val y = if (place == Place.TOP) TOP_BOX_Y else if (compact) SIDE_BOX_Y + 6 else SIDE_BOX_Y
         val acting = live(table) && view.toAct == seat && !view.finished && view.phase != ScPhase.SWAP && view.phase != ScPhase.VOID
         g.fill(x - 2, y - 2, x + boxW + 2, y + BOX_H, if (acting) 0xA0806020.toInt() else 0x80202830.toInt())
         val name = PanelText.seatLabel(table, seat).string
@@ -433,9 +434,12 @@ class MjPanel(private val screen: PanelHost) : GamePanel {
         renderDiscards(g, view, me, width / 2 - MY_ROW * w / 2, buttonY() - 24 - rows * h, MY_ROW)
     }
 
-    /** What this turn asks of you, or whom everyone waits for, over the buttons. */
+    /**
+     * What this turn asks of you, or whom everyone waits for: over the buttons, or in the
+     * immersive view under the top box, clear of your tiles on the table.
+     */
     private fun renderPrompt(g: GuiGraphicsExtractor, table: ClientTable, view: ScView) {
-        val y = buttonY() - 11
+        val y = if (screen.inWorld) TOP_BOX_Y + BOX_H + 12 else buttonY() - 11
         val mine = asked(table, view)
         val text: Component? = when (view.phase) {
             ScPhase.SWAP -> if (mine) Component.translatable("tukuai.mahjong.note.swap") else waitingFor(table, view)

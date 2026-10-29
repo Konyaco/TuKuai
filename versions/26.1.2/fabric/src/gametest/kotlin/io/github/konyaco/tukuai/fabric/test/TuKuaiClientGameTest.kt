@@ -492,6 +492,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         shot(context, "mj-2-world-dealing")
         context.waitTicks(40)
         shot(context, "mj-3-world-dealt")
+        sideShot(context, server, table, "mj-3b-world-side-dealt")
 
         val mahjong = { ClientTables[table]?.view as? ScView }
         val send = { action: ScAction -> act(server, table, TableOp.ACT, data = ScCodecs.ACTION.encode(action)) }
@@ -584,6 +585,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.setScreen { null }
         context.waitTicks(5)
         shot(context, "mj-10-world-midgame")
+        sideShot(context, server, table, "mj-10b-world-side-midgame")
 
         var waited = 0
         while (status(server, table) != TableStatus.FINISHED) {
@@ -601,6 +603,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.setScreen { null }
         context.waitTicks(10)
         shot(context, "mj-12-world-result")
+        sideShot(context, server, table, "mj-12b-world-side-result")
 
         act(server, table, TableOp.REPLAY)
         context.waitFor({ it.screen is ReplayScreen }, 100)
@@ -613,6 +616,27 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         shot(context, "mj-13-replay")
         context.setScreen { null }
         act(server, table, TableOp.AUTO, 0)
+    }
+
+    /**
+     * Stands up, looks at the table from beside the east seat, and sits back down; standing
+     * up mid-hand pauses it, so nothing moves meanwhile.
+     */
+    private fun sideShot(context: ClientGameTestContext, server: TestServerContext, table: BlockPos, name: String) {
+        val screen = context.computeOnClient<Boolean, RuntimeException> { it.screen != null }
+        context.setScreen { null }
+        act(server, table, TableOp.STAND)
+        context.waitTicks(5)
+        moveTo(server, table.east(2))
+        context.waitTicks(5)
+        context.input.lookAt(table)
+        context.waitTicks(10)
+        shot(context, name)
+        act(server, table, TableOp.SIT, 0)
+        context.waitFor({ ClientTables[table]?.snapshot?.paused != true }, 100)
+        context.waitTicks(5)
+        context.input.lookAt(table)
+        if (screen) context.setScreen { TableScreen(table) }
     }
 
     /**
