@@ -85,6 +85,8 @@ data class TableSnapshot(
     val paused: Boolean = false,
     /** The players with the most points at this game in this world, best first; sent only between games. */
     val leaderboard: List<LeaderEntry> = emptyList(),
+    /** Whether the game may hurt its players in the world, see [io.github.konyaco.tukuai.engine.core.GameDefinition.mayHarm]. */
+    val hurts: Boolean = false,
 ) {
     /** The people at the table who are here and playing for themselves; they decide together when to start. */
     val voters: List<Seat>
@@ -97,7 +99,7 @@ data class TableSnapshot(
     override fun hashCode(): Int = encode().contentHashCode()
 
     companion object {
-        private const val VERSION = 5
+        private const val VERSION = 6
 
         fun decode(data: ByteArray): TableSnapshot = CODEC.decode(data)
 
@@ -117,6 +119,7 @@ data class TableSnapshot(
                     .bool(value.spectators).int(value.host ?: -1).int(value.matchRounds).bool(value.matchOver)
                     .bool(value.paused)
                 writer.list(value.leaderboard) { string(it.name).int(it.games).int(it.wins).int(it.points) }
+                writer.bool(value.hurts)
             }
 
             override fun read(reader: WireReader): TableSnapshot {
@@ -148,6 +151,7 @@ data class TableSnapshot(
                     matchOver = reader.bool(),
                     paused = reader.bool(),
                     leaderboard = reader.list { LeaderEntry(string(), int(), int(), int()) },
+                    hurts = reader.bool(),
                 )
             }
         }
@@ -203,4 +207,7 @@ enum class TableOp {
 
     /** Set how many games make a match to `a`; 0 means no limit. */
     ROUNDS,
+
+    /** `a` = 1 lets a game that may hurt its players do so in the world, 0 keeps it on the table. Only the host may. */
+    HURT,
 }

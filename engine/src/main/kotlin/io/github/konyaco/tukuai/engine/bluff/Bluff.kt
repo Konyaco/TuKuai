@@ -171,6 +171,12 @@ object Bluff : GameDefinition<BluffRules, BluffState, BluffAction, BluffView> {
 
     override fun result(state: BluffState): GameResult? = state.result
 
+    override val mayHarm: Boolean get() = true
+
+    /** Whoever's creeper just blew. */
+    override fun harmed(before: BluffState, after: BluffState): List<Seat> =
+        after.hands.indices.filter { after.isOut(it) && !before.isOut(it) }
+
     override fun view(state: BluffState, seat: Seat?): BluffView = BluffView.of(state, seat, open = false)
 
     override fun openView(state: BluffState, seat: Seat?): BluffView = BluffView.of(state, seat, open = true)

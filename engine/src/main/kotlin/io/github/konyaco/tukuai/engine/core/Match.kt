@@ -32,6 +32,15 @@ interface MatchHandle {
     fun encodedOpenView(seat: Seat?): ByteArray
 
     fun replay(players: List<String>): Replay
+
+    /** See [GameDefinition.mayHarm]. */
+    val mayHarm: Boolean
+
+    /**
+     * The seats hurt by moves made through [submit] and [playBot] since the last call, see
+     * [GameDefinition.harmed]. Moves replayed to rebuild a game hurt nobody.
+     */
+    fun takeHarmed(): List<Seat>
 }
 
 class Match<R : Any, S : Any, A : Any, V : Any>(
@@ -44,12 +53,14 @@ class Match<R : Any, S : Any, A : Any, V : Any>(
 
     private val actions = mutableListOf<Pair<Seat, A>>()
     private val bots = HashMap<Pair<Seat, BotLevel>, Bot<V, A>>()
+    private val harmed = mutableListOf<Seat>()
 
     override val gameId: String get() = game.id
     override val seatCount: Int = game.seatCount(rules)
     override val toAct: Seat? get() = game.toAct(state)
     override val result: GameResult? get() = game.result(state)
     override val step: Int get() = actions.size
+    override val mayHarm: Boolean get() = game.mayHarm
 
     val history: List<Pair<Seat, A>> get() = actions
 
@@ -58,6 +69,15 @@ class Match<R : Any, S : Any, A : Any, V : Any>(
         actions += seat to action
     }
 
+    /** [apply], keeping track of whom the move hurt. */
+    private fun play(seat: Seat, action: A) {
+        val before = state
+        apply(seat, action)
+        harmed += game.harmed(before, state)
+    }
+
+    override fun takeHarmed(): List<Seat> = harmed.toList().also { harmed.clear() }
+
     override fun submit(seat: Seat, action: ByteArray): String? {
         val decoded = try {
             game.actionCodec.decode(action)
@@ -65,7 +85,7 @@ class Match<R : Any, S : Any, A : Any, V : Any>(
             return e.message ?: "Bad action"
         }
         return try {
-            apply(seat, decoded)
+            play(seat, decoded)
             null
         } catch (e: IllegalActionException) {
             e.message ?: "Illegal action"
@@ -76,7 +96,7 @@ class Match<R : Any, S : Any, A : Any, V : Any>(
         val bot = bots.getOrPut(seat to level) { game.createBot(level, seed * 31 + seat) }
         val choice = bot.act(game.view(state, seat))
         try {
-            apply(seat, choice)
+            play(seat, choice)
         } catch (e: IllegalActionException) {
             // A bot bug must not freeze the table, so fall back to the simplest bot once.
             if (level == BotLevel.EASY) throw IllegalStateException("Easy bot made an illegal move", e)

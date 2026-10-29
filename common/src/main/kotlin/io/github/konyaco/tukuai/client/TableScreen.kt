@@ -282,6 +282,8 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             send(TableOp.ROUNDS, ROUND_CHOICES[(ROUND_CHOICES.indexOf(s.matchRounds) + 1).mod(ROUND_CHOICES.size)])
         }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.match.tip")))
         spectateButton(s, left + 203, top + 40, 97, canEdit)
+        // Beside the leaderboard, for a game that may hurt its players.
+        if (game?.mayHarm == true) hurtButton(s, left + lobbyWidth - 64 - 4 - 92, top - 3, 92, canEdit)
 
         val narrow = twoColumns(t)
         s.seats.forEachIndexed { i, seat ->
@@ -333,6 +335,16 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         val tip = Component.translatable("tukuai.table.spectate.tip")
         if (!mayChange) tip.append("\n").append(Component.translatable("tukuai.table.spectate.host_only", seatName(s.seats.getOrNull(s.host ?: -1)?.occupant)))
         button(text, x, y, w, canEdit && mayChange) { send(TableOp.SPECTATE, if (s.spectators) 0 else 1) }
+            .setTooltip(Tooltip.create(tip))
+    }
+
+    /** Whether the game hurts its players in the world, as a creeper going off does. Only the host changes it. */
+    private fun hurtButton(s: TableSnapshot, x: Int, y: Int, w: Int, canEdit: Boolean) {
+        val mayChange = s.host == null || s.host == s.you
+        val text = Component.translatable(if (s.hurts) "tukuai.table.hurt.on" else "tukuai.table.hurt.off")
+        val tip = Component.translatable("tukuai.table.hurt.tip")
+        if (!mayChange) tip.append("\n").append(Component.translatable("tukuai.table.spectate.host_only", seatName(s.seats.getOrNull(s.host ?: -1)?.occupant)))
+        button(text, x, y, w, canEdit && mayChange, h = 14) { send(TableOp.HURT, if (s.hurts) 0 else 1) }
             .setTooltip(Tooltip.create(tip))
     }
 

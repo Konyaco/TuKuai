@@ -51,6 +51,15 @@ interface GameDefinition<R : Any, S : Any, A : Any, V : Any> {
     fun createBot(level: BotLevel, seed: Long): Bot<V, A>
 
     /**
+     * Whether something in this game may hurt a player in the world, such as a creeper going
+     * off; a table lets its players turn that on or off.
+     */
+    val mayHarm: Boolean get() = false
+
+    /** The seats whose players something in the game hurt with the move from [before] to [after]; see [mayHarm]. */
+    fun harmed(before: S, after: S): List<Seat> = emptyList()
+
+    /**
      * The rule book for players new to the game. Given [rules], it starts with a section
      * on those rules in particular ([GuideSection.TABLE]).
      */

@@ -60,6 +60,8 @@ import org.lwjgl.glfw.GLFW
  */
 class TuKuaiClientGameTest : FabricClientGameTest {
     private companion object {
+        /** Ticks for a blown creeper to go off after it is lit, and a few more. */
+        const val HARM_WAIT = 40
         /** Where the two old one-block tables go, as (x, z) from the player. */
         val OLD_ROOMY = 0 to 3
         val OLD_CRAMPED = 3 to 0
@@ -327,7 +329,9 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.setScreen { null }
         act(server, table, TableOp.GAME, text = "bluff")
         repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
-        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "bluff" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        // Creepers that really hurt, so the lobby shows the switch turned on.
+        act(server, table, TableOp.HURT, 1)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "bluff" && it.hurts && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
         context.setScreen { TableScreen(table) }
         context.waitTicks(10)
         shot(context, "bluff-1-lobby")
@@ -381,15 +385,31 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.waitTicks(8)
         shot(context, "bluff-7-screen-hiss")
 
-        var waited = 0
-        while (status(server, table) != TableStatus.FINISHED) {
-            check(waited < 12000) { "The creeper bluff game did not finish" }
-            context.waitTicks(100)
-            waited += 100
+        // Play on, a game at a time, until our own creeper has blown, watching our health as it goes.
+        val health = { server.computeOnServer<Float, RuntimeException> { s -> s.playerList.players.first().health } }
+        var lowest = health()
+        var games = 1
+        while (true) {
+            var waited = 0
+            while (status(server, table) != TableStatus.FINISHED) {
+                check(waited < 12000) { "The creeper bluff game did not finish" }
+                context.waitTicks(5)
+                waited += 5
+                lowest = minOf(lowest, health())
+            }
+            context.waitTicks(HARM_WAIT)
+            lowest = minOf(lowest, health())
+            context.waitFor({ bluff()?.finished == true }, 200)
+            val view = bluff()!!
+            check(view.out.count { !it } == 1 && view.winner != null) { "The creeper bluff game ended oddly: $view" }
+            if (view.out[0]) break
+            check(++games <= 8) { "Our creeper never blew in $games games" }
+            act(server, table, TableOp.START)
+            context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
         }
-        context.waitFor({ bluff()?.finished == true }, 200)
-        val view = bluff()!!
-        check(view.out.count { !it } == 1 && view.winner != null) { "The creeper bluff game ended oddly: $view" }
+        // With the switch on, our creeper blowing took three hearts.
+        check(lowest <= 20f - 6f + 0.5f) { "Our creeper blew but we were not hurt: lowest health $lowest" }
+        act(server, table, TableOp.HURT, 0)
         context.waitTicks(20)
         context.setScreen { TableScreen(table) }
         context.waitTicks(10)

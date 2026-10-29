@@ -137,6 +137,20 @@ class BluffTest {
     }
 
     @Test
+    fun `a blown creeper hurts its player when the table allows it, but replaying the game hurts nobody`() {
+        val match = playOut(BluffRules.CLASSIC, 11, List(4) { BotLevel.NORMAL }, stopAt = 0)
+        val harmed = ArrayList<Int>()
+        while (match.toAct != null) {
+            match.playBot(match.toAct!!, BotLevel.NORMAL)
+            harmed += match.takeHarmed()
+        }
+        assertTrue(Bluff.mayHarm)
+        assertEquals(match.state.hands.indices.filter { match.state.isOut(it) }.sorted(), harmed.sorted())
+        assertTrue(match.takeHarmed().isEmpty())
+        assertTrue(match.replay(listOf("a", "b", "c", "d")).rebuild(Bluff).takeHarmed().isEmpty())
+    }
+
+    @Test
     fun `the last one standing wins a point from everyone else`() {
         val s = state("Q K", "K A", rules = BluffRules(players = 2, handSize = 2, maxPlay = 2), fuses = listOf(6, 1)).play(0, "Q")
         val over = Bluff.apply(Bluff.apply(s, 1, BluffAction.Call), 1, BluffAction.Light)

@@ -158,3 +158,6 @@ abstract class CompatEntity(type: EntityType<*>, level: Level) : Entity(type, le
 
     final override fun addAdditionalSaveData(tag: CompoundTag) = addAdditionalSaveData(ValueOutput(tag))
 }
+
+/** Hurts a player on the server, as 26.1 names it. */
+fun Player.hurtOnServer(level: ServerLevel, source: DamageSource, amount: Float): Boolean = hurt(source, amount)
