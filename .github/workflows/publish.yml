@@ -1,0 +1,57 @@
+name: Publish
+
+# Uploads the jars of a GitHub release to Modrinth and CurseForge with
+# .github/scripts/publish.py. Release runs it after each new release, and it can be started by
+# hand for a tag that is already released. It reads the secrets MODRINTH_TOKEN and
+# CURSEFORGE_TOKEN and the variables MODRINTH_PROJECT_ID (default tukuai) and
+# CURSEFORGE_PROJECT_ID; a site whose token or project id is not set is skipped with a notice.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, such as v0.9.0
+        required: true
+        type: string
+      sites:
+        description: Where to upload
+        type: choice
+        options: [both, modrinth, curseforge]
+        default: both
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      sites:
+        type: string
+        default: both
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Download the jars
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release download "${TAG}" --pattern 'tukuai-*.jar' --dir jars
+
+      - name: Upload to the stores
+        env:
+          TAG: ${{ inputs.tag }}
+          SITES: ${{ inputs.sites }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+        run: |
+          if [[ "${SITES}" == "both" ]]; then SITES=modrinth,curseforge; fi
+          python3 .github/scripts/publish.py "${TAG#v}" jars --sites "${SITES}"
