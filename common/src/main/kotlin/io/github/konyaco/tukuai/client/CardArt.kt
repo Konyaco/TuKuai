@@ -19,7 +19,8 @@ import io.github.konyaco.tukuai.engine.uno.UnoKind
  * The card atlas `textures/gui/cards.png`, made by `tools/gen_textures.py`: 32×44 cards
  * in rows of 14. Faces 0..53 follow [Decks.STANDARD_54], then come the card backs,
  * and two 16×16 hats sit below them. The UNO cards start on row 6, see [uno], the
- * other face styles on row 11, see [face], and the Tutu cards on row 19, see [tutu]. Right of the cards are a patch of plain paper
+ * other face styles on row 11, see [face], the Tutu cards on row 19, see [tutu], and the creeper head of creeper
+ * bluff on row 24, see [CREEPER_SIDE]. Right of the cards are a patch of plain paper
  * for the edges of cards on the table and a 16×16 tile of pale cloth for the table top.
  */
 object CardArt {
@@ -105,6 +106,10 @@ object CardArt {
     const val TNT_SIDE = TUTU_FIRST + 55 + 8
     const val TNT_TOP = TNT_SIDE + 1
 
+    /** The face of the little creeper head before each player at creeper bluff; its top is the next sprite. */
+    const val CREEPER_SIDE = 24 * COLUMNS
+    const val CREEPER_TOP = CREEPER_SIDE + 1
+
     fun u(sprite: Int): Int = (sprite % COLUMNS) * WIDTH
 
     fun v(sprite: Int): Int = (sprite / COLUMNS) * HEIGHT
@@ -121,6 +126,11 @@ object CardArt {
     /** The side of a TNT block, [size] GUI pixels square. */
     fun drawTnt(g: GuiGraphicsExtractor, x: Int, y: Int, size: Int) {
         g.blitTexture(ATLAS, x, y, u(TNT_SIDE).toFloat(), v(TNT_SIDE).toFloat(), size, size, WIDTH, WIDTH, TEXTURE_WIDTH, TEXTURE_HEIGHT)
+    }
+
+    /** A creeper's face, [size] GUI pixels square. */
+    fun drawCreeper(g: GuiGraphicsExtractor, x: Int, y: Int, size: Int) {
+        g.blitTexture(ATLAS, x, y, u(CREEPER_SIDE).toFloat(), v(CREEPER_SIDE).toFloat(), size, size, WIDTH, WIDTH, TEXTURE_WIDTH, TEXTURE_HEIGHT)
     }
 
     /** The landlord's hat, or the farmer's straw hat when [landlord] is false. */

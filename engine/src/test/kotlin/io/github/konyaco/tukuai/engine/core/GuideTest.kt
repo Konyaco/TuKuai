@@ -1,5 +1,9 @@
 package io.github.konyaco.tukuai.engine.core
 
+import io.github.konyaco.tukuai.engine.bluff.Bluff
+import io.github.konyaco.tukuai.engine.bluff.BluffGuide
+import io.github.konyaco.tukuai.engine.bluff.BluffPenalty
+import io.github.konyaco.tukuai.engine.bluff.BluffRules
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.doudizhu.DdzGuide
 import io.github.konyaco.tukuai.engine.doudizhu.DdzRules
@@ -31,7 +35,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GuideTest {
-    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu)
+    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff)
 
     /** The English language file, read with a regex since the engine has no JSON library. */
     private val english: Map<String, String> by lazy {
@@ -198,6 +202,22 @@ class GuideTest {
                 assertEquals(example.follows, ok, "${example.text}: ${card.face} on $top")
             }
         }
+    }
+
+    @Test
+    fun `every creeper bluff rule changes what the table section says`() {
+        assertEquals(6, fieldCount(BluffRules::class.java), "BluffRules changed; describe the new rule in BluffGuide.table")
+        val base = BluffRules.CLASSIC
+        val changed = listOf(
+            base.copy(players = 3),
+            base.copy(handSize = 4),
+            base.copy(maxPlay = 2),
+            base.copy(penalty = BluffPenalty.HEARTS),
+            base.copy(chances = 5),
+            base.copy(jokers = false),
+        )
+        val before = keysOfTable(BluffGuide.sections(base))
+        for (rules in changed) assertNotEquals(before, keysOfTable(BluffGuide.sections(rules)), "$rules reads like the classic rules")
     }
 
     @Test
