@@ -12,6 +12,7 @@
       "io.github.konyaco.tukuai.fabric.test.TuKuaiClientGameTest",
       "io.github.konyaco.tukuai.fabric.test.SpectateGameTest",
       "io.github.konyaco.tukuai.fabric.test.ImmersiveInputGameTest",
+      "io.github.konyaco.tukuai.fabric.test.FourPlayerDdzGameTest",
       "io.github.konyaco.tukuai.fabric.test.MatchGameTest",
       "io.github.konyaco.tukuai.fabric.test.BigTableGameTest",
       "io.github.konyaco.tukuai.fabric.test.ShowcaseGameTest",

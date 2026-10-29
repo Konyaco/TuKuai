@@ -6,9 +6,9 @@ import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PanelText
-import io.github.konyaco.tukuai.client.PlayingCardHand
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
+import io.github.konyaco.tukuai.client.gd.GdHand
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -21,7 +21,6 @@ import io.github.konyaco.tukuai.engine.doudizhu.DdzEvent
 import io.github.konyaco.tukuai.engine.doudizhu.DdzEventKind
 import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
-import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.engine.doudizhu.Patterns
 import io.github.konyaco.tukuai.engine.doudizhu.bot.DdzBot
 import io.github.konyaco.tukuai.table.TableOp
@@ -35,10 +34,12 @@ import org.lwjgl.glfw.GLFW
 /**
  * The Dou Dizhu part of the table screen: your hand along the bottom, the other two
  * players left and right (the next player is on your right, as play goes
- * counterclockwise), the landlord's three cards at the top.
+ * counterclockwise), the landlord's three cards at the top. With four players the one
+ * across sits at the top, under the landlord's eight cards, and a long hand takes two rows.
  */
 class DdzPanel(private val screen: PanelHost) : GamePanel {
-    private val picker = PlayingCardHand(screen)
+    /** Two decks hold two of a card, so picks are kept by place in the hand. */
+    private val picker = GdHand(screen, oneRowMost = 20, margin = 120)
     private val selected get() = picker.selected
     private var wasMyTurn = false
 
@@ -63,7 +64,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
     override fun rebuild(table: ClientTable) {
         val view = table.view as? DdzView ?: return
         val s = table.snapshot
-        picker.sync(s.step, view.hand)
+        picker.sync(s.step, sortedHand(view))
         if (!screen.interactive) return
         val myTurn = s.status == TableStatus.PLAYING && view.isMyTurn
         if (myTurn && !wasMyTurn) {
@@ -71,7 +72,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         }
         wasMyTurn = myTurn
 
-        if (s.status == TableStatus.FINISHED) screen.finishButtons(table, width / 2, RESULT_TOP + 74)
+        if (s.status == TableStatus.FINISHED) screen.finishButtons(table, width / 2, RESULT_TOP + resultHeight(view) - 24)
         if (myTurn) addTurnButtons(view)
     }
 
@@ -130,27 +131,27 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         if (!screen.interactive) return false
         val view = table.view as? DdzView ?: return false
         if (view.seat == null) return false
-        return picker.click(sortedHand(view), x, y, button)
+        return picker.click(x, y, button)
     }
 
     override fun clickTableCard(table: ClientTable, card: TableCard): Boolean {
         if (!screen.interactive) return false
-        val view = table.view as? DdzView ?: return false
-        return picker.clickTableCard(view.hand, card)
+        if (table.view !is DdzView) return false
+        return picker.clickTableCard(card)
     }
 
     override fun isRaised(table: ClientTable, card: TableCard): Boolean = picker.isRaised(card)
 
     override fun mouseDragged(table: ClientTable, x: Double, y: Double): Boolean {
-        val view = table.view as? DdzView ?: return false
-        return picker.drag(sortedHand(view), x)
+        if (table.view !is DdzView) return false
+        return picker.drag(x)
     }
 
     override fun mouseReleased(table: ClientTable) = picker.release()
 
     override fun dragTableCard(table: ClientTable, card: TableCard) {
-        val view = table.view as? DdzView ?: return
-        picker.dragTableCard(view.hand, card)
+        if (table.view !is DdzView) return
+        picker.dragTableCard(card)
     }
 
     override fun keyPressed(table: ClientTable, key: Int): Boolean {
@@ -180,22 +181,28 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         val view = table.view as? DdzView ?: return
         val s = table.snapshot
         val me = s.you ?: 0
-        val right = (me + 1) % DouDizhu.SEATS
-        val left = (me + 2) % DouDizhu.SEATS
+        val seats = view.handCounts.size
+        val right = (me + 1) % seats
+        val left = (me + seats - 1) % seats
         val recent = recentActions(view)
         val finished = s.status == TableStatus.FINISHED
 
         if (!finished) renderTop(g, table, view) else renderTitle(g, table)
-        renderOpponent(g, table, view, left, recent[left], onLeft = true)
-        renderOpponent(g, table, view, right, recent[right], onLeft = false)
+        renderOpponent(g, table, view, left, recent[left], Place.LEFT)
+        renderOpponent(g, table, view, right, recent[right], Place.RIGHT)
+        // At the end the result covers the player across, and lists them with everyone else.
+        if (seats == 4 && !finished) renderOpponent(g, table, view, (me + 2) % seats, recent[(me + 2) % seats], Place.TOP)
 
         // Your own last move above your hand, or on your turn, whether anything beats the table and what you picked.
         if (!finished) {
-            recent[me]?.let { renderEvent(g, view, it, width / 2, buttonY() - 40, PanelText.Align.CENTER) }
+            recent[me]?.let {
+                if (seats == 4) renderEvent(g, view, it, width / 2, buttonY() - 28, PanelText.Align.CENTER, scale = 0.5f, step = 9)
+                else renderEvent(g, view, it, width / 2, buttonY() - 40, PanelText.Align.CENTER)
+            }
             if (screen.interactive && view.isMyTurn && view.phase == DdzPhase.PLAYING) renderTurnNote(g, table, view)
         }
         renderSelf(g, table, view, me)
-        picker.render(g, sortedHand(view), mouseX, mouseY)
+        picker.render(g, mouseX, mouseY) { false }
         if (finished) renderResult(g, table, view)
     }
 
@@ -231,29 +238,44 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
     private fun renderTop(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView) {
         renderTitle(g, table)
 
-        // The landlord's three cards: face down until someone takes them.
-        val scale = 0.75f
+        // The landlord's cards: face down until someone takes them. Eight of them, with four
+        // players, overlap smaller to leave room for the player across.
+        val count = view.rules.kittySize
+        val four = count > 3
+        val scale = if (four) 0.5f else 0.75f
         val cw = (CardArt.WIDTH * scale).toInt()
-        val x0 = width / 2 - (cw * 3 + 4) / 2
-        for (i in 0 until 3) {
+        val step = if (four) 13 else cw + 2
+        val x0 = width / 2 - (cw + step * (count - 1)) / 2
+        for (i in 0 until count) {
             val card = view.kitty.getOrNull(i)
-            val x = x0 + i * (cw + 2)
-            if (card != null) CardArt.drawCard(g, card, x, 6, scale) else CardArt.draw(g, CardArt.back(), x, 6, scale)
+            val x = x0 + i * step
+            if (card != null) CardArt.drawCard(g, card, x, KITTY_Y, scale) else CardArt.draw(g, CardArt.back(), x, KITTY_Y, scale)
         }
         val line = Component.translatable("tukuai.ddz.stake", view.rules.baseScore, multiplier(view))
-        g.centeredText(font, line, width / 2, 6 + (CardArt.HEIGHT * scale).toInt() + 4, TableScreen.WHITE)
+        g.centeredText(font, line, width / 2, KITTY_Y + (CardArt.HEIGHT * scale).toInt() + 4, TableScreen.WHITE)
     }
 
-    private fun renderOpponent(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView, seat: Seat, recent: DdzEvent?, onLeft: Boolean) {
+    private enum class Place { LEFT, TOP, RIGHT }
+
+    private fun renderOpponent(g: GuiGraphicsExtractor, table: ClientTable, view: DdzView, seat: Seat, recent: DdzEvent?, place: Place) {
         // With the world in view, the table's own hands stand in the middle of the screen, so
         // the boxes shrink to the edges and keep everything they show in their own column.
-        val compact = ClientConfig.immersive && screen.interactive
-        val boxW = if (compact) 74 else 96
+        // With four players the plays go below the boxes too, clear of the player across.
+        val four = view.handCounts.size == 4
+        val compact = (ClientConfig.immersive && screen.interactive) || four
+        val boxW = if (ClientConfig.immersive && screen.interactive) 74 else 96
         val margin = if (compact) 4 else 8
-        val x = if (onLeft) margin else width - margin - boxW
-        val y = 70
+        val onLeft = place == Place.LEFT
+        val x = when (place) {
+            Place.LEFT -> margin
+            Place.TOP -> width / 2 - boxW / 2
+            Place.RIGHT -> width - margin - boxW
+        }
+        val y = if (place == Place.TOP) TOP_BOX_Y else SIDE_BOX_Y
+        // Four players leave less room up and down, so the boxes are only as tall as the name and the count.
+        val boxH = if (four) SHORT_BOX_H else 54
         val acting = view.turn == seat && table.snapshot.status == TableStatus.PLAYING
-        g.fill(x - 2, y - 2, x + boxW + 2, y + 54, if (acting) 0x90806020.toInt() else 0x70000000)
+        g.fill(x - 2, y - 2, x + boxW + 2, y + boxH, if (acting) 0x90806020.toInt() else 0x70000000)
         if (view.landlord != null) CardArt.drawHat(g, view.isLandlord(seat), x, y)
         val nameX = if (view.landlord != null) x + 18 else x
         g.text(font, font.plainSubstrByWidth(PanelText.seatLabel(table, seat).string, boxW - (nameX - x)), nameX, y + 4, TableScreen.WHITE, true)
@@ -261,26 +283,47 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         CardArt.draw(g, CardArt.back(), x, y + 18, 0.5f)
         g.text(font, Component.literal("× ${view.handCounts[seat]}"), x + 20, y + 26, TableScreen.YELLOW, true)
         if (view.doubles.getOrNull(seat) == true) {
-            if (compact) g.text(font, Component.translatable("tukuai.ddz.doubled"), x, y + 42, TableScreen.RED, true)
+            if (compact && !four) g.text(font, Component.translatable("tukuai.ddz.doubled"), x, y + 42, TableScreen.RED, true)
             else g.text(font, Component.translatable("tukuai.ddz.doubled"), x + 56, y + 26, TableScreen.RED, true)
         }
-        if (acting) PanelText.timer(g, table, x + boxW - 4, y + 42, alignRight = true)
+        if (acting) PanelText.timer(g, table, x + boxW - 4, if (four) y + 26 else y + 42, alignRight = true)
 
         // What they just did beside the box, or below it when compact. Their whole hand, once
         // it is shown (at the end, or in a replay), goes below the box so the result in the
         // middle does not cover it.
-        val align = if (onLeft) PanelText.Align.LEFT else PanelText.Align.RIGHT
-        val edgeX = if (onLeft) x else x + boxW
+        val align = when (place) {
+            Place.LEFT -> PanelText.Align.LEFT
+            Place.TOP -> PanelText.Align.CENTER
+            Place.RIGHT -> PanelText.Align.RIGHT
+        }
+        val edgeX = when (place) {
+            Place.LEFT -> x
+            Place.TOP -> width / 2
+            Place.RIGHT -> x + boxW
+        }
         val revealed = view.revealedHands.getOrNull(seat)
         val finished = table.snapshot.status == TableStatus.FINISHED
+        // Two decks make long hands; they squeeze closer to stay on their side of the screen.
+        val handStep = if (four) 5 else 7
         if (revealed != null) {
-            // A watcher sees hands while play goes on; with the box compact, its last move comes first.
-            val below = if (compact && !finished && recent != null) 58 + CardArt.HEIGHT / 2 + 4 else 60
-            PanelText.cards(g, revealed.sortedWith(DDZ_ORDER.reversed()), edgeX, y + below, 0.5f, 7, align)
+            val cards = revealed.sortedWith(DDZ_ORDER.reversed())
+            if (place == Place.TOP) {
+                // At the end the result covers the top, so the hand across goes below it; in a
+                // replay it goes beside the box.
+                if (finished) PanelText.cards(g, cards, width / 2, RESULT_TOP + resultHeight(view) + 4, 0.5f, 4, PanelText.Align.CENTER)
+                else PanelText.cards(g, cards, x + boxW + 8, y, 0.5f, 4, PanelText.Align.LEFT)
+            } else {
+                // A watcher sees hands while play goes on; with the box compact, its last move comes first.
+                val under = boxH + 4
+                val below = if (compact && !finished && recent != null) under + CardArt.HEIGHT / 2 + 4 else under + 2
+                PanelText.cards(g, cards, edgeX, y + below, 0.5f, handStep, align)
+            }
         }
         if (recent == null || (finished && revealed != null)) return
-        if (compact) {
-            renderEvent(g, view, recent, edgeX, if (recent.kind == DdzEventKind.PLAY) y + 58 else y + 48, align, scale = 0.5f, step = 7)
+        if (place == Place.TOP) {
+            renderEvent(g, view, recent, edgeX, if (recent.kind == DdzEventKind.PLAY) y + boxH + 4 else y + boxH - 8, align, scale = 0.5f, step = 9)
+        } else if (compact) {
+            renderEvent(g, view, recent, edgeX, if (recent.kind == DdzEventKind.PLAY) y + boxH + 4 else y + boxH - 6, align, scale = 0.5f, step = 7)
         } else {
             renderEvent(g, view, recent, if (onLeft) x + boxW + 8 else x - 8, y + 4, align)
         }
@@ -313,7 +356,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         val w = 210
         val x = width / 2 - w / 2
         val top = RESULT_TOP
-        g.fill(x, top, x + w, top + 98, 0xE0101010.toInt())
+        g.fill(x, top, x + w, top + resultHeight(view), 0xE0101010.toInt())
         val me = table.snapshot.you
         val iWon = me != null && settlement.scores.getOrElse(me) { 0 } > 0
         val title = Component.translatable(if (settlement.landlordWon) "tukuai.ddz.landlord_won" else "tukuai.ddz.farmers_won")
@@ -325,7 +368,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
             settlement.multiplier,
         )
         g.centeredText(font, detail, width / 2, top + 18, TableScreen.GRAY)
-        for (seat in 0 until DouDizhu.SEATS) {
+        for (seat in view.handCounts.indices) {
             val y = top + 32 + seat * 12
             CardArt.drawHat(g, view.isLandlord(seat), x + 8, y - 4)
             g.text(font, PanelText.seatLabel(table, seat), x + 28, y, if (seat == me) TableScreen.YELLOW else TableScreen.WHITE, false)
@@ -345,6 +388,16 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
 
         /** The result box sits at the top, over the landlord's cards, clear of both players' boxes. */
         private const val RESULT_TOP = 4
+
+        /** Room for the title, the detail and a line for each seat, and the buttons below. */
+        private fun resultHeight(view: DdzView) = 62 + view.handCounts.size * 12
+
+        private const val KITTY_Y = 6
+
+        /** The player across, with four players: under the landlord's cards and the stake. */
+        private const val TOP_BOX_Y = 44
+        private const val SHORT_BOX_H = 38
+        private const val SIDE_BOX_Y = 70
 
         fun eventText(event: DdzEvent): Component? = when (event.kind) {
             DdzEventKind.BID -> if (event.value == 0) Component.translatable("tukuai.ddz.no_bid") else Component.translatable("tukuai.ddz.bid", event.value)
@@ -375,7 +428,8 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
                     if (e.kind == DdzEventKind.DOUBLE || e.kind == DdzEventKind.NO_DOUBLE) out.putIfAbsent(e.seat, e)
                 }
                 DdzPhase.PLAYING, DdzPhase.FINISHED -> {
-                    val wanted = if (view.phase == DdzPhase.FINISHED) DouDizhu.SEATS else DouDizhu.SEATS - 1
+                    val seats = view.handCounts.size
+                    val wanted = if (view.phase == DdzPhase.FINISHED) seats else seats - 1
                     var seen = 0
                     for (e in events) {
                         if (e.kind !in PLAY_KINDS) break

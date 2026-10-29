@@ -18,8 +18,8 @@ class PatternsTest {
         assertEquals(Pattern(PatternType.TRIO, 15), first("2 2 2"))
         assertEquals(Pattern(PatternType.TRIO_SINGLE, 7), first("7 7 7 3"))
         assertEquals(Pattern(PatternType.TRIO_PAIR, 7), first("7 7 7 K K"))
-        assertEquals(Pattern(PatternType.BOMB, 9), first("9 9 9 9"))
-        assertEquals(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER), first("BJ RJ"))
+        assertEquals(Pattern(PatternType.BOMB, 9, 4), first("9 9 9 9"))
+        assertEquals(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER, 2), first("BJ RJ"))
         assertEquals(Pattern(PatternType.FOUR_TWO_SINGLES, 5), first("5 5 5 5 8 9"))
         assertEquals(Pattern(PatternType.FOUR_TWO_PAIRS, 5), first("5 5 5 5 8 8 9 9"))
     }
@@ -68,10 +68,10 @@ class PatternsTest {
         assertFalse(Pattern(PatternType.PAIR, 4).beats(single3))
         assertFalse(Pattern(PatternType.STRAIGHT, 4, 6).beats(Pattern(PatternType.STRAIGHT, 3, 5)))
         assertTrue(Pattern(PatternType.STRAIGHT, 4, 5).beats(Pattern(PatternType.STRAIGHT, 3, 5)))
-        assertTrue(Pattern(PatternType.BOMB, 3).beats(Pattern(PatternType.STRAIGHT, 10, 5)))
-        assertTrue(Pattern(PatternType.BOMB, 4).beats(Pattern(PatternType.BOMB, 3)))
-        assertTrue(Pattern(PatternType.ROCKET, 17).beats(Pattern(PatternType.BOMB, 15)))
-        assertFalse(Pattern(PatternType.BOMB, 15).beats(Pattern(PatternType.ROCKET, 17)))
+        assertTrue(Pattern(PatternType.BOMB, 3, 4).beats(Pattern(PatternType.STRAIGHT, 10, 5)))
+        assertTrue(Pattern(PatternType.BOMB, 4, 4).beats(Pattern(PatternType.BOMB, 3, 4)))
+        assertTrue(Pattern(PatternType.ROCKET, 17, 2).beats(Pattern(PatternType.BOMB, 15, 4)))
+        assertFalse(Pattern(PatternType.BOMB, 15, 4).beats(Pattern(PatternType.ROCKET, 17, 2)))
     }
 
     @Test
@@ -89,5 +89,57 @@ class PatternsTest {
         for (play in follows) assertNotNull(Patterns.readingFor(play.cards, toBeat, rules), DdzCards.describe(play.cards))
         assertTrue(follows.any { it.pattern.type == PatternType.BOMB })
         assertTrue(follows.any { it.pattern.type == PatternType.ROCKET })
+    }
+
+    // ---- Four players, two decks ----------------------------------------------------------------
+
+    private val four = DdzRules.FOUR
+
+    private fun firstOfFour(text: String): Pattern? = Patterns.classify(cards2(text), four).firstOrNull()
+
+    @Test
+    fun `two decks make bombs of up to eight cards, and more cards beat fewer`() {
+        assertEquals(Pattern(PatternType.BOMB, 3, 8), firstOfFour("3 3 3 3 3 3 3 3"))
+        assertEquals(Pattern(PatternType.BOMB, 9, 5), firstOfFour("9 9 9 9 9"))
+        val five3 = Pattern(PatternType.BOMB, 3, 5)
+        assertTrue(five3.beats(Pattern(PatternType.BOMB, 2 + 13, 4)))
+        assertFalse(Pattern(PatternType.BOMB, 15, 4).beats(five3))
+        assertTrue(Pattern(PatternType.BOMB, 4, 5).beats(five3))
+        assertTrue(Pattern(PatternType.BOMB, 3, 6).beats(Pattern(PatternType.BOMB, 15, 5)))
+    }
+
+    @Test
+    fun `with two decks only all four jokers are the rocket, and two of a joker are a pair`() {
+        assertEquals(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER, 4), firstOfFour("BJ BJ RJ RJ"))
+        assertTrue(Pattern(PatternType.ROCKET, DdzValue.RED_JOKER, 4).beats(Pattern(PatternType.BOMB, 15, 8)))
+        assertEquals(null, firstOfFour("BJ RJ"))
+        assertEquals(Pattern(PatternType.PAIR, DdzValue.BLACK_JOKER), firstOfFour("BJ BJ"))
+        assertTrue(Pattern(PatternType.PAIR, DdzValue.RED_JOKER).beats(Pattern(PatternType.PAIR, DdzValue.BLACK_JOKER)))
+    }
+
+    @Test
+    fun `in the four-player game trios and planes carry only pairs`() {
+        assertEquals(null, firstOfFour("7 7 7 3"))
+        assertEquals(Pattern(PatternType.TRIO_PAIR, 7), firstOfFour("7 7 7 K K"))
+        assertEquals(null, firstOfFour("3 3 3 4 4 4 9 J"))
+        assertEquals(Pattern(PatternType.PLANE_PAIRS, 3, 2), firstOfFour("3 3 3 4 4 4 9 9 J J"))
+        assertEquals(null, firstOfFour("5 5 5 5 8 9"))
+    }
+
+    @Test
+    fun `four-player options are legal plays and use each copy once`() {
+        val hand = cards2("3 3 3 3 3 4 4 4 5 5 6 7 8 9 9 9 J Q 2 2 BJ BJ RJ RJ 10")
+        for (toBeat in listOf(null, Pattern(PatternType.PAIR, 3), Pattern(PatternType.BOMB, 15, 4))) {
+            val plays = Patterns.options(hand, toBeat, four)
+            assertTrue(plays.isNotEmpty())
+            for (play in plays) {
+                assertNotNull(Patterns.readingFor(play.cards, toBeat, four), DdzCards.describe(play.cards))
+                assertNotNull(DdzCards.minus(hand, play.cards), DdzCards.describe(play.cards))
+            }
+        }
+        val leads = Patterns.options(hand, null, four)
+        assertTrue(leads.any { it.pattern == Pattern(PatternType.BOMB, 3, 5) })
+        assertTrue(leads.any { it.pattern.type == PatternType.ROCKET })
+        assertTrue(leads.none { it.pattern.type == PatternType.TRIO_SINGLE })
     }
 }

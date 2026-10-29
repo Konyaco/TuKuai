@@ -29,7 +29,7 @@
 <table>
   <tr>
     <td width="55%"><img src="docs/images/zh-TW/ddz-table.webp" alt="鬥地主"></td>
-    <td><b>鬥地主</b><br>三人遊戲，一名地主對兩名農民。規則可選經典叫分、搶地主和不洗牌。</td>
+    <td><b>鬥地主</b><br>三人遊戲，一名地主對兩名農民。規則可選經典叫分、搶地主和不洗牌；也能玩四人鬥地主：兩副牌，一名地主對三名農民，炸彈最多八張。</td>
   </tr>
   <tr>
     <td><img src="docs/images/zh-TW/uno-table.webp" alt="UNO"></td>

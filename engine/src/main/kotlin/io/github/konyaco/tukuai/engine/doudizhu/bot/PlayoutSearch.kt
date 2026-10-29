@@ -1,6 +1,6 @@
 package io.github.konyaco.tukuai.engine.doudizhu.bot
 
-import io.github.konyaco.tukuai.engine.card.Decks
+import io.github.konyaco.tukuai.engine.doudizhu.DdzCards
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.IllegalActionException
 import io.github.konyaco.tukuai.engine.core.Seat
@@ -19,7 +19,7 @@ import kotlin.random.Random
  * luck in the guessing does not favour one over another.
  *
  * Guesses use only what the seat could know: its own hand, the cards played so far, how
- * many cards each player holds, and the landlord's three cards, which everyone saw.
+ * many cards each player holds, and the landlord's kitty cards, which everyone saw.
  */
 class PlayoutSearch(private val random: Random, private val playouts: Int = PLAYOUTS) {
 
@@ -41,13 +41,20 @@ class PlayoutSearch(private val random: Random, private val playouts: Int = PLAY
     /** A full state that matches everything [seat] has seen, with the unknown cards dealt at random. */
     fun guess(view: DdzView, seat: Seat): DdzState? {
         val landlord = view.landlord ?: return null
-        val played = view.playedCards.toSet()
-        // The landlord's three cards were shown to everyone; any not played yet are still in their hand.
-        val kittyLeft = if (landlord == seat) emptyList() else view.kitty.filter { it !in played }
-        val known = view.hand.toSet() + played + kittyLeft
-        val pool = Decks.STANDARD_54.filter { it !in known }.shuffled(random)
+        val played = view.playedCards
+        // The landlord's cards were shown to everyone; any the landlord has not played yet are
+        // still in their hand. With two decks a card may be held twice, so copies are counted:
+        // whichever copy the landlord played, they still hold the rest.
+        val kittyLeft = if (landlord == seat) {
+            emptyList()
+        } else {
+            val left = view.kitty.toMutableList()
+            view.log.filter { it.seat == landlord && it.kind == DdzEventKind.PLAY }.forEach { e -> e.cards.forEach { left.remove(it) } }
+            left
+        }
+        val pool = DdzCards.minus(DdzCards.deck(view.rules.decks), view.hand + played + kittyLeft)?.shuffled(random) ?: return null
         var next = 0
-        val hands = List(DouDizhu.SEATS) { s ->
+        val hands = List(view.rules.players) { s ->
             when {
                 s == seat -> view.hand
                 else -> {
@@ -59,7 +66,7 @@ class PlayoutSearch(private val random: Random, private val playouts: Int = PLAY
             }
         }
         if (next != pool.size) return null
-        val playCounts = List(DouDizhu.SEATS) { s -> view.log.count { it.seat == s && it.kind == DdzEventKind.PLAY } }
+        val playCounts = List(view.rules.players) { s -> view.log.count { it.seat == s && it.kind == DdzEventKind.PLAY } }
         return DdzState(
             rules = view.rules,
             seed = 0,
@@ -84,7 +91,7 @@ class PlayoutSearch(private val random: Random, private val playouts: Int = PLAY
     /** Plays [start] to the end with NORMAL players and returns the points [seat] ends with. */
     private fun playOut(start: DdzState, seat: Seat, seed: Long): Long {
         var state = start
-        val bots = Array(DouDizhu.SEATS) { DdzBot(BotLevel.NORMAL, seed + it) }
+        val bots = Array(start.rules.players) { DdzBot(BotLevel.NORMAL, seed + it) }
         var moves = 0
         while (state.phase != DdzPhase.FINISHED && moves++ < MAX_MOVES) {
             val turn = state.turn

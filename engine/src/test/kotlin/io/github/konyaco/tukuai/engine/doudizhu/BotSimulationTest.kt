@@ -26,7 +26,7 @@ class BotSimulationTest {
         for (preset in DouDizhu.presets) {
             for (seed in 0L until 150L) {
                 // The hard computer is slow to simulate, so it sits in only some of the games.
-                val levels = List(3) { BotLevel.entries[((seed + it) % if (seed < 15) 3 else 2).toInt()] }
+                val levels = List(preset.rules.players) { BotLevel.entries[((seed + it) % if (seed < 15) 3 else 2).toInt()] }
                 val match = playOut(preset.rules, seed, levels)
                 val result = match.result!!
                 assertEquals(0, result.scores.sum(), "seed $seed")
@@ -104,5 +104,45 @@ class BotSimulationTest {
                 assertTrue(play.pattern in Patterns.classify(play.cards, DdzRules.CLASSIC), "${play.pattern} ${DdzCards.describe(play.cards)}")
             }
         }
+    }
+
+    @Test
+    fun `four-player guesses keep both copies of a card straight`() {
+        val match = playOut(DdzRules.FOUR, 31, List(4) { BotLevel.NORMAL })
+        val replay = match.replay(listOf("a", "b", "c", "d"))
+        for (step in listOf(6, 20, 40)) {
+            val state = replay.rebuild(DouDizhu, minOf(step, replay.steps.size - 1)).state
+            if (state.phase != DdzPhase.PLAYING) continue
+            val seat = state.turn
+            val guess = PlayoutSearch(kotlin.random.Random(step)).guess(DouDizhu.view(state, seat), seat)!!
+            assertEquals(state.hands[seat], guess.hands[seat])
+            assertEquals(state.hands.map { it.size }, guess.hands.map { it.size })
+            val count = { hands: List<List<io.github.konyaco.tukuai.engine.card.PlayingCard>> -> hands.flatten().groupingBy { it }.eachCount() }
+            assertEquals(count(state.hands), count(guess.hands))
+        }
+    }
+
+    @Test
+    fun `four-player hand split keeps every card and makes legal plays`() {
+        for (seed in 0L until 100L) {
+            val state = DouDizhu.start(DdzRules.FOUR.copy(deal = if (seed % 2 == 0L) DealMode.CLUMPED else DealMode.SHUFFLED), seed)
+            val hand = state.hands[0] + state.kitty
+            val split = HandAnalysis.split(hand, DdzRules.FOUR)
+            assertEquals(hand.groupingBy { it }.eachCount(), split.plays.flatMap { it.cards }.groupingBy { it }.eachCount(), "seed $seed")
+            for (play in split.plays) {
+                assertTrue(play.pattern in Patterns.classify(play.cards, DdzRules.FOUR), "${play.pattern} ${DdzCards.describe(play.cards)}")
+            }
+        }
+    }
+
+    @Test
+    fun `in the four-player game someone usually wants the landlord`() {
+        var redeals = 0
+        for (seed in 0L until 200L) {
+            val match = playOut(DdzRules.FOUR, seed, List(4) { BotLevel.NORMAL })
+            redeals += match.state.redeals
+        }
+        println("Four-player redeals over 200 games: $redeals")
+        assertTrue(redeals < 60, "$redeals redeals in 200 games")
     }
 }

@@ -14,21 +14,22 @@ import io.github.konyaco.tukuai.engine.core.WireCodec
 import io.github.konyaco.tukuai.engine.doudizhu.bot.DdzBot
 import kotlin.random.Random
 
-/** Three-player Dou Dizhu: one landlord with the three kitty cards against two farmers. */
+/**
+ * Dou Dizhu: one landlord with the kitty cards against the farmers. Three play with one
+ * deck, 17 cards each and 3 in the kitty; four play with two decks, 25 each and 8 in the
+ * kitty, see [DdzRules.players].
+ */
 object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
-    const val SEATS = 3
-    const val HAND_SIZE = 17
-
     override val id = "doudizhu"
     override val rulesCodec: WireCodec<DdzRules> = DdzRules.CODEC
     override val actionCodec: WireCodec<DdzAction> = DdzCodecs.ACTION
     override val viewCodec: WireCodec<DdzView> = DdzCodecs.VIEW
     override val presets: List<RulesPreset<DdzRules>> = DdzRules.PRESETS
 
-    override fun seatCount(rules: DdzRules) = SEATS
+    override fun seatCount(rules: DdzRules) = rules.players
 
     override fun start(rules: DdzRules, seed: Long): DdzState {
-        val first = Random(seed).nextInt(SEATS)
+        val first = Random(seed).nextInt(rules.players)
         return dealt(rules, seed, redeals = 0, firstBidder = first, log = emptyList())
     }
 
@@ -46,37 +47,38 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
             bids = emptyList(),
             landlord = null,
             bidMultiplier = 1,
-            doubles = List(SEATS) { null },
+            doubles = List(rules.players) { null },
             lead = null,
             bombs = 0,
-            playCounts = List(SEATS) { 0 },
+            playCounts = List(rules.players) { 0 },
             log = log,
             settlement = null,
         )
     }
 
-    /** Deals 17 cards to each seat and leaves 3 for the kitty. */
+    /** Deals [DdzRules.handSize] cards to each seat and leaves the rest for the kitty. */
     fun deal(rules: DdzRules, seed: Long, redeals: Int): Pair<List<List<PlayingCard>>, List<PlayingCard>> {
         val random = Random(seed xor (redeals + 1) * -0x61c8864680b583ebL)
         val deck = when (rules.deal) {
-            DealMode.SHUFFLED -> Decks.STANDARD_54.shuffled(random)
-            DealMode.CLUMPED -> clumpedDeck(random)
+            DealMode.SHUFFLED -> DdzCards.deck(rules.decks).shuffled(random)
+            DealMode.CLUMPED -> clumpedDeck(DdzCards.deck(rules.decks), random)
         }
-        val hands = List(SEATS) { ArrayList<PlayingCard>(HAND_SIZE + 3) }
+        val size = rules.handSize
+        val hands = List(rules.players) { ArrayList<PlayingCard>(size + rules.kittySize) }
         val chunk = if (rules.deal == DealMode.CLUMPED) 3 else 1
         var next = 0
-        while (hands.any { it.size < HAND_SIZE }) {
+        while (hands.any { it.size < size }) {
             for (hand in hands) {
-                repeat(minOf(chunk, HAND_SIZE - hand.size)) { hand += deck[next++] }
+                repeat(minOf(chunk, size - hand.size)) { hand += deck[next++] }
             }
         }
         return hands.map { it.sortedWith(DDZ_ORDER) } to deck.subList(next, deck.size).sortedWith(DDZ_ORDER)
     }
 
     /** Groups of equal values in random order, lightly disturbed, like a deck that was not shuffled after a game. */
-    private fun clumpedDeck(random: Random): List<PlayingCard> {
-        val deck = Decks.STANDARD_54.groupBy { it.ddzValue }.values.shuffled(random).flatten().toMutableList()
-        repeat(12) {
+    private fun clumpedDeck(cards: List<PlayingCard>, random: Random): List<PlayingCard> {
+        val deck = cards.groupBy { it.ddzValue }.values.shuffled(random).flatten().toMutableList()
+        repeat(12 * cards.size / Decks.STANDARD_54.size) {
             val a = random.nextInt(deck.size)
             val b = random.nextInt(deck.size)
             deck[a] = deck[b].also { deck[b] = deck[a] }
@@ -107,7 +109,7 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
 
     private fun wrongAction(action: DdzAction): Nothing = throw IllegalActionException("$action is not allowed now")
 
-    private fun next(seat: Seat) = (seat + 1) % SEATS
+    private fun DdzState.next(seat: Seat) = (seat + 1) % rules.players
 
     // ---- Score bidding -------------------------------------------------------------------------
 
@@ -125,7 +127,7 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
         val best = bids.filter { it.value > 0 }.maxByOrNull { it.value }
         return when {
             bid.points == 3 -> crown(after, state.turn, 3)
-            bids.size < SEATS -> after.copy(turn = next(state.turn))
+            bids.size < state.rules.players -> after.copy(turn = state.next(state.turn))
             best != null -> crown(after, best.seat, best.value)
             else -> redeal(after)
         }
@@ -152,10 +154,10 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
         val claimant = bids.lastOrNull { it.kind == DdzEventKind.CALL || it.kind == DdzEventKind.ROB }?.seat
         val multiplier = 1 shl robs
         return when {
-            bids.size < SEATS -> after.copy(turn = next(state.turn))
+            bids.size < state.rules.players -> after.copy(turn = state.next(state.turn))
             caller == null -> redeal(after)
             // Everyone has spoken once. If someone robbed, the first caller gets one last chance to rob back.
-            bids.size == SEATS && robs > 0 -> after.copy(turn = caller)
+            bids.size == state.rules.players && robs > 0 -> after.copy(turn = caller)
             else -> crown(after, claimant!!, multiplier)
         }
     }
@@ -168,7 +170,7 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
             // Nobody wants it again and again: the first bidder of the last deal is made landlord.
             return crown(state.copy(log = log), state.firstBidder, 1)
         }
-        return dealt(state.rules, state.seed, state.redeals + 1, next(state.firstBidder), log)
+        return dealt(state.rules, state.seed, state.redeals + 1, state.next(state.firstBidder), log)
     }
 
     private fun crown(state: DdzState, landlord: Seat, bidMultiplier: Int): DdzState {
@@ -183,7 +185,7 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
             log = state.log + event,
         )
         return if (state.rules.doubling) {
-            crowned.copy(phase = DdzPhase.DOUBLING, turn = next(landlord))
+            crowned.copy(phase = DdzPhase.DOUBLING, turn = state.next(landlord))
         } else {
             crowned.copy(phase = DdzPhase.PLAYING, turn = landlord)
         }
@@ -199,7 +201,7 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
         return if (state.turn == state.landlord) {
             after.copy(phase = DdzPhase.PLAYING, turn = state.landlord)
         } else {
-            after.copy(turn = next(state.turn))
+            after.copy(turn = state.next(state.turn))
         }
     }
 
@@ -211,15 +213,13 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
     private fun play(state: DdzState, cards: List<PlayingCard>): DdzState {
         val hand = state.hands[state.turn]
         if (cards.isEmpty()) throw IllegalActionException("Play at least one card")
-        if (cards.toSet().size != cards.size || !hand.containsAll(cards)) {
-            throw IllegalActionException("Those cards are not all in hand")
-        }
+        // With two decks a card may be held twice, so each card played takes one copy.
+        val remaining = DdzCards.minus(hand, cards) ?: throw IllegalActionException("Those cards are not all in hand")
         val pattern = Patterns.readingFor(cards, toBeat(state), state.rules)
             ?: throw IllegalActionException("${DdzCards.describe(cards)} does not make a play that is allowed here")
 
         val sorted = cards.sortedWith(DDZ_ORDER)
         val event = DdzEvent(state.turn, DdzEventKind.PLAY, cards = sorted, pattern = pattern)
-        val remaining = hand - cards.toSet()
         val after = state.copy(
             hands = state.hands.mapIndexed { seat, h -> if (seat == state.turn) remaining else h },
             lead = TablePlay(state.turn, sorted, pattern),
@@ -227,19 +227,19 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
             playCounts = state.playCounts.mapIndexed { seat, n -> if (seat == state.turn) n + 1 else n },
             log = state.log + event,
         )
-        return if (remaining.isEmpty()) finish(after, state.turn) else after.copy(turn = next(state.turn))
+        return if (remaining.isEmpty()) finish(after, state.turn) else after.copy(turn = state.next(state.turn))
     }
 
     private fun pass(state: DdzState): DdzState {
         if (toBeat(state) == null) throw IllegalActionException("You lead this round and cannot pass")
-        return state.copy(turn = next(state.turn), log = state.log + DdzEvent(state.turn, DdzEventKind.PASS))
+        return state.copy(turn = state.next(state.turn), log = state.log + DdzEvent(state.turn, DdzEventKind.PASS))
     }
 
     private fun finish(state: DdzState, winner: Seat): DdzState {
         val landlord = state.landlord!!
         val rules = state.rules
         val landlordWon = winner == landlord
-        val farmers = (0 until SEATS).filter { it != landlord }
+        val farmers = (0 until rules.players).filter { it != landlord }
         // Spring: the losing side never got to play (the landlord's opening lead does not count for them).
         val spring = if (landlordWon) farmers.all { state.playCounts[it] == 0 } else state.playCounts[landlord] == 1
 
@@ -247,7 +247,7 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
         if (rules.bombsDouble) multiplier = multiplier shl minOf(state.bombs, 20)
         if (spring && rules.springDoubles) multiplier *= 2
 
-        val scores = IntArray(SEATS)
+        val scores = IntArray(rules.players)
         val landlordFactor = if (state.doubles[landlord] == true) 2 else 1
         for (farmer in farmers) {
             var stake = multiplier * landlordFactor * (if (state.doubles[farmer] == true) 2 else 1)
@@ -269,7 +269,7 @@ object DouDizhu : GameDefinition<DdzRules, DdzState, DdzAction, DdzView> {
 
     override fun view(state: DdzState, seat: Seat?): DdzView = DdzView.of(state, seat)
 
-    /** Every hand is shown, and the landlord's three cards before anyone takes them. */
+    /** Every hand is shown, and the landlord's cards before anyone takes them. */
     override fun openView(state: DdzState, seat: Seat?): DdzView =
         DdzView.of(state, seat).copy(revealedHands = state.hands, kitty = state.kitty)
 
