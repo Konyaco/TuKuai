@@ -14,6 +14,10 @@ import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
 import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdView
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScCodecs
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScPhase
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScView
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.bot.ScBot
 import io.github.konyaco.tukuai.engine.paodekuai.PdkView
 import io.github.konyaco.tukuai.engine.tutu.TutuView
 import io.github.konyaco.tukuai.network.TableActionPayload
@@ -291,6 +295,61 @@ class ShowcaseGameTest : FabricClientGameTest {
         command(server, "gamemode creative @a")
         act(server, uno, TableOp.SIT, 0)
         context.waitTicks(10)
+        // Mahjong at the same table, played well into a hand, until it is our turn to discard; seen
+        // over the player's shoulder, with the wall, the discards and the melds on the table.
+        act(server, uno, TableOp.END)
+        context.waitFor({ ClientTables[uno]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        act(server, uno, TableOp.GAME, text = "mahjong")
+        act(server, uno, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
+        context.waitFor({ ClientTables[uno]?.snapshot?.let { it.gameId == "mahjong" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(uno) }
+        fun mahjong() = ClientTables[uno]?.view as? ScView
+        fun myDiscard() = mahjong()?.let { it.isMyTurn && it.phase == ScPhase.PLAY && it.drawn != null && it.seat?.let { me -> !it.won(me) } == true } == true
+        hands@ for (hand in 0 until 6) {
+            act(server, uno, TableOp.START)
+            context.waitFor({ mahjong()?.finished == false }, 200)
+            act(server, uno, TableOp.AUTO, 1)
+            context.waitFor({ mahjong()?.let { it.finished || it.wallLeft < 34 || (it.seat != null && it.won(it.seat!!)) } == true }, 6000)
+            val view = context.computeOnClient<ScView?, RuntimeException> { mahjong() }
+            if (view == null || view.finished || view.won(view.seat!!)) {
+                waitFinished(context, server, uno)
+                act(server, uno, TableOp.AUTO, 0)
+                continue
+            }
+            act(server, uno, TableOp.AUTO, 0)
+            // Answer whatever is asked of us, the way the computer would, until we draw and discard.
+            for (step in 0 until 40) {
+                context.waitFor({ mahjong()?.let { it.isMyTurn || it.finished } == true }, 2400)
+                if (context.computeOnClient<Boolean, RuntimeException> { myDiscard() }) break@hands
+                val now = context.computeOnClient<ScView?, RuntimeException> { mahjong() } ?: break
+                if (now.finished) break
+                act(server, uno, TableOp.ACT, data = ScCodecs.ACTION.encode(ScBot(BotLevel.NORMAL, 0).act(now)))
+                context.waitFor({ mahjong()?.let { v -> v.log.size != now.log.size || v.toAct != now.toAct } == true }, 200)
+            }
+            act(server, uno, TableOp.AUTO, 1)
+            waitFinished(context, server, uno)
+            act(server, uno, TableOp.AUTO, 0)
+        }
+        context.input.setCursorPos(0.0, 0.0)
+        context.input.pressKey(GLFW.GLFW_KEY_H)
+        context.waitTicks(10)
+        shot("mj-screen")
+        context.setScreen { null }
+        command(server, "gamemode spectator @a")
+        // Eyes over the player's seat, looking down across the table.
+        command(server, "tp @a ${uno.x + 0.5} ${uno.y + 1.6} ${uno.z + 2.3}")
+        setFov(context, 60)
+        context.waitTicks(10)
+        context.runOnClient<RuntimeException> {
+            it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3(uno.x + 0.5, uno.y + 0.6, uno.z + 0.25))
+        }
+        context.waitTicks(20)
+        world.clientLevel.waitForChunksRender()
+        shot("mj-table")
+        setFov(context, 85)
+        command(server, "gamemode creative @a")
+        act(server, uno, TableOp.SIT, 0)
+        context.waitTicks(10)
         // Back to UNO for the wide shots.
         act(server, uno, TableOp.END)
         context.waitFor({ ClientTables[uno]?.snapshot?.status != TableStatus.PLAYING }, 100)
@@ -543,11 +602,11 @@ class ShowcaseGameTest : FabricClientGameTest {
         }
     }
 
-    private fun act(server: TestServerContext, pos: BlockPos, op: TableOp, a: Int = 0, b: Int = 0, text: String = "") {
+    private fun act(server: TestServerContext, pos: BlockPos, op: TableOp, a: Int = 0, b: Int = 0, text: String = "", data: ByteArray = ByteArray(0)) {
         server.runOnServer<RuntimeException> { s ->
             val player = s.playerList.players.first()
             val table = s.overworld().getBlockEntity(pos) as CardTableBlockEntity
-            table.handle(player, TableActionPayload(pos, op, a, b, text))
+            table.handle(player, TableActionPayload(pos, op, a, b, text, data))
         }
     }
 

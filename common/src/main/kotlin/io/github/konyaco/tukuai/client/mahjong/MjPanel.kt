@@ -67,7 +67,7 @@ class MjPanel(private val screen: PanelHost) : GamePanel {
     private fun handY() = height - MjArt.height(HAND_SCALE) - 6
 
     /** The row with your name, void suit and waits on the left and the wall on the right. */
-    private fun labelY() = if (screen.inWorld) buttonY() - 34 else handY() - 12
+    private fun labelY() = if (screen.inWorld) buttonY() - 34 else handY() - RAISE - 11
 
     private fun buttonY() = if (screen.inWorld) height - BOTTOM_BUTTONS else handY() - 36
 
@@ -487,7 +487,7 @@ class MjPanel(private val screen: PanelHost) : GamePanel {
         var x = 8 + font.width(label) + 6
         if (asked(table, view) && table.timerTicks() >= 0) {
             PanelText.timer(g, table, x, labelY, alignRight = false)
-            x += 26
+            x += font.width(Component.translatable("tukuai.table.seconds", (table.timerTicks() + 19) / 20)) + 6
         }
         // In the corner each part gets a line of its own.
         val rowY = if (corner) labelY + 11 else labelY
