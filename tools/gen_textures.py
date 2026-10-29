@@ -17,6 +17,7 @@ ATLAS_W, ATLAS_H = 512, 2048
 UNO_ROW = 6  # UNO cards start on this row of cards, below the icons; see CardArt.UNO_FIRST.
 STYLE_ROW = 11  # The other face styles start on this row, 54 cards each; see CardArt.STYLE_FIRST.
 TUTU_ROW = 19  # Tutu cards start on this row, after the face styles; see CardArt.TUTU_FIRST.
+BLUFF_ROW = 24  # The creeper head of creeper bluff, after the Tutu cards; see CardArt.CREEPER_SIDE.
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
@@ -658,6 +659,27 @@ def tnt_block(top):
     return cell
 
 
+def creeper_block(top):
+    """A cell whose top 32x32 is the face, or the top, of the little creeper head on a creeper bluff table."""
+    cell = Image.new("RGBA", (CARD_W, CARD_H), CLEAR)
+    rnd = random.Random(11 if top else 13)
+    face = ["........",
+            "........",
+            ".kk..kk.",
+            ".kk..kk.",
+            "...kk...",
+            "..kkkk..",
+            "..kkkk..",
+            "..k..k.."]
+    greens = [(94, 196, 80, 255), (70, 170, 60, 255), (118, 214, 100, 255), (52, 140, 46, 255)]
+    for y in range(8):
+        for x in range(8):
+            color = (24, 32, 22, 255) if not top and face[y][x] == "k" else greens[rnd.randrange(len(greens))]
+            for k in range(16):
+                cell.putpixel((x * 4 + k % 4, y * 4 + k // 4), color)
+    return cell
+
+
 def tutu_cards():
     """Same order as TutuDeck.FACES, then TNT and the cactus with each colour named, then the TNT block; see CardArt.tutu."""
     cards = []
@@ -735,6 +757,8 @@ def atlas():
         sheet.paste(card, ((i % COLS) * CARD_W, (STYLE_ROW + i // COLS) * CARD_H))
     for i, card in enumerate(tutu_cards()):
         sheet.paste(card, ((i % COLS) * CARD_W, (TUTU_ROW + i // COLS) * CARD_H))
+    for i, card in enumerate([creeper_block(False), creeper_block(True)]):
+        sheet.paste(card, (i * CARD_W, BLUFF_ROW * CARD_H))
     # The paper colour of a card's edges, for cards drawn with thickness on the table.
     for y in range(8):
         for x in range(8):

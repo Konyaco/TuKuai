@@ -85,6 +85,11 @@ data class TableSnapshot(
     val paused: Boolean = false,
     /** The players with the most points at this game in this world, best first; sent only between games. */
     val leaderboard: List<LeaderEntry> = emptyList(),
+    /**
+     * How much a game that may hurt its players does so in the world, see
+     * [io.github.konyaco.tukuai.engine.core.GameDefinition.mayHarm]: one of [HARM_OFF], [HARM_LIGHT] or [HARM_LETHAL].
+     */
+    val harm: Int = HARM_LETHAL,
 ) {
     /** The people at the table who are here and playing for themselves; they decide together when to start. */
     val voters: List<Seat>
@@ -97,7 +102,16 @@ data class TableSnapshot(
     override fun hashCode(): Int = encode().contentHashCode()
 
     companion object {
-        private const val VERSION = 5
+        private const val VERSION = 6
+
+        /** The game stays on the table. */
+        const val HARM_OFF = 0
+
+        /** A little damage, never below half a heart. */
+        const val HARM_LIGHT = 1
+
+        /** Blown up for real. */
+        const val HARM_LETHAL = 2
 
         fun decode(data: ByteArray): TableSnapshot = CODEC.decode(data)
 
@@ -117,6 +131,7 @@ data class TableSnapshot(
                     .bool(value.spectators).int(value.host ?: -1).int(value.matchRounds).bool(value.matchOver)
                     .bool(value.paused)
                 writer.list(value.leaderboard) { string(it.name).int(it.games).int(it.wins).int(it.points) }
+                writer.int(value.harm)
             }
 
             override fun read(reader: WireReader): TableSnapshot {
@@ -148,6 +163,7 @@ data class TableSnapshot(
                     matchOver = reader.bool(),
                     paused = reader.bool(),
                     leaderboard = reader.list { LeaderEntry(string(), int(), int(), int()) },
+                    harm = reader.int(),
                 )
             }
         }
@@ -203,4 +219,7 @@ enum class TableOp {
 
     /** Set how many games make a match to `a`; 0 means no limit. */
     ROUNDS,
+
+    /** How much a game that may hurt its players does so in the world, `a` = [TableSnapshot.HARM_OFF] to [TableSnapshot.HARM_LETHAL]. Only the host may. */
+    HURT,
 }

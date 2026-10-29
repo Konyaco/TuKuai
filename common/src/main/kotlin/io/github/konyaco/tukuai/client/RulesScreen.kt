@@ -86,9 +86,13 @@ class RulesScreen(
 
     override fun init() {
         var x = MARGIN
-        for (id in games) {
+        // The tabs share the row left of the done button, narrowing alike when there are too many to fit.
+        val widths = games.map { maxOf(60, font.width(TableScreen.gameName(it)) + 16) }
+        val room = width - 2 * MARGIN - 60 - 4 - 4 * games.size
+        val fit = if (widths.sum() <= room) 1f else room.toFloat() / widths.sum()
+        for ((i, id) in games.withIndex()) {
             val label = TableScreen.gameName(id)
-            val w = maxOf(60, font.width(label) + 16)
+            val w = (widths[i] * fit).toInt()
             val b = button(label, x, 6, w) {
                 openGame(id)
                 rebuildWidgets()

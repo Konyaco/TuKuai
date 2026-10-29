@@ -71,8 +71,9 @@ class FourPlayerDdzGameTest : FabricClientGameTest {
             context.input.lookAt(table)
             context.waitTicks(30)
             shot(context, "ddz4-world-dealt")
+            // With no delay the computers may have bid and played already; the deal shows while bidding.
             val dealt = ClientTables[table]!!.view as DdzView
-            check(dealt.handCounts == List(4) { 25 }) { "Dealt ${dealt.handCounts}, not 25 each" }
+            if (dealt.phase == DdzPhase.BIDDING) check(dealt.handCounts == List(4) { 25 }) { "Dealt ${dealt.handCounts}, not 25 each" }
 
             context.setScreen { TableScreen(table) }
             context.waitTicks(20)

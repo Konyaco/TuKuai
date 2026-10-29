@@ -12,6 +12,11 @@ import io.github.konyaco.tukuai.content.SeatEntity
 import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.content.Wood
+import io.github.konyaco.tukuai.engine.bluff.BluffAction
+import io.github.konyaco.tukuai.engine.bluff.BluffCodecs
+import io.github.konyaco.tukuai.engine.bluff.BluffEventKind
+import io.github.konyaco.tukuai.engine.bluff.BluffPhase
+import io.github.konyaco.tukuai.engine.bluff.BluffView
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdView
@@ -25,6 +30,7 @@ import io.github.konyaco.tukuai.table.ReplayStore
 import io.github.konyaco.tukuai.table.ServerSettings
 import io.github.konyaco.tukuai.table.StatsStore
 import io.github.konyaco.tukuai.table.TableOp
+import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
@@ -55,6 +61,8 @@ import org.lwjgl.glfw.GLFW
  */
 class TuKuaiClientGameTest : FabricClientGameTest {
     private companion object {
+        /** Ticks for a blown creeper to go off after it is lit, and a few more. */
+        const val HARM_WAIT = 40
         /** Where the two old one-block tables go, as (x, z) from the player. */
         val OLD_ROOMY = 0 to 3
         val OLD_CRAMPED = 3 to 0
@@ -63,9 +71,10 @@ class TuKuaiClientGameTest : FabricClientGameTest {
     override fun runTest(context: ClientGameTestContext) {
         // Taking README screenshots with ShowcaseGameTest; no need to play the whole test round too.
         if (System.getenv("TUKUAI_SHOWCASE") != null || System.getenv("TUKUAI_MULTIPLAYER") != null) return
-        // TUKUAI_ONLY=<name> runs just one of the tests, to try it quickly; "tutu" plays only Tutu cards.
+        // TUKUAI_ONLY=<name> runs just one of the tests, to try it quickly; "tutu" plays only Tutu cards, "bluff" only creeper bluff.
         val only = System.getenv("TUKUAI_ONLY")
-        if (only == "tutu") return onlyTutu(context)
+        if (only == "tutu") return onlyGame(context) { server, table -> playTutu(context, server, table) }
+        if (only == "bluff") return onlyGame(context) { server, table -> playBluff(context, server, table) }
         if (only != null && only != "game") return
         context.worldBuilder().create().use { world ->
             world.clientLevel.waitForChunksRender()
@@ -284,11 +293,12 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         shot(context, "19-uno-replay")
 
         playTutu(context, server, table)
+        playBluff(context, server, table)
         playPaoDeKuai(context, server, table)
     }
 
-    /** A table with only us and computers, straight into a hand of Tutu cards; `TUKUAI_LANG` picks the language. */
-    private fun onlyTutu(context: ClientGameTestContext) {
+    /** A table with only us and computers, straight into [play], such as a hand of Tutu cards; `TUKUAI_LANG` picks the language. */
+    private fun onlyGame(context: ClientGameTestContext, play: (TestServerContext, BlockPos) -> Unit) {
         val lang = System.getenv("TUKUAI_LANG") ?: "en_us"
         if (lang != "en_us") {
             context.runOnClient<RuntimeException> { mc ->
@@ -307,8 +317,131 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             world.clientLevel.waitForChunksRender()
             act(server, table, TableOp.SIT, 0)
             context.waitTicks(10)
-            playTutu(context, server, table)
+            play(server, table)
         }
+    }
+
+    /**
+     * Switches the table to creeper bluff for four and plays a game of it: the lobby, the rule
+     * book on the creeper, our turn with a play on the pile to answer, a call turned over, a
+     * fuse hissing, the end and the replay.
+     */
+    private fun playBluff(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        act(server, table, TableOp.GAME, text = "bluff")
+        repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
+        // A table blows its players up for real unless told otherwise; ours only hurts, so the test lives on.
+        context.waitFor({ ClientTables[table]?.snapshot?.harm == TableSnapshot.HARM_LETHAL }, 100)
+        act(server, table, TableOp.HURT, TableSnapshot.HARM_LIGHT)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "bluff" && it.harm == TableSnapshot.HARM_LIGHT && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "bluff-1-lobby")
+        readRules(context, "bluff", "penalty")
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "bluff" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.input.lookAt(table)
+        context.waitTicks(12)
+        shot(context, "bluff-2-world-dealing")
+
+        // Our turn with someone's play to answer; when we lead, we lay down a card and wait again.
+        context.setScreen { TableScreen(table) }
+        val bluff = { ClientTables[table]?.view as? BluffView }
+        var turns = 0
+        while (true) {
+            context.waitFor({ bluff()?.let { it.isMyTurn || it.finished } == true }, 2400)
+            val view = bluff()!!
+            if (view.finished) {
+                act(server, table, TableOp.START)
+                context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
+                continue
+            }
+            if (view.phase == BluffPhase.PLAY && view.canCall && !view.mustCall) break
+            check(++turns < 40) { "Never had a play to answer" }
+            val action = if (view.phase == BluffPhase.PENALTY) BluffAction.Light else if (view.mustCall) BluffAction.Call else BluffAction.Play(listOf(view.hand.first()))
+            act(server, table, TableOp.ACT, data = BluffCodecs.ACTION.encode(action))
+            context.waitFor({ bluff()?.let { v -> v.log.size > view.log.size } == true }, 100)
+        }
+        context.waitTicks(10)
+        shot(context, "bluff-3-screen-turn")
+        context.setScreen { null }
+        context.waitTicks(5)
+        shot(context, "bluff-4-world-turn")
+
+        // We call it: the play is turned over, and whoever lost the call has to light their fuse.
+        context.setScreen { TableScreen(table) }
+        act(server, table, TableOp.ACT, data = BluffCodecs.ACTION.encode(BluffAction.Call))
+        context.waitFor({ bluff()?.phase == BluffPhase.PENALTY }, 100)
+        context.waitTicks(10)
+        shot(context, "bluff-5-screen-called")
+        context.setScreen { null }
+        context.waitTicks(5)
+        shot(context, "bluff-6-world-called")
+
+        checkPause(context, server, table)
+        context.setScreen { TableScreen(table) }
+        act(server, table, TableOp.AUTO, 1)
+        context.waitFor({ bluff()?.log?.lastOrNull()?.kind == BluffEventKind.DEAL && bluff()?.log?.any { it.kind == BluffEventKind.LIGHT } == true }, 600)
+        context.waitTicks(8)
+        shot(context, "bluff-7-screen-hiss")
+
+        // Play on, a game at a time, until our own creeper has blown, watching our health as it goes.
+        // From the second game we play ourselves, calling every play a lie, so we lose calls quickly.
+        val health = { server.computeOnServer<Float, RuntimeException> { s -> s.playerList.players.first().health } }
+        var lowest = health()
+        var games = 1
+        while (true) {
+            var waited = 0
+            while (status(server, table) != TableStatus.FINISHED) {
+                check(waited < 12000) { "The creeper bluff game did not finish" }
+                val turn = bluff()?.takeIf { games > 1 && it.isMyTurn && !it.finished }
+                if (turn != null) {
+                    val action = when {
+                        turn.phase == BluffPhase.PENALTY -> BluffAction.Light
+                        turn.canCall -> BluffAction.Call
+                        else -> BluffAction.Play(turn.hand.take(turn.rules.maxPlay))
+                    }
+                    act(server, table, TableOp.ACT, data = BluffCodecs.ACTION.encode(action))
+                }
+                context.waitTicks(5)
+                waited += 5
+                lowest = minOf(lowest, health())
+            }
+            context.waitTicks(HARM_WAIT)
+            lowest = minOf(lowest, health())
+            context.waitFor({ bluff()?.finished == true }, 200)
+            val view = bluff()!!
+            check(view.out.count { !it } == 1 && view.winner != null) { "The creeper bluff game ended oddly: $view" }
+            if (view.out[0]) break
+            check(++games <= 6) { "Our creeper never blew in $games games" }
+            act(server, table, TableOp.START)
+            context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
+            act(server, table, TableOp.AUTO, 0)
+        }
+        // With light harm, our creeper blowing took two hearts; we may have healed half a heart before we looked.
+        check(lowest <= 20f - CardTableBlockEntity.LIGHT_HARM + 1f) { "Our creeper blew but we were not hurt: lowest health $lowest" }
+        act(server, table, TableOp.HURT, TableSnapshot.HARM_OFF)
+        context.waitTicks(20)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "bluff-8-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "bluff-9-world-result")
+
+        act(server, table, TableOp.REPLAY)
+        context.waitFor({ it.screen is ReplayScreen }, 100)
+        context.runOnClient<RuntimeException> {
+            val replay = it.screen as ReplayScreen
+            replay.pause()
+            replay.seek(replay.total / 2)
+        }
+        context.waitTicks(5)
+        shot(context, "bluff-10-replay")
+        context.setScreen { null }
+        act(server, table, TableOp.AUTO, 0)
     }
 
     /**

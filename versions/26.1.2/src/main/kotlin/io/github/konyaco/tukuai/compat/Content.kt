@@ -6,9 +6,11 @@ import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
 import net.minecraft.network.chat.Style
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.RandomSource
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
+import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
@@ -87,3 +89,6 @@ abstract class CompatBlock(properties: BlockBehaviour.Properties) : Block(proper
     ): InteractionResult =
         if (useItem(stack, state, level, pos, player, hand, hit)) InteractionResult.SUCCESS else InteractionResult.TRY_WITH_EMPTY_HAND
 }
+
+/** Hurts a player on the server. */
+fun Player.hurtOnServer(level: ServerLevel, source: DamageSource, amount: Float): Boolean = hurtServer(level, source, amount)

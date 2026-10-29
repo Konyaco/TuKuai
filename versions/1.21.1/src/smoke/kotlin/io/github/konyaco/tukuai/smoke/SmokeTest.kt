@@ -18,6 +18,7 @@ import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.ServerSettings
 import io.github.konyaco.tukuai.table.TableOp
+import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import java.util.function.Supplier
 import kotlin.system.exitProcess
@@ -114,7 +115,7 @@ object SmokeTest {
         onClient { mc.setScreen(TableScreen(table)) }
         ticks(10)
 
-        for (game in listOf("doudizhu", "uno", "tutu", "paodekuai", "guandan")) play(table, game)
+        for (game in listOf("doudizhu", "uno", "tutu", "bluff", "paodekuai", "guandan")) play(table, game)
 
         // The hotbar shows the items in their woods and colours.
         onClient { mc.setScreen(null) }
@@ -129,6 +130,8 @@ object SmokeTest {
     private fun play(table: BlockPos, game: String) {
         act(table, TableOp.GAME, text = game)
         ticks(10)
+        // Creepers blow their players up for real by default; the smoke test keeps them on the table.
+        act(table, TableOp.HURT, TableSnapshot.HARM_OFF)
         act(table, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
         ticks(10)
         act(table, TableOp.START)
