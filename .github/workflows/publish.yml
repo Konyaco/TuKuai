@@ -5,6 +5,11 @@ name: Publish
 # hand for a tag that is already released. It reads the secrets MODRINTH_TOKEN and
 # CURSEFORGE_TOKEN and the variables MODRINTH_PROJECT_ID (default tukuai) and
 # CURSEFORGE_PROJECT_ID; a site whose token or project id is not set is skipped with a notice.
+# The script and the files it reads come from the commit the workflow runs from, not the tag, so
+# a tag made before the script existed can still be uploaded by hand from main. The jars input
+# picks which of the release's jars go up, for retrying only the ones a failed run left out.
+# Modrinth skips a version that is already up, but CurseForge cannot tell a file was already
+# uploaded and would take it again, so a CurseForge rerun should leave those jars out.
 on:
   workflow_dispatch:
     inputs:
@@ -17,6 +22,10 @@ on:
         type: choice
         options: [both, modrinth, curseforge]
         default: both
+      jars:
+        description: Which jars of the release to upload, as a glob; e.g. tukuai-*-26.1.2-*.jar
+        type: string
+        default: tukuai-*.jar
   workflow_call:
     inputs:
       tag:
@@ -25,6 +34,9 @@ on:
       sites:
         type: string
         default: both
+      jars:
+        type: string
+        default: tukuai-*.jar
 
 permissions:
   contents: read
@@ -35,14 +47,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.tag }}
 
       - name: Download the jars
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
-        run: gh release download "${TAG}" --pattern 'tukuai-*.jar' --dir jars
+          JARS: ${{ inputs.jars }}
+        run: gh release download "${TAG}" --pattern "${JARS}" --dir jars
 
       - name: Upload to the stores
         env:
