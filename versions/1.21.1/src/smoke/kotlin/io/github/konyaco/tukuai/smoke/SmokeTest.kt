@@ -115,7 +115,7 @@ object SmokeTest {
         onClient { mc.setScreen(TableScreen(table)) }
         ticks(10)
 
-        for (game in listOf("doudizhu", "uno", "tutu", "bluff", "paodekuai", "guandan")) play(table, game)
+        for (game in listOf("doudizhu", "uno", "tutu", "bluff", "paodekuai", "guandan", "mahjong")) play(table, game)
 
         // The hotbar shows the items in their woods and colours.
         onClient { mc.setScreen(null) }

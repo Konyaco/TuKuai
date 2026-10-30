@@ -18,6 +18,7 @@ UNO_ROW = 6  # UNO cards start on this row of cards, below the icons; see CardAr
 STYLE_ROW = 11  # The other face styles start on this row, 54 cards each; see CardArt.STYLE_FIRST.
 TUTU_ROW = 19  # Tutu cards start on this row, after the face styles; see CardArt.TUTU_FIRST.
 BLUFF_ROW = 24  # The creeper head of creeper bluff, after the Tutu cards; see CardArt.CREEPER_SIDE.
+MAHJONG_ROW = 25  # Mahjong tile faces, characters, dots and bamboo 1-9, then a blank face; see CardArt.MAHJONG_FIRST.
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
@@ -738,6 +739,276 @@ def farmer_icon():
     return icon
 
 
+# ---- Mahjong tiles -----------------------------------------------------------------------------
+
+IVORY = (244, 239, 224, 255)
+IVORY_EDGE = (214, 206, 186, 255)
+MJ_INK = (30, 46, 96, 255)
+MJ_RED = (196, 36, 40, 255)
+MJ_GREEN = (30, 128, 70, 255)
+MJ_GREEN_DARK = (16, 84, 44, 255)
+MJ_GREEN_LIGHT = (96, 186, 116, 255)
+MJ_BLUE = (34, 78, 160, 255)
+
+# Chinese numerals for the characters suit, 16 wide; see mj_characters.
+NUMERALS = {
+    1: ["................",
+        "................",
+        "................",
+        "................",
+        "################",
+        "################",
+        "................",
+        "................",
+        "................",
+        "................"],
+    2: ["................",
+        "..############..",
+        "..############..",
+        "................",
+        "................",
+        "................",
+        "................",
+        "################",
+        "################",
+        "................"],
+    3: [".##############.",
+        ".##############.",
+        "................",
+        "................",
+        "...##########...",
+        "...##########...",
+        "................",
+        "................",
+        "################",
+        "################"],
+    4: ["################",
+        "##...##..##...##",
+        "##...##..##...##",
+        "##...##..##...##",
+        "##..##...##...##",
+        "##.##.....#####.",
+        "##............##",
+        "##............##",
+        "################",
+        "################"],
+    5: [".##############.",
+        ".......##.......",
+        ".......##.......",
+        "..###########...",
+        "......##....##..",
+        "......##....##..",
+        ".....##.....##..",
+        ".....##.....##..",
+        "################",
+        "################"],
+    6: [".......##.......",
+        "........##......",
+        "################",
+        "################",
+        "................",
+        ".....##...##....",
+        "....##.....##...",
+        "...##.......##..",
+        "..##.........##.",
+        ".##...........##"],
+    7: [".....##.........",
+        ".....##......##.",
+        ".....##...####..",
+        ".....######.....",
+        "#######.........",
+        ".....##.........",
+        ".....##.........",
+        ".....##.......##",
+        ".....##.......##",
+        "......#########."],
+    8: [".....##...##....",
+        ".....##...##....",
+        ".....##....##...",
+        "....##.....##...",
+        "....##......##..",
+        "...##.......##..",
+        "..##.........##.",
+        ".##...........##",
+        "##............##",
+        "................"],
+    9: ["....##..........",
+        "....##..........",
+        "##########......",
+        "....##...##.....",
+        "....##...##.....",
+        "...##....##.....",
+        "...##....##.....",
+        "..##.....##...##",
+        ".##......##...##",
+        "##........#####."],
+}
+
+# The character 萬 (ten thousand) under each numeral, 18 wide.
+WAN = ["...##.......##....",
+       "##################",
+       "...##.......##....",
+       "..................",
+       "..##############..",
+       "..##....##....##..",
+       "..##############..",
+       "..##....##....##..",
+       "..##############..",
+       "........##........",
+       ".################.",
+       ".##.....##.....##.",
+       ".##....##......##.",
+       ".##...##..##...##.",
+       ".##..##....##..##.",
+       ".##.#########..##.",
+       ".##............##.",
+       ".##..........####."]
+
+
+def mj_blank():
+    """An ivory tile face with a slightly darker rim; the renderer gives it depth."""
+    tile = Image.new("RGBA", (CARD_W, CARD_H), IVORY)
+    for y in range(CARD_H):
+        for x in range(CARD_W):
+            if x in (0, CARD_W - 1) or y in (0, CARD_H - 1):
+                tile.putpixel((x, y), IVORY_EDGE)
+    return tile
+
+
+def mj_characters(rank):
+    tile = mj_blank()
+    bitmap(tile, NUMERALS[rank], 8, 5, MJ_INK)
+    bitmap(tile, WAN, 7, 20, MJ_RED)
+    return tile
+
+
+def coin(img, cx, cy, r, color):
+    """A dot of the dots suit: a ring of colour, an ivory ring, and a centre of colour."""
+    for y in range(int(cy - r - 1), int(cy + r + 2)):
+        for x in range(int(cx - r - 1), int(cx + r + 2)):
+            d = math.hypot(x + 0.5 - cx, y + 0.5 - cy)
+            if d <= r:
+                if d > r * 0.62 or d < r * 0.3:
+                    put(img, x, y, color)
+
+
+DOT_LAYOUTS = {
+    2: [(16, 13, 7, MJ_GREEN), (16, 31, 7, MJ_BLUE)],
+    3: [(8.5, 9.5, 5.5, MJ_BLUE), (16, 22, 5.5, MJ_RED), (23.5, 34.5, 5.5, MJ_GREEN)],
+    4: [(9.5, 13, 6, MJ_BLUE), (22.5, 13, 6, MJ_GREEN), (9.5, 31, 6, MJ_GREEN), (22.5, 31, 6, MJ_BLUE)],
+    5: [(9, 10, 5.5, MJ_BLUE), (23, 10, 5.5, MJ_GREEN), (16, 22, 5.5, MJ_RED), (9, 34, 5.5, MJ_GREEN), (23, 34, 5.5, MJ_BLUE)],
+    6: [(10, 9, 5, MJ_GREEN), (22, 9, 5, MJ_GREEN), (10, 22, 5, MJ_RED), (22, 22, 5, MJ_RED), (10, 34, 5, MJ_RED), (22, 34, 5, MJ_RED)],
+    7: [(7.5, 7, 4, MJ_GREEN), (16, 11, 4, MJ_GREEN), (24.5, 15, 4, MJ_GREEN),
+        (10.5, 25, 4.5, MJ_RED), (21.5, 25, 4.5, MJ_RED), (10.5, 35, 4.5, MJ_RED), (21.5, 35, 4.5, MJ_RED)],
+    8: [(10.5, 7, 4.3, MJ_BLUE), (21.5, 7, 4.3, MJ_BLUE), (10.5, 17, 4.3, MJ_BLUE), (21.5, 17, 4.3, MJ_BLUE),
+        (10.5, 27, 4.3, MJ_BLUE), (21.5, 27, 4.3, MJ_BLUE), (10.5, 37, 4.3, MJ_BLUE), (21.5, 37, 4.3, MJ_BLUE)],
+    9: [(x, y, 4.3, c) for y, c in ((9, MJ_BLUE), (22, MJ_RED), (35, MJ_GREEN)) for x in (7, 16, 25)],
+}
+
+
+def mj_dots(rank):
+    tile = mj_blank()
+    if rank == 1:
+        # One large ornate dot.
+        cx, cy = 16, 22
+        for y in range(CARD_H):
+            for x in range(CARD_W):
+                d = math.hypot(x + 0.5 - cx, y + 0.5 - cy)
+                if d <= 12:
+                    if d > 10.5:
+                        put(tile, x, y, MJ_GREEN)
+                    elif d > 9 and (int(math.degrees(math.atan2(y + 0.5 - cy, x + 0.5 - cx))) // 30) % 2 == 0:
+                        put(tile, x, y, MJ_BLUE)
+                    elif 5.5 < d <= 7:
+                        put(tile, x, y, MJ_RED)
+                    elif d <= 3:
+                        put(tile, x, y, MJ_GREEN)
+        return tile
+    for cx, cy, r, color in DOT_LAYOUTS[rank]:
+        coin(tile, cx, cy, r, color)
+    return tile
+
+
+def stick(img, cx, cy, color=None, h=11):
+    """One stick of the bamboo suit, 4 wide, centred on (cx, cy), with a node in the middle and at each end."""
+    body = color or MJ_GREEN
+    dark = MJ_RED if color == MJ_RED else MJ_GREEN_DARK
+    light = (236, 120, 110, 255) if color == MJ_RED else MJ_GREEN_LIGHT
+    x0 = int(cx) - 2
+    y0 = int(cy - h / 2)
+    for y in range(y0, y0 + h):
+        for dx in range(4):
+            c = dark if dx in (0, 3) else (light if dx == 1 else body)
+            put(img, x0 + dx, y, c)
+    for y in (y0, y0 + h // 2, y0 + h - 1):
+        for dx in range(-1, 5):
+            put(img, x0 + dx, y, dark)
+
+
+BAMBOO_LAYOUTS = {
+    2: [(16, 12), (16, 32)],
+    3: [(16, 12), (10, 32), (22, 32)],
+    4: [(10, 12), (22, 12), (10, 32), (22, 32)],
+    5: [(8, 12), (24, 12), (16, 22, "r"), (8, 32), (24, 32)],  # The red one stands between the rows.
+    6: [(8, 13), (16, 13), (24, 13), (8, 31), (16, 31), (24, 31)],
+    7: [(16, 8, "r"), (8, 22), (16, 22), (24, 22), (8, 36), (16, 36), (24, 36)],
+    8: [(8, 9), (16, 9), (24, 9), (11, 22), (21, 22), (8, 35), (16, 35), (24, 35)],
+    9: [(x, y, "r" if x == 16 else None) for y in (9, 22, 35) for x in (8, 16, 24)],
+}
+
+
+def mj_bird(tile):
+    """The one of bamboo: a little green bird."""
+    def ellipse(cx, cy, rx, ry, color):
+        for y in range(int(cy - ry - 1), int(cy + ry + 2)):
+            for x in range(int(cx - rx - 1), int(cx + rx + 2)):
+                if ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1:
+                    put(tile, x, y, color)
+    # Tail feathers fanning down to the left.
+    for i, color in enumerate([MJ_BLUE, MJ_RED, MJ_GREEN_DARK]):
+        for k in range(12):
+            put(tile, 12 - k + i * 2 - 2, 26 + k // 2 + i * 2, color)
+            put(tile, 12 - k + i * 2 - 2, 27 + k // 2 + i * 2, color)
+    ellipse(16, 24, 8, 6, MJ_GREEN)
+    ellipse(17, 22, 5, 3, MJ_GREEN_LIGHT)
+    ellipse(22, 14, 4.5, 4.5, MJ_GREEN)
+    put(tile, 23, 13, (255, 255, 255, 255))
+    put(tile, 24, 13, (20, 20, 20, 255))
+    for k in range(3):
+        put(tile, 27 + k, 14, (230, 150, 40, 255))
+        put(tile, 27 + k, 15 - (1 if k == 2 else 0), (230, 150, 40, 255))
+    # A red crest, and legs.
+    for x in (20, 21, 22):
+        put(tile, x, 9, MJ_RED)
+        put(tile, x + 1, 8, MJ_RED)
+    for x in (14, 18):
+        for y in range(30, 35):
+            put(tile, x, y, MJ_RED)
+        put(tile, x + 1, 34, MJ_RED)
+        put(tile, x - 1, 34, MJ_RED)
+
+
+def mj_bamboo(rank):
+    tile = mj_blank()
+    if rank == 1:
+        mj_bird(tile)
+        return tile
+    for spot in BAMBOO_LAYOUTS[rank]:
+        cx, cy = spot[0], spot[1]
+        red = len(spot) > 2 and spot[2] == "r"
+        stick(tile, cx, cy, MJ_RED if red else None, h=16 if rank in (2, 3, 4, 5, 6) else 11)
+    return tile
+
+
+def mahjong_tiles():
+    """Same order as Tile.id in the engine: characters, dots, bamboo, each 1 to 9; then a blank face."""
+    tiles = [mj_characters(r) for r in range(1, 10)]
+    tiles += [mj_dots(r) for r in range(1, 10)]
+    tiles += [mj_bamboo(r) for r in range(1, 10)]
+    tiles.append(mj_blank())
+    return tiles
+
+
 def atlas():
     sheet = Image.new("RGBA", (ATLAS_W, ATLAS_H), CLEAR)
     cards = [face(r, s) for s in SUITS for r in RANKS] + [joker(False), joker(True)]
@@ -759,6 +1030,8 @@ def atlas():
         sheet.paste(card, ((i % COLS) * CARD_W, (TUTU_ROW + i // COLS) * CARD_H))
     for i, card in enumerate([creeper_block(False), creeper_block(True)]):
         sheet.paste(card, (i * CARD_W, BLUFF_ROW * CARD_H))
+    for i, tile in enumerate(mahjong_tiles()):
+        sheet.paste(tile, ((i % COLS) * CARD_W, (MAHJONG_ROW + i // COLS) * CARD_H))
     # The paper colour of a card's edges, for cards drawn with thickness on the table.
     for y in range(8):
         for x in range(8):

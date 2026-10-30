@@ -46,7 +46,7 @@ object TablePointer {
             val current = rises[id(card)] ?: target
             val rise = current + (target - current) * min(1f, seconds * EASE)
             rises[id(card)] = rise
-            card.copy(rise = rise, tint = if (raised) PICKED_TINT else -1, outline = if (under) OUTLINE_COLOR else card.outline)
+            card.copy(rise = rise, tint = if (raised) PICKED_TINT else card.tint, outline = if (under) OUTLINE_COLOR else card.outline)
         }
         drawnAt = pos
         drawn = dressed

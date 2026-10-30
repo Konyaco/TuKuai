@@ -6,6 +6,8 @@ import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.ReplayScreen
 import io.github.konyaco.tukuai.client.RulesScreen
+import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.client.TablePointer
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.SeatEntity
@@ -20,6 +22,11 @@ import io.github.konyaco.tukuai.engine.bluff.BluffView
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdView
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScAction
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScCodecs
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScPhase
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScView
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.bot.ScBot
 import io.github.konyaco.tukuai.engine.paodekuai.PdkAction
 import io.github.konyaco.tukuai.engine.paodekuai.PdkCodecs
 import io.github.konyaco.tukuai.engine.paodekuai.PdkView
@@ -75,6 +82,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         val only = System.getenv("TUKUAI_ONLY")
         if (only == "tutu") return onlyGame(context) { server, table -> playTutu(context, server, table) }
         if (only == "bluff") return onlyGame(context) { server, table -> playBluff(context, server, table) }
+        if (only == "mahjong") return onlyGame(context) { server, table -> playMahjong(context, server, table) }
         if (only != null && only != "game") return
         context.worldBuilder().create().use { world ->
             world.clientLevel.waitForChunksRender()
@@ -295,6 +303,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         playTutu(context, server, table)
         playBluff(context, server, table)
         playPaoDeKuai(context, server, table)
+        playMahjong(context, server, table)
     }
 
     /** A table with only us and computers, straight into [play], such as a hand of Tutu cards; `TUKUAI_LANG` picks the language. */
@@ -442,6 +451,192 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         shot(context, "bluff-10-replay")
         context.setScreen { null }
         act(server, table, TableOp.AUTO, 0)
+    }
+
+    /**
+     * Switches the table to mahjong and plays a hand with three computers: the lobby, the rule
+     * book, the deal, passing three tiles on with the hint's pick, the void suit, our turn on
+     * the screen, in the immersive view and in the world, the middle of the hand, the end and
+     * the replay.
+     */
+    private fun playMahjong(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        // The long Guandan game before may still be going; any player may end it.
+        act(server, table, TableOp.AUTO, 0)
+        if (status(server, table) == TableStatus.PLAYING) {
+            act(server, table, TableOp.END)
+            context.waitFor({ ClientTables[table]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        }
+        act(server, table, TableOp.GAME, text = "mahjong")
+        repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "mahjong" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "mj-1-lobby")
+        readRules(context, "mahjong", "hands")
+        for (section in listOf("sets", "points")) {
+            context.runOnClient<RuntimeException> { (it.screen as TableScreen).openRules() }
+            context.waitFor({ it.screen is RulesScreen }, 20)
+            context.runOnClient<RuntimeException> { (it.screen as RulesScreen).showSection(section) }
+            context.waitTicks(5)
+            shot(context, "rules-mahjong-$section")
+            context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
+            context.waitFor({ it.screen is TableScreen }, 20)
+        }
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "mahjong" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.input.lookAt(table)
+        context.waitTicks(4)
+        shot(context, "mj-2-world-dealing")
+        context.waitTicks(40)
+        shot(context, "mj-3-world-dealt")
+        sideShot(context, server, table, "mj-3b-world-side-dealt")
+
+        val mahjong = { ClientTables[table]?.view as? ScView }
+        val send = { action: ScAction -> act(server, table, TableOp.ACT, data = ScCodecs.ACTION.encode(action)) }
+        context.setScreen { TableScreen(table) }
+        // Passing three tiles on: the hint picks them, and Enter passes them.
+        context.waitFor({ mahjong()?.let { it.isMyTurn && it.phase == ScPhase.SWAP } == true }, 600)
+        context.waitTicks(5)
+        context.input.pressKey(GLFW.GLFW_KEY_H)
+        context.waitTicks(5)
+        shot(context, "mj-4-screen-swap")
+        context.input.pressKey(GLFW.GLFW_KEY_ENTER)
+        context.waitFor({ mahjong()?.let { it.isMyTurn && it.phase == ScPhase.VOID } == true }, 600)
+        context.waitTicks(5)
+        shot(context, "mj-5-screen-void")
+        val void = ScBot(BotLevel.NORMAL, 0).voidSuit(mahjong()!!.hand)
+        send(ScAction.ChooseVoid(void))
+
+        // Our turn to discard, with the hint's tile picked; we answer claims by passing until then.
+        var guard = 0
+        while (true) {
+            context.waitFor({ mahjong()?.let { it.isMyTurn || it.finished || (it.seat != null && it.won(it.seat!!)) } == true }, 2400)
+            val view = mahjong()!!
+            if (view.phase == ScPhase.PLAY && view.drawn != null && !view.canWin) break
+            check(++guard < 60) { "Never had a turn to discard" }
+            when {
+                view.finished || view.won(view.seat!!) -> {
+                    act(server, table, TableOp.AUTO, 1)
+                    context.waitFor({ status(server, table) == TableStatus.FINISHED }, 12000)
+                    act(server, table, TableOp.AUTO, 0)
+                    act(server, table, TableOp.START)
+                    context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING && mahjong()?.finished == false }, 200)
+                }
+                view.phase == ScPhase.SWAP -> send(ScAction.Swap(ScBot(BotLevel.NORMAL, 0).swapTiles(view.hand)))
+                view.phase == ScPhase.VOID -> send(ScAction.ChooseVoid(ScBot(BotLevel.NORMAL, 0).voidSuit(view.hand)))
+                view.phase == ScPhase.PLAY -> send(ScBot(BotLevel.NORMAL, 0).act(view))
+                else -> send(ScAction.Pass)
+            }
+            context.waitFor({ mahjong()?.let { v -> v.log.size != view.log.size || v.toAct != view.toAct || v.finished } == true }, 200)
+        }
+        context.waitTicks(10)
+        context.input.pressKey(GLFW.GLFW_KEY_H)
+        context.waitTicks(5)
+        shot(context, "mj-6-screen-turn")
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = true
+            (it.screen as? TableScreen)?.refresh()
+        }
+        context.waitTicks(10)
+        shot(context, "mj-7-screen-immersive")
+        // Our tiles on the table can be pointed at and picked by clicking them, as cards can.
+        val spot = context.computeOnClient<DoubleArray?, RuntimeException> { mc ->
+            val w = mc.window.guiScaledWidth
+            val h = mc.window.guiScaledHeight
+            val screen = mc.screen as TableScreen
+            val client = ClientTables[table]!!
+            (0 until h step 2).firstNotNullOfOrNull { y ->
+                (0 until w step 2).firstNotNullOfOrNull { x ->
+                    TablePointer.cardAt(table, x.toDouble(), y.toDouble(), w, h)?.takeIf { it.tile && !screen.isRaised(client, it) }?.let {
+                        doubleArrayOf(x * mc.window.screenWidth.toDouble() / w, y * mc.window.screenHeight.toDouble() / h, it.key.toDouble())
+                    }
+                }
+            }
+        }
+        checkNotNull(spot) { "None of our tiles on the table could be pointed at in the immersive view" }
+        context.input.setCursorPos(spot[0], spot[1])
+        context.waitTicks(3)
+        context.input.holdMouse(GLFW.GLFW_MOUSE_BUTTON_LEFT)
+        context.waitTicks(2)
+        context.input.releaseMouse(GLFW.GLFW_MOUSE_BUTTON_LEFT)
+        context.waitTicks(10)
+        val picked = context.computeOnClient<Boolean, RuntimeException> { mc ->
+            (mc.screen as TableScreen).isRaised(ClientTables[table]!!, TableCard(0f, 0f, 0f, 1f, 0, key = spot[2].toInt(), mine = true, tile = true))
+        }
+        check(picked) { "Clicking our tile on the table did not pick it" }
+        shot(context, "mj-7b-screen-immersive-picked")
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = false
+            (it.screen as? TableScreen)?.refresh()
+        }
+        context.setScreen { null }
+        context.input.lookAt(table)
+        context.waitTicks(5)
+        shot(context, "mj-8-world-turn")
+
+        context.setScreen { TableScreen(table) }
+        act(server, table, TableOp.AUTO, 1)
+        context.waitFor({ mahjong()?.let { it.finished || it.wallLeft < 30 } == true }, 6000)
+        context.waitTicks(5)
+        shot(context, "mj-9-screen-midgame")
+        context.setScreen { null }
+        context.waitTicks(5)
+        shot(context, "mj-10-world-midgame")
+        sideShot(context, server, table, "mj-10b-world-side-midgame")
+
+        var waited = 0
+        while (status(server, table) != TableStatus.FINISHED) {
+            check(waited < 12000) { "The mahjong hand did not finish" }
+            context.waitTicks(100)
+            waited += 100
+        }
+        context.waitFor({ mahjong()?.finished == true }, 200)
+        val view = mahjong()!!
+        check(view.scores.sum() == 0 && view.wins.size <= 3) { "The mahjong hand ended oddly: $view" }
+        context.waitTicks(20)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "mj-11-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "mj-12-world-result")
+        sideShot(context, server, table, "mj-12b-world-side-result")
+
+        act(server, table, TableOp.REPLAY)
+        context.waitFor({ it.screen is ReplayScreen }, 100)
+        context.runOnClient<RuntimeException> {
+            val replay = it.screen as ReplayScreen
+            replay.pause()
+            replay.seek(replay.total / 2)
+        }
+        context.waitTicks(5)
+        shot(context, "mj-13-replay")
+        context.setScreen { null }
+        act(server, table, TableOp.AUTO, 0)
+    }
+
+    /**
+     * Stands up, looks at the table from beside the east seat, and sits back down; standing
+     * up mid-hand pauses it, so nothing moves meanwhile.
+     */
+    private fun sideShot(context: ClientGameTestContext, server: TestServerContext, table: BlockPos, name: String) {
+        val screen = context.computeOnClient<Boolean, RuntimeException> { it.screen != null }
+        context.setScreen { null }
+        act(server, table, TableOp.STAND)
+        context.waitTicks(5)
+        moveTo(server, table.east(2))
+        context.waitTicks(5)
+        context.input.lookAt(table)
+        context.waitTicks(10)
+        shot(context, name)
+        act(server, table, TableOp.SIT, 0)
+        context.waitFor({ ClientTables[table]?.snapshot?.paused != true }, 100)
+        context.waitTicks(5)
+        context.input.lookAt(table)
+        if (screen) context.setScreen { TableScreen(table) }
     }
 
     /**

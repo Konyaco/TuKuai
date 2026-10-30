@@ -12,6 +12,9 @@ import io.github.konyaco.tukuai.engine.doudizhu.Patterns
 import io.github.konyaco.tukuai.engine.doudizhu.BiddingMode
 import io.github.konyaco.tukuai.engine.doudizhu.DealMode
 import io.github.konyaco.tukuai.engine.guandan.Guandan
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScGuide
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScRules
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.SichuanMahjong
 import io.github.konyaco.tukuai.engine.paodekuai.PaoDeKuai
 import io.github.konyaco.tukuai.engine.paodekuai.PdkGuide
 import io.github.konyaco.tukuai.engine.paodekuai.PdkPatternType
@@ -35,7 +38,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GuideTest {
-    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff)
+    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff, SichuanMahjong)
 
     /** The English language file, read with a regex since the engine has no JSON library. */
     private val english: Map<String, String> by lazy {
@@ -134,6 +137,15 @@ class GuideTest {
         )
         val before = keysOfTable(UnoGuide.sections(base))
         for (rules in changed) assertNotEquals(before, keysOfTable(UnoGuide.sections(rules)), "$rules reads like the classic rules")
+    }
+
+    @Test
+    fun `every mahjong rule changes what the table section says`() {
+        assertEquals(3, fieldCount(ScRules::class.java), "ScRules changed; describe the new rule in ScGuide.table")
+        val base = ScRules.BLOOD
+        val changed = listOf(base.copy(swapThree = false), base.copy(maxFan = 4), base.copy(maxFan = 0), base.copy(heavenly = false))
+        val before = keysOfTable(ScGuide.sections(base))
+        for (rules in changed) assertNotEquals(before, keysOfTable(ScGuide.sections(rules)), "$rules reads like the usual rules")
     }
 
     private fun fieldCount(type: Class<*>) = type.declaredFields.count { !java.lang.reflect.Modifier.isStatic(it.modifiers) }

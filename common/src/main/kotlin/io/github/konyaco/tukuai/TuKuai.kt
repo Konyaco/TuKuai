@@ -5,6 +5,7 @@ import io.github.konyaco.tukuai.engine.bluff.Bluff
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
 import io.github.konyaco.tukuai.engine.guandan.Guandan
+import io.github.konyaco.tukuai.engine.mahjong.sichuan.SichuanMahjong
 import io.github.konyaco.tukuai.engine.paodekuai.PaoDeKuai
 import io.github.konyaco.tukuai.engine.tutu.Tutu
 import io.github.konyaco.tukuai.engine.uno.Uno
@@ -20,6 +21,6 @@ object TuKuai {
 
     /** Runs once on both sides when the mod loads, before any world opens. */
     fun init() {
-        for (game in listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff)) if (GameRegistry[game.id] == null) GameRegistry.register(game)
+        for (game in listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff, SichuanMahjong)) if (GameRegistry[game.id] == null) GameRegistry.register(game)
     }
 }

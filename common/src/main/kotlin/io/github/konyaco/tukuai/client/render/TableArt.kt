@@ -168,6 +168,7 @@ class TableArt {
      */
     private fun drawCard(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, card: TableCard, back: Int) {
         if (card.cube) return drawCube(buffer, pose, light, card)
+        if (card.tile) return drawTile(buffer, pose, light, card)
         val f = CardFrame.of(card)
         val c = f.c
         val r = f.r
@@ -185,6 +186,41 @@ class TableArt {
         if (card.outline != 0) {
             // Just behind the face, so only the rim that sticks out past the card shows.
             side(buffer, pose, FULL_BRIGHT, c, n, f.halfT * 0.5f, r, f.halfW + OUTLINE, u, f.halfH + OUTLINE, EDGE, card.outline)
+        }
+    }
+
+    /**
+     * A mahjong tile, see [TableCard.tile]: its face in front, then a slab of ivory and a
+     * thinner one of the back's colour, as real tiles are made of two layers.
+     */
+    private fun drawTile(buffer: VertexConsumer, pose: PoseStack.Pose, light: Int, card: TableCard) {
+        val f = CardFrame.of(card)
+        val r = f.r
+        val u = f.u
+        val n = f.n
+        val neg = { v: FloatArray -> floatArrayOf(-v[0], -v[1], -v[2]) }
+        fun along(k: Float) = floatArrayOf(f.c[0] + n[0] * k, f.c[1] + n[1] * k, f.c[2] + n[2] * k)
+        val back = ARGB_OPAQUE or card.tileBack
+        val ivory = card.tint.takeIf { it != -1 } ?: TILE_IVORY
+        // A sprite that is a card back means the tile is still on its way, face hidden.
+        val face = if (CardArt.isBack(card.sprite)) EDGE else sprite(card.sprite)
+        side(buffer, pose, light, f.c, n, f.halfT, r, f.halfW, u, f.halfH, face, if (CardArt.isBack(card.sprite)) back else card.tint)
+        if (card.backSprite >= 0) {
+            side(buffer, pose, light, f.c, neg(n), f.halfT, neg(r), f.halfW, u, f.halfH, sprite(card.backSprite))
+        } else {
+            side(buffer, pose, light, f.c, neg(n), f.halfT, neg(r), f.halfW, u, f.halfH, EDGE, back)
+        }
+        // The ivory slab, from the face back, then the coloured one behind it.
+        val front = f.halfT * 2 * TILE_IVORY_SHARE
+        val rear = f.halfT * 2 - front
+        for ((centre, half, color) in listOf(Triple(along(f.halfT - front / 2), front / 2, ivory), Triple(along(-f.halfT + rear / 2), rear / 2, back))) {
+            side(buffer, pose, light, centre, r, f.halfW, neg(n), half, u, f.halfH, EDGE, color)
+            side(buffer, pose, light, centre, neg(r), f.halfW, n, half, u, f.halfH, EDGE, color)
+            side(buffer, pose, light, centre, u, f.halfH, r, f.halfW, neg(n), half, EDGE, color)
+            side(buffer, pose, light, centre, neg(u), f.halfH, r, f.halfW, n, half, EDGE, color)
+        }
+        if (card.outline != 0) {
+            side(buffer, pose, FULL_BRIGHT, f.c, n, f.halfT * 0.9f, r, f.halfW + OUTLINE, u, f.halfH + OUTLINE, EDGE, card.outline)
         }
     }
 
@@ -266,6 +302,12 @@ class TableArt {
 
         /** Thickness of a card at scale 1, in blocks. */
         const val CARD_THICKNESS = CardFrame.CARD_THICKNESS
+
+        /** The ivory of a mahjong tile's sides, tinting the paper patch. */
+        private const val TILE_IVORY = 0xFFFFFCF2.toInt()
+
+        /** How much of a tile's thickness is ivory; the rest is the back's colour. */
+        private const val TILE_IVORY_SHARE = 0.65f
 
         /** How far the frame around an outlined card reaches past its edges, in blocks. */
         private const val OUTLINE = 0.008f

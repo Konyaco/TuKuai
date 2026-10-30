@@ -44,13 +44,16 @@ class CardFrame(
         /** Thickness of a card at scale 1, in blocks. */
         const val CARD_THICKNESS = 0.008f
 
+        /** Thickness of a mahjong tile at scale 1, in blocks: two thirds of its width, as real tiles. */
+        const val TILE_THICKNESS = 0.2f
+
         /** How much higher each flat card in a row sits than the one before it. */
         private const val LAYER_LIFT = 0.002f
 
         fun of(card: TableCard, rise: Float = card.rise): CardFrame {
             val halfW = CARD_WIDTH * card.scale / 2
             val halfH = CARD_WIDTH * card.scale * CardArt.HEIGHT / CardArt.WIDTH / 2
-            val halfT = CARD_THICKNESS * card.scale / 2
+            val halfT = (if (card.tile) TILE_THICKNESS else CARD_THICKNESS) * card.scale / 2
             val tilt = Math.toRadians(card.tilt.toDouble())
             val sin = sin(tilt).toFloat()
             val cos = cos(tilt).toFloat()
@@ -60,10 +63,11 @@ class CardFrame(
             val n = floatArrayOf(-card.upX * sin, cos, -card.upZ * sin)
             // Card positions are measured from the middle of the table. A standing card rests on
             // its bottom edge; flat ones lift a little over the cards before them in their row.
-            // A card picked from a hand slides up along its own face.
+            // A card picked from a hand slides up along its own face. A tile turned face down
+            // (tilted 180 degrees) still rests on the table.
             val c = floatArrayOf(
                 card.x + 0.5f + u[0] * rise,
-                CardTableBlock.TOP_HEIGHT + sin * halfH + cos * halfT + card.lift + (if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f) + u[1] * rise,
+                CardTableBlock.TOP_HEIGHT + sin * halfH + abs(cos) * halfT + card.lift + (if (card.tilt == 0f) card.layer * LAYER_LIFT else 0f) + u[1] * rise,
                 card.z + 0.5f + u[2] * rise,
             )
             return CardFrame(c, r, u, n, halfW, halfH, halfT)
