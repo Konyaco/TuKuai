@@ -11,59 +11,63 @@
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge와 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 라이선스"></a>
 </p>
+<h3 align="center">당신의 Minecraft 월드에 카드 테이블 하나.<br>의자를 당겨 앉아 친구들과 더우디주, 마작, UNO를. 친구가 없으면 컴퓨터가 자리를 채워 줍니다.</h3>
 
-TuKuai(土块棋牌室)는 만들어서 설치할 수 있는 카드 테이블을 Minecraft에 추가하여, 친구나 컴퓨터와 함께 카드 게임을 할 수 있게 하는 모드입니다.
+<p align="center"><img src="docs/images/en/clip.webp" alt="서재의 카드 테이블에서 주민 두 명을 상대로 더우디주 한 판을 치는 모습" width="100%"></p>
 
-![서재에 놓인 카드 테이블 두 개. 왼쪽에서는 더우디주, 오른쪽에서는 주민들이 UNO 테이블을 둘러싸고 있다](docs/images/hero.webp)
-
-## 특징
-
-- **월드 안의 테이블**: 카드가 월드 속 테이블 위에 놓입니다. 손패는 주인을 향해 세워지고, 낸 카드는 가운데에 놓이며, 주변 사람도 볼 수 있습니다.
-- **멀티플레이와 컴퓨터**: 빈자리는 컴퓨터로 채울 수 있으며 난이도는 쉬움, 보통, 어려움 세 단계입니다. 자리를 비우거나 접속이 끊긴 플레이어의 차례는 컴퓨터가 대신 둡니다. 치던 사람이 모두 자리를 떠나면 누군가 앉아서 이어서 치거나 대국을 끝낼 때까지 일시 정지됩니다.
-- **다시 보기와 전적**: 모든 판이 자동으로 저장되며, 어느 자리의 시점으로든 다시 볼 수 있습니다. 테이블은 플레이어별 전적을 기록합니다.
-- **외형 꾸미기**: 테이블과 의자는 여러 나무로 만들 수 있고, 테이블보와 방석은 염색할 수 있으며, 카드 뒷면과 앞면도 여러 디자인이 있습니다.
-- **몰입 시점**: 화면이 월드를 가리지 않으며, 테이블 위의 카드를 바로 골라 낼 수 있습니다.
+<p align="center"><b>게임 7종</b> · <b>2~8인</b> · <b>빈자리는 컴퓨터가</b> · <b>모든 판 다시 보기</b> · <b>Fabric과 NeoForge</b></p>
 
 ## 게임
 
 <table>
   <tr>
-    <td width="55%"><img src="docs/images/ko/ddz-table.webp" alt="더우디주"></td>
-    <td><b>더우디주</b><br>세 명이 하는 게임으로, 지주 한 명과 농민 두 명이 겨룹니다. 규칙은 기본 입찰, 지주 빼앗기, 섞지 않기 중에서 고를 수 있습니다. 카드 두 벌로 하는 4인용(지주 한 명 대 농민 세 명, 폭탄은 최대 8장)도 있습니다.</td>
+    <td width="50%"><img src="docs/images/ko/ddz-world.webp" alt="더우디주"></td>
+    <td width="50%"><img src="docs/images/ko/mj-table.webp" alt="마작"></td>
   </tr>
   <tr>
-    <td><img src="docs/images/ko/uno-table.webp" alt="UNO"></td>
-    <td><b>UNO</b><br>2~4명. 기본 규칙과 벌칙 카드를 겹쳐 낼 수 있는 규칙 중에서 고를 수 있습니다.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/ko/pdk-table.webp" alt="파오더콰이"></td>
-    <td><b>파오더콰이</b><br>세 명이 각자 겨루며, 손패를 먼저 모두 낸 사람이 이깁니다. 손패는 16장 또는 15장이며, 낼 수 있으면 반드시 내야 하는 규칙을 쓸지 고를 수 있습니다.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/ko/gd-table.webp" alt="관단"></td>
-    <td><b>관단</b><br>네 명이 두 팀으로 나뉘어 카드 두 벌로 합니다. 한 판만 하거나 A까지 이어서 할 수 있습니다.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/ko/tutu-table.webp" alt="투투 카드"></td>
-    <td><b>투투 카드</b><br>이 모드의 오리지널 게임으로, 진행 방식은 UNO와 비슷하고 특수 카드는 Minecraft에서 가져왔습니다. 예를 들어 TNT는 테이블 위에서 연기를 냅니다. 2~8명이며, 6명과 8명은 큰 카드 테이블이 필요합니다.</td>
+    <td valign="top"><b>더우디주</b> · 3인 또는 4인<br>지주 한 명 대 농민들. 점수 입찰, 지주 빼앗기, 섞지 않은 덱으로 칠 수 있고, 카드 두 벌로 네 명이 치며 최대 여덟 장짜리 폭탄을 내는 규칙도 있습니다.</td>
+    <td valign="top"><b>마작</b> · 4인<br>쓰촨 마작 혈전도저. 세 장을 넘기고, 버릴 색을 정하고, 누가 화료해도 세 명이 날 때까지 계속합니다. 패는 테이블 위에 서 있고 가운데에 패산이 쌓입니다.</td>
   </tr>
   <tr>
     <td><img src="docs/images/ko/bluff-world.webp" alt="크리퍼 블러프"></td>
-    <td><b>크리퍼 블러프</b><br>Liar's Bar 같은 블러핑 게임으로, 리볼버 대신 크리퍼를 씁니다. 카드를 엎어 놓고 지정된 숫자라고 말하거나, 앞사람의 카드가 거짓말이라고 지목합니다. 틀린 쪽은 자기 크리퍼의 도화선에 불을 붙이며, 여섯 번에 한 번 터집니다. 2~8명. 터진 크리퍼가 월드에서 주인에게 피해를 줄지는 호스트가 정합니다.</td>
+    <td><img src="docs/images/ko/tutu-world.webp" alt="투투 카드"></td>
   </tr>
   <tr>
-    <td><img src="docs/images/ko/mj-table.webp" alt="마작"></td>
-    <td><b>마작</b><br>4명, 쓰촨 마작 혈전 규칙: 세 장 교환과 버릴 무늬 정하기가 있고, 누가 화료해도 세 명이 화료할 때까지 계속합니다. 패는 테이블 위에 서 있고 가운데에 패산이 쌓입니다.</td>
+    <td valign="top"><b>크리퍼 블러프</b> · 2~8인<br>Liar's Bar에서 리볼버 대신 크리퍼를 쓰는 게임. 카드를 엎어 내며 필요하면 거짓말을 하고, 아니면 앞사람의 거짓말을 밝혀냅니다. 틀린 쪽은 자기 크리퍼의 도화선에 불을 붙이고, 여섯 번에 한 번은 터집니다. 피해를 입을지는 방장이 정합니다.</td>
+    <td valign="top"><b>투투 카드</b> · 2~8인<br>UNO와 비슷한 이 모드만의 게임으로, 특수 카드는 Minecraft에서 따왔습니다. 불붙은 TNT가 테이블에서 연기를 내뿜고, 누구 차례에 터질지는 아무도 모릅니다.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/ko/gd-world.webp" alt="관단"></td>
+    <td><img src="docs/images/ko/uno-world.webp" alt="UNO"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>관단</b> · 4인<br>두 팀, 카드 두 벌, 와일드카드와 공물. 한 판만 치거나, A까지 올라가는 긴 게임을 칩니다.</td>
+    <td valign="top"><b>UNO</b> · 2~4인<br>클래식 규칙, 또는 벌칙 카드를 다음 사람에게 쌓아 넘기는 규칙으로.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/ko/pdk-world.webp" alt="파오더콰이"></td>
+    <td><img src="docs/images/ko/ddz-table.webp" alt="더우디주의 테이블 화면"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>파오더콰이</b> · 3인<br>모두가 각자도생, 손패를 먼저 다 낸 사람이 이깁니다. 16장 또는 15장씩, 낼 수 있으면 꼭 내야 하는 규칙을 켜거나 끌 수 있습니다.</td>
+    <td valign="top"><b>바로 칠 수 있게</b><br>자리에 앉으면 손패, 점수, <b>힌트</b> 버튼이 보입니다. <b>?</b> 버튼의 규칙서는 모든 게임을 그림으로 설명합니다.</td>
   </tr>
 </table>
 
-각 게임의 규칙은 게임 안의 규칙서에서 볼 수 있습니다. 테이블의 **?** 버튼을 누르면 열립니다.
+## TuKuai에서 쳐야 하는 이유
+
+- **카드가 정말 테이블 위에.** 손패는 주인을 향해 서 있고, 낸 카드는 가운데에 떨어지며, 지나가는 사람도 구경할 수 있습니다. 몰입 시점으로 바꾸면 테이블 위의 카드를 바로 골라 냅니다.
+- **사람이 모자랄 일이 없습니다.** 빈자리에는 언제든 쉬움, 보통, 어려움 컴퓨터가 앉고, 자리를 비우거나 접속이 끊긴 사람 대신 칩니다. 모두 자리를 뜨면 돌아올 때까지 판이 기다립니다.
+- **하룻밤 내내.** 한 경기는 여러 판의 점수를 합산하고, 모든 판은 어느 자리의 시점으로든 다시 볼 수 있으며, 테이블은 모두의 전적을 기록합니다.
+- **방을 내 취향대로.** 테이블과 의자는 모든 종류의 나무로 만들 수 있고, 테이블보와 방석은 원하는 색으로 염색하며, 카드 뒷면과 앞면도 여러 가지입니다. 큰 테이블에는 8명까지 앉습니다.
+
+![서재에 놓인 카드 테이블 두 개. 왼쪽에서는 더우디주, 오른쪽에서는 주민들이 UNO 테이블을 둘러싸고 있다](docs/images/hero.webp)
 
 ## 시작하기
 
 ### 다운로드
 
-[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 Minecraft 버전과 로더에 맞는 jar(예: `tukuai-fabric-1.21.1-<버전>.jar`)를 받으세요. Minecraft 26.1.2와 1.21.1을 지원하며, 다음 모드가 필요합니다.
+[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 Minecraft 버전과 로더에 맞는 jar(예: `tukuai-fabric-1.21.1-<버전>.jar`)를 받으세요. 서버와 모든 플레이어의 게임에 설치해야 합니다. Minecraft 26.1.2와 1.21.1을 지원하며, 다음 모드가 필요합니다.
 
 | 로더 | 필수 모드 |
 | --- | --- |
