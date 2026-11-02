@@ -11,59 +11,63 @@
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge and Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT license"></a>
 </p>
+<h3 align="center">A card table for your Minecraft world.<br>Pull up a stool and play Dou Dizhu, mahjong, UNO and more with friends, or with computers when they are not around.</h3>
 
-TuKuai adds a card table to Minecraft that you can craft and place, and play cards at with friends or computer players.
+<p align="center"><img src="docs/images/en/clip.webp" alt="A whole deal of Dou Dizhu at a card table in a library, against two villagers" width="100%"></p>
 
-![Two card tables in a small library: Dou Dizhu on the left, villagers around the UNO table on the right](docs/images/hero.webp)
+<p align="center"><b>7 games</b> · <b>2 to 8 players</b> · <b>computers for any empty seat</b> · <b>replays of every game</b> · <b>Fabric and NeoForge</b></p>
 
-## Features
-
-- **A real table in the world**: the cards lie on the table itself. Each hand stands up facing its owner, played cards go to the middle, and anyone nearby can watch.
-- **Multiplayer, with computers**: computers can fill empty seats at three levels, easy, normal and hard, and take over for players who leave or disconnect. If every player has left, the game pauses until someone sits down to play on or end the match.
-- **Replays and records**: every game is saved and can be replayed from any seat. The table keeps a record for each player.
-- **Custom looks**: tables and stools come in every kind of wood, the cloth and cushions can be dyed, and there are several card backs and card faces.
-- **Immersive view**: the screen stays clear of the world, and you pick and play cards straight from the table.
-
-## Games
+## The games
 
 <table>
   <tr>
-    <td width="55%"><img src="docs/images/en/ddz-table.webp" alt="Dou Dizhu"></td>
-    <td><b>Dou Dizhu</b><br>Three players: one landlord against two farmers. Rule sets: classic bidding, rob the landlord, and unshuffled; or four players with two decks, one landlord against three farmers, with bombs of up to eight cards.</td>
+    <td width="50%"><img src="docs/images/en/ddz-world.webp" alt="Dou Dizhu"></td>
+    <td width="50%"><img src="docs/images/en/mj-table.webp" alt="Mahjong"></td>
   </tr>
   <tr>
-    <td><img src="docs/images/en/uno-table.webp" alt="UNO"></td>
-    <td><b>UNO</b><br>Two to four players. Classic rules, or rules that let penalty cards stack.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/en/pdk-table.webp" alt="Pao De Kuai"></td>
-    <td><b>Pao De Kuai</b><br>Three players, each for themselves; the first to play out their hand wins. 16 or 15 cards each, with or without a must-beat rule.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/en/gd-table.webp" alt="Guandan"></td>
-    <td><b>Guandan</b><br>Four players in two teams, with two decks. Play a single round, or a long game up to Ace.</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/en/tutu-table.webp" alt="Tutu Cards"></td>
-    <td><b>Tutu Cards</b><br>An original game in the spirit of UNO, with special cards taken from Minecraft, such as TNT that smokes on the table. Two to eight players; six and eight need a big card table.</td>
+    <td valign="top"><b>Dou Dizhu</b> · 3 or 4 players<br>One landlord against the farmers. Bid or rob for the landlord, play an unshuffled deck, or play four with two decks and bombs of up to eight cards.</td>
+    <td valign="top"><b>Mahjong</b> · 4 players<br>Sichuan rules, played as a blood battle: pass three tiles on, drop a suit, and play on after a win until three players are out. The tiles stand on the table around the wall.</td>
   </tr>
   <tr>
     <td><img src="docs/images/en/bluff-world.webp" alt="Creeper Bluff"></td>
-    <td><b>Creeper Bluff</b><br>A bluffing game like Liar's Bar, with a creeper instead of a revolver. Lay cards face down and say they are the called rank, or call the last play a lie; whoever is wrong lights their creeper's fuse, which blows on one of six lightings. Two to eight players. The host chooses whether a blown creeper hurts its player in the world.</td>
+    <td><img src="docs/images/en/tutu-world.webp" alt="Tutu Cards"></td>
   </tr>
   <tr>
-    <td><img src="docs/images/en/mj-table.webp" alt="Mahjong"></td>
-    <td><b>Mahjong</b><br>Four players, by the Sichuan rules as a blood battle: pass three tiles on, pick a suit to get rid of, and play on after a player wins until three have. The tiles stand on the table, with the wall in the middle.</td>
+    <td valign="top"><b>Creeper Bluff</b> · 2 to 8 players<br>Like Liar's Bar, with a creeper instead of a revolver. Lay your cards face down and lie if you must, or call out the last player; whoever is wrong lights their creeper's fuse, and one lighting in six blows. The host decides whether it hurts.</td>
+    <td valign="top"><b>Tutu Cards</b> · 2 to 8 players<br>Our own game in the spirit of UNO, with cards from Minecraft. A lit TNT smokes on the table, and nobody knows on whose turn it goes off.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/en/gd-world.webp" alt="Guandan"></td>
+    <td><img src="docs/images/en/uno-world.webp" alt="UNO"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Guandan</b> · 4 players<br>Two teams, two decks, wild cards and tribute. Play one round, or climb all the way to Ace.</td>
+    <td valign="top"><b>UNO</b> · 2 to 4 players<br>Classic rules, or let the penalty cards stack up on the next player.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/en/pdk-world.webp" alt="Pao De Kuai"></td>
+    <td><img src="docs/images/en/ddz-table.webp" alt="The table screen in a game of Dou Dizhu"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Pao De Kuai</b> · 3 players<br>Every player for themselves, and the first to empty their hand wins. 16 or 15 cards each, with or without having to beat.</td>
+    <td valign="top"><b>Easy to pick up</b><br>Sit down and the table screen shows your hand, the scores and a <b>Hint</b> button. The rule book behind the <b>?</b> button explains every game with pictures.</td>
   </tr>
 </table>
 
-The rules of each game are in the rule book in the game: click the **?** button at the table.
+## Why play at TuKuai
+
+- **The cards are really on the table.** Hands stand up facing their players, played cards land in the middle, and anyone walking by can watch. Switch to the immersive view to pick and play your cards straight off the table.
+- **Never short of players.** Computers take any empty seat at easy, normal or hard, and play on for anyone who leaves or disconnects. If everyone walks away, the game waits for them.
+- **Settle in for the evening.** A match keeps the scores over several games, every game is saved to replay from any seat, and each table keeps everyone's record.
+- **Make the room your own.** Tables and stools come in every kind of wood, the cloth and cushions take any dye, and there are several card backs and faces. The big table seats eight.
+
+![Two card tables in a small library: Dou Dizhu on the left, villagers around the UNO table on the right](docs/images/hero.webp)
 
 ## Getting started
 
 ### Download
 
-Get the jar for your Minecraft version and loader from [Releases](https://github.com/Konyaco/TuKuai/releases/latest), such as `tukuai-fabric-1.21.1-<version>.jar`. It runs on Minecraft 26.1.2 and 1.21.1, and needs:
+Get the jar for your Minecraft version and loader from [Releases](https://github.com/Konyaco/TuKuai/releases/latest), such as `tukuai-fabric-1.21.1-<version>.jar`. Install it on the server and on every player's game. It runs on Minecraft 26.1.2 and 1.21.1, and needs:
 
 | Loader | Also install |
 | --- | --- |

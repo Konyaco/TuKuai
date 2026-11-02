@@ -51,6 +51,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.RotatedPillarBlock
+import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.Vec3
 import net.minecraft.world.level.block.state.BlockState
 import org.lwjgl.glfw.GLFW
@@ -58,13 +59,15 @@ import org.lwjgl.glfw.GLFW
 /**
  * Takes the screenshots for the README. Only runs when `TUKUAI_SHOWCASE` lists the
  * languages to take them in, e.g. `TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric:runClientGameTest`.
- * The pictures land in `fabric/build/run/clientGameTest/screenshots`.
+ * The pictures land in `fabric/build/run/clientGameTest/screenshots`, and
+ * `tools/showcase_images.sh` turns the new ones into the README's.
  *
  * Two tables in a small card room: Dou Dizhu on the left with stools, UNO on the right,
  * where the villagers have taken the seats. Guandan and Run Fast are played for a while at
  * the Dou Dizhu table, between its replay and the walk over to UNO, and Tutu Cards at the
- * UNO table after UNO. The first language also takes the crafting recipes, which have no
- * words in them once cut down.
+ * UNO table after UNO. After Creeper Bluff and Mahjong, every game is shot once more at the
+ * UNO table as it looks in the world, see [gameShots]. The first language also takes the
+ * crafting recipes, which have no words in them once cut down.
  */
 class ShowcaseGameTest : FabricClientGameTest {
     private companion object {
@@ -350,6 +353,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         command(server, "gamemode creative @a")
         act(server, uno, TableOp.SIT, 0)
         context.waitTicks(10)
+        gameShots(context, server, uno, lang)
         // Back to UNO for the wide shots.
         act(server, uno, TableOp.END)
         context.waitFor({ ClientTables[uno]?.snapshot?.status != TableStatus.PLAYING }, 100)
@@ -385,6 +389,108 @@ class ShowcaseGameTest : FabricClientGameTest {
         }
         command(server, "gamemode creative @a")
         if (crafting) craftingShots(context, server, ::shot)
+    }
+
+    /**
+     * Each game at the UNO table as it looks in the world, with villagers standing in the
+     * computers' seats: first a clip of a whole deal of Dou Dizhu, then a still of every game
+     * a while into a round, from about where the player sits. The player
+     * stays seated throughout, so the game goes on; the client never draws its own player
+     * through another camera, so the seat looks empty.
+     */
+    private fun gameShots(context: ClientGameTestContext, server: TestServerContext, table: BlockPos, lang: String) {
+        fun shot(name: String) {
+            context.takeScreenshot(TestScreenshotOptions.of("showcase-$lang-$name").disableCounterPrefix())
+        }
+        val middle = Vec3(table.x + 0.5, table.y + 0.75, table.z + 0.5)
+        setFov(context, 60)
+        val games = listOf("doudizhu" to "", "paodekuai" to "", "guandan" to "", "tutu" to "party", "uno" to "")
+        for ((game, preset) in games) {
+            act(server, table, TableOp.END)
+            context.waitFor({ ClientTables[table]?.snapshot?.status != TableStatus.PLAYING }, 100)
+            act(server, table, TableOp.GAME, text = game)
+            if (preset.isNotEmpty()) act(server, table, TableOp.PRESET, text = preset)
+            act(server, table, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
+            context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == game && it.seats.all { s -> s.occupant != null } } == true }, 100)
+            val seats = context.computeOnClient<Int, RuntimeException> { ClientTables[table]!!.snapshot.seats.size }
+            server.runOnServer<RuntimeException> { s -> seatVillagers(s.overworld(), table, seats) }
+            context.setScreen { null }
+            context.waitTicks(10)
+
+            // From just behind the player's seat, a little to the right, looking across the table.
+            val eye = Vec3(middle.x + 0.5, table.y + 2.3, middle.z + 2.6)
+            val at = Vec3(middle.x - 0.1, middle.y, middle.z - 0.2)
+            if (game == "doudizhu") {
+                // A whole deal, from the shuffle to two seconds after it is won. The camera stays
+                // put, so the frames differ only where the cards move and the clip stays small.
+                placeCamera(context, eye, at)
+                context.waitTicks(10)
+                var frame = 0
+                var after = -1
+                while (after < 40 && frame < 1200) {
+                    if (frame == 10) {
+                        act(server, table, TableOp.START)
+                        act(server, table, TableOp.AUTO, 1)
+                    }
+                    shot("clip-%03d".format(frame))
+                    context.waitTicks(1)
+                    frame++
+                    if (after >= 0) after++ else if (frame > 20 && status(server, table) != TableStatus.PLAYING) after = 0
+                }
+            }
+
+            for (attempt in 0 until 3) {
+                if (status(server, table) != TableStatus.PLAYING) {
+                    act(server, table, TableOp.START)
+                    context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == game && it.status == TableStatus.PLAYING } == true }, 200)
+                }
+                act(server, table, TableOp.AUTO, 1)
+                context.waitTicks(if (attempt == 0) 240 else 120)
+                act(server, table, TableOp.AUTO, 0)
+                // Long enough for the computers to play up to us, and the cards to settle.
+                context.waitTicks(60)
+                if (status(server, table) == TableStatus.PLAYING) break
+            }
+            placeCamera(context, eye, at)
+            context.waitTicks(10)
+            shot("$game-world")
+            placeCamera(context, null)
+        }
+        act(server, table, TableOp.AUTO, 0)
+        setFov(context, 85)
+    }
+
+    /**
+     * Looks from [eye] at [at] through a camera of the client's own, which no one else sees;
+     * or, with a null [eye], through the player's eyes again.
+     */
+    private fun placeCamera(context: ClientGameTestContext, eye: Vec3?, at: Vec3 = Vec3.ZERO) {
+        context.runOnClient<RuntimeException> { mc ->
+            if (eye == null) {
+                mc.setCameraEntity(mc.player)
+                return@runOnClient
+            }
+            val camera = mc.cameraEntity?.takeIf { it !== mc.player }
+                ?: Villager(EntityType.VILLAGER, mc.level!!).also { mc.setCameraEntity(it) }
+            camera.snapTo(eye.x, eye.y - camera.eyeHeight, eye.z, 0f, 0f)
+            camera.lookAt(EntityAnchorArgument.Anchor.EYES, at)
+            camera.setOldPosAndRot()
+        }
+    }
+
+    /** Villagers in the computers' seats, all but the first of [seats], at [table], and none anywhere else around it. */
+    private fun seatVillagers(level: ServerLevel, table: BlockPos, seats: Int) {
+        for (villager in level.getEntitiesOfClass(Villager::class.java, AABB(table).inflate(3.0))) villager.discard()
+        val entity = level.getBlockEntity(table) as CardTableBlockEntity
+        val looks = listOf(
+            VillagerProfession.LIBRARIAN to VillagerType.PLAINS,
+            VillagerProfession.FARMER to VillagerType.TAIGA,
+            VillagerProfession.CLERIC to VillagerType.DESERT,
+        )
+        for (seat in 1 until seats) {
+            val (profession, type) = looks[(seat - 1) % looks.size]
+            villager(level, table, entity.sideOf(seat), profession, type)
+        }
     }
 
     /**

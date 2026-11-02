@@ -11,59 +11,63 @@
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge 和 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 许可证"></a>
 </p>
+<h3 align="center">在你的 Minecraft 世界里摆一张牌桌。<br>搬个凳子坐下，和朋友打斗地主、麻将、UNO……朋友不在，就叫电脑来凑一桌。</h3>
 
-土块棋牌室在 Minecraft 中加入可以合成和摆放的牌桌，供玩家与朋友或电脑一同打牌。
+<p align="center"><img src="docs/images/zh-CN/clip.webp" alt="书房里的牌桌上，玩家和两个村民打完一整局斗地主" width="100%"></p>
 
-![书房里的两张牌桌：左边在打斗地主，右边几个村民围着 UNO 牌桌](docs/images/hero.webp)
+<p align="center"><b>7 种玩法</b> · <b>2 到 8 人</b> · <b>空位电脑补</b> · <b>每局都能回放</b> · <b>Fabric 和 NeoForge</b></p>
 
-## 特色
-
-- **立体牌桌**：牌摆在世界中的桌面上。手牌立起朝向自己，出过的牌放在桌子中央，旁人也能看到。
-- **多人联机与电脑补位**：空位可由电脑补上，分简单、普通、困难三档；玩家离开或掉线时由电脑代打；在打的人全都离座时对局暂停，等有人坐上桌接着打或结束对局。
-- **回放与战绩**：每局自动保存回放，可从任意座位的视角重看；牌桌记录每位玩家的战绩。
-- **外观定制**：牌桌和凳子有多种木材可选，桌布和坐垫可以染色，牌背和牌面有多种样式。
-- **沉浸视角**：界面不遮挡世界，直接点选桌上的牌出牌。
-
-## 游戏
+## 玩法
 
 <table>
   <tr>
-    <td width="55%"><img src="docs/images/zh-CN/ddz-table.webp" alt="斗地主"></td>
-    <td><b>斗地主</b><br>三人游戏，一名地主对两名农民。规则可选经典叫分、抢地主和不洗牌；也能玩四人斗地主：两副牌，一名地主对三名农民，炸弹最多八张。</td>
+    <td width="50%"><img src="docs/images/zh-CN/ddz-world.webp" alt="斗地主"></td>
+    <td width="50%"><img src="docs/images/zh-CN/mj-table.webp" alt="麻将"></td>
   </tr>
   <tr>
-    <td><img src="docs/images/zh-CN/uno-table.webp" alt="UNO"></td>
-    <td><b>UNO</b><br>2 至 4 人。可选经典规则或罚牌可叠加的规则。</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/zh-CN/pdk-table.webp" alt="跑得快"></td>
-    <td><b>跑得快</b><br>三人各自为战，先出完手牌者获胜。可选每人 16 张或 15 张，以及是否有大必压。</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/zh-CN/gd-table.webp" alt="掼蛋"></td>
-    <td><b>掼蛋</b><br>四人分两队，使用两副牌。可选只打一局，或连续打到 A。</td>
-  </tr>
-  <tr>
-    <td><img src="docs/images/zh-CN/tutu-table.webp" alt="土土牌"></td>
-    <td><b>土土牌</b><br>本模组原创的出牌游戏，玩法与 UNO 相近，功能牌取材自 Minecraft，例如会在桌上冒烟的 TNT。2 至 8 人，6 人和 8 人需使用大方桌。</td>
+    <td valign="top"><b>斗地主</b> · 3 或 4 人<br>一个地主对几个农民。可以叫分、抢地主、打不洗牌，也能四个人用两副牌打，炸弹最多八张。</td>
+    <td valign="top"><b>麻将</b> · 4 人<br>四川麻将血战到底：换三张、定缺，有人胡了其他人接着打，直到三家胡牌。麻将牌立在桌上，牌墙码在中间。</td>
   </tr>
   <tr>
     <td><img src="docs/images/zh-CN/bluff-world.webp" alt="吹牛苦力怕"></td>
-    <td><b>吹牛苦力怕</b><br>类似骗子酒馆的吹牛游戏，用苦力怕代替左轮枪。扣下牌说都是叫到的点数，或者揭穿上家撒谎；猜错的一方点燃自己苦力怕的引线，六次里有一次会炸。2 至 8 人。房主可以选苦力怕炸了会不会在世界里伤到它的主人。</td>
+    <td><img src="docs/images/zh-CN/tutu-world.webp" alt="土土牌"></td>
   </tr>
   <tr>
-    <td><img src="docs/images/zh-CN/mj-table.webp" alt="麻将"></td>
-    <td><b>麻将</b><br>四人，四川麻将血战到底：换三张、定缺，有人胡了其他人接着打，直到三家胡牌。麻将牌立在桌上，牌墙码在中间。</td>
+    <td valign="top"><b>吹牛苦力怕</b> · 2 到 8 人<br>像骗子酒馆，只是把左轮枪换成了苦力怕。扣下牌，该吹就吹，或者揭穿上家；猜错的人点燃自己苦力怕的引线，六次里有一次会炸。炸了疼不疼，房主说了算。</td>
+    <td valign="top"><b>土土牌</b> · 2 到 8 人<br>本模组原创，玩法和 UNO 差不多，功能牌取材自 Minecraft。点着的 TNT 在桌上冒烟，谁也不知道会在谁的回合炸。</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/zh-CN/gd-world.webp" alt="掼蛋"></td>
+    <td><img src="docs/images/zh-CN/uno-world.webp" alt="UNO"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>掼蛋</b> · 4 人<br>两队对打，两副牌，有逢人配，有进贡还贡。可以只打一局，也可以一路打到 A。</td>
+    <td valign="top"><b>UNO</b> · 2 到 4 人<br>经典规则，或者让罚牌一张张叠给下家。</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/zh-CN/pdk-world.webp" alt="跑得快"></td>
+    <td><img src="docs/images/zh-CN/ddz-table.webp" alt="斗地主的牌桌界面"></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>跑得快</b> · 3 人<br>各自为战，谁先出完谁赢。每人 16 张或 15 张，可选有没有大必压。</td>
+    <td valign="top"><b>上手容易</b><br>坐下就能看到手牌、比分和<b>提示</b>按钮。点 <b>?</b> 打开规则书，每种玩法都有图解。</td>
   </tr>
 </table>
 
-规则说明见游戏内的规则书：点击牌桌界面上的 **?** 按钮即可打开。
+## 为什么来土块棋牌室
+
+- **牌真的摆在桌上。** 手牌立起来朝着自己，出过的牌落在桌子中间，路过的人都能围观。打开沉浸视角，直接点桌上的牌出牌。
+- **永远不缺人。** 空位随时加电脑，分简单、普通、困难三档；有人离开或掉线，电脑接着替他打。大家都走开了，牌局就停下来等人回来。
+- **一坐一晚上。** 一场比赛连打好几局、累计比分，每局都存了回放，能换任意座位的视角重看，牌桌还记着每个人的战绩。
+- **把屋子布置成你的样子。** 牌桌和凳子有各种木头，桌布和坐垫随便染色，牌背、牌面有好几套。大方桌能坐 8 个人。
+
+![书房里的两张牌桌：左边在打斗地主，右边几个村民围着 UNO 牌桌](docs/images/hero.webp)
 
 ## 开始游玩
 
 ### 下载
 
-从 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下载对应 Minecraft 版本和加载器的 jar，例如 `tukuai-fabric-1.21.1-<版本>.jar`。支持 Minecraft 26.1.2 和 1.21.1，还需要：
+从 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下载对应 Minecraft 版本和加载器的 jar，例如 `tukuai-fabric-1.21.1-<版本>.jar`。服务器和每位玩家都要安装。支持 Minecraft 26.1.2 和 1.21.1，还需要：
 
 | 加载器 | 前置模组 |
 | --- | --- |
