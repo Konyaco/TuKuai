@@ -1,0 +1,15 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "tukuai_smoke"
+version = "1.0.0"
+displayName = "TuKuai smoke test"
+
+[[dependencies.tukuai_smoke]]
+modId = "tukuai"
+type = "required"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "CLIENT"

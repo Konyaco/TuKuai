@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client.mahjong
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
@@ -32,7 +33,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import org.lwjgl.glfw.GLFW
 
 /**
  * The mahjong part of the table screen: your hand along the bottom with your melds to its
@@ -230,7 +230,7 @@ class MjPanel(private val screen: PanelHost) : GamePanel {
     }
 
     override fun mouseClicked(table: ClientTable, x: Double, y: Double, button: Int): Boolean {
-        if (!screen.interactive || screen.inWorld || button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false
+        if (!screen.interactive || screen.inWorld || button != InputConstants.MOUSE_BUTTON_LEFT) return false
         val view = table.view as? ScView ?: return false
         val me = view.seat ?: return false
         val top = handY() - RAISE
@@ -259,7 +259,7 @@ class MjPanel(private val screen: PanelHost) : GamePanel {
         val view = table.view as? ScView ?: return false
         if (!asked(table, view)) return false
         return when (key) {
-            GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_ENTER -> {
+            InputConstants.KEY_SPACE, InputConstants.KEY_RETURN -> {
                 val picked = pickedTiles(view)
                 when (view.phase) {
                     ScPhase.SWAP -> if (SichuanMahjong.swapProblem(view.hand, picked) == null) send(ScAction.Swap(picked))
@@ -269,7 +269,7 @@ class MjPanel(private val screen: PanelHost) : GamePanel {
                 }
                 true
             }
-            GLFW.GLFW_KEY_H -> {
+            InputConstants.KEY_H -> {
                 when (view.phase) {
                     ScPhase.SWAP -> hintSwap(view)
                     ScPhase.PLAY -> hintDiscard(view)

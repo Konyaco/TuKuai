@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.GameRegistry
@@ -19,7 +20,6 @@ import net.minecraft.network.chat.CommonComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.util.FormattedCharSequence
-import org.lwjgl.glfw.GLFW
 
 /**
  * The rule book: a tab for each game, its sections down the left and the open page on the
@@ -346,21 +346,21 @@ class RulesScreen(
     override fun keyPressed(event: KeyEvent): Boolean {
         val view = viewBottom() - viewTop()
         when (event.key()) {
-            GLFW.GLFW_KEY_UP -> scrollBy(-LINE * 2)
-            GLFW.GLFW_KEY_DOWN -> scrollBy(LINE * 2)
-            GLFW.GLFW_KEY_PAGE_UP -> scrollBy(-(view - 20))
-            GLFW.GLFW_KEY_PAGE_DOWN, GLFW.GLFW_KEY_SPACE -> scrollBy(view - 20)
-            GLFW.GLFW_KEY_HOME -> scroll = 0
-            GLFW.GLFW_KEY_END -> scroll = maxScroll()
-            GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_RIGHT -> {
-                val next = section + if (event.key() == GLFW.GLFW_KEY_LEFT) -1 else 1
+            InputConstants.KEY_UP -> scrollBy(-LINE * 2)
+            InputConstants.KEY_DOWN -> scrollBy(LINE * 2)
+            InputConstants.KEY_PAGEUP -> scrollBy(-(view - 20))
+            InputConstants.KEY_PAGEDOWN, InputConstants.KEY_SPACE -> scrollBy(view - 20)
+            InputConstants.KEY_HOME -> scroll = 0
+            InputConstants.KEY_END -> scroll = maxScroll()
+            InputConstants.KEY_LEFT, InputConstants.KEY_RIGHT -> {
+                val next = section + if (event.key() == InputConstants.KEY_LEFT) -1 else 1
                 if (next in sections.indices) {
                     section = next
                     scroll = 0
                     rebuildWidgets()
                 }
             }
-            GLFW.GLFW_KEY_TAB -> if (games.size > 1) {
+            InputConstants.KEY_TAB -> if (games.size > 1) {
                 openGame(games[(games.indexOf(game) + 1).mod(games.size)])
                 rebuildWidgets()
             }
@@ -370,7 +370,7 @@ class RulesScreen(
     }
 
     override fun onClose() {
-        mc.setScreen(parent)
+        mc.openScreen(parent)
     }
 
     override fun isPauseScreen(): Boolean = false
@@ -385,7 +385,7 @@ class RulesScreen(
 
         /** Opens the book on top of [parent], on the section about the table's rules when there is one. */
         fun open(parent: Screen?, table: ClientTable?, gameId: String) {
-            net.minecraft.client.Minecraft.getInstance().setScreen(RulesScreen(parent, table?.pos, gameId))
+            net.minecraft.client.Minecraft.getInstance().openScreen(RulesScreen(parent, table?.pos, gameId))
         }
     }
 }

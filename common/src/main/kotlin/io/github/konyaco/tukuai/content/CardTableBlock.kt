@@ -1,6 +1,5 @@
 package io.github.konyaco.tukuai.content
 
-import com.mojang.serialization.MapCodec
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
@@ -79,8 +78,6 @@ open class CardTableBlock(properties: BlockBehaviour.Properties) : CompatBaseEnt
     init {
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(partProperty, centerPart).setValue(WOOD, Wood.OAK))
     }
-
-    override fun codec(): MapCodec<out BaseEntityBlock> = CODEC
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
         builder.add(FACING, partProperty, WOOD)
@@ -231,8 +228,6 @@ open class CardTableBlock(properties: BlockBehaviour.Properties) : CompatBaseEnt
          */
         const val TOP_HEIGHT = 14f / 16f
 
-        val CODEC: MapCodec<CardTableBlock> = Block.simpleCodec(::CardTableBlock)
-
         /** Parts of a 3x3 table; a [BigCardTableBlock] has its own, see [CardTableBlock.partAt]. */
         fun partAt(dx: Int, dz: Int): Int = (dz + 1) * 3 + (dx + 1)
 
@@ -258,12 +253,8 @@ class BigCardTableBlock(properties: BlockBehaviour.Properties) : CardTableBlock(
 
     override val partProperty: IntegerProperty get() = BIG_PART
 
-    override fun codec(): MapCodec<out BaseEntityBlock> = BIG_CODEC
-
     companion object {
         /** Which of the 25 blocks this is: `(dz + 2) * 5 + (dx + 2)` for its offset from the middle. */
         val BIG_PART: IntegerProperty = IntegerProperty.create("part", 0, 24)
-
-        val BIG_CODEC: MapCodec<BigCardTableBlock> = Block.simpleCodec(::BigCardTableBlock)
     }
 }

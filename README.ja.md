@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="最新リリース"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.1.2 / 1.21.1">
+  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.3 / 26.2 / 26.1.2 / 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge と Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT ライセンス"></a>
 </p>
@@ -67,15 +67,15 @@
 
 ### ダウンロード
 
-[Releases](https://github.com/Konyaco/TuKuai/releases/latest) から Minecraft のバージョンとローダーに合った jar（例：`tukuai-fabric-1.21.1-<バージョン>.jar`）をダウンロードしてください。サーバーと全プレイヤーのゲームの両方に入れてください。Minecraft 26.1.2 と 1.21.1 に対応しており、次の Mod が必要です。
+[Releases](https://github.com/Konyaco/TuKuai/releases/latest) から Minecraft のバージョンとローダーに合った jar（例：`tukuai-fabric-1.21.1-<バージョン>.jar`）をダウンロードしてください。サーバーと全プレイヤーのゲームの両方に入れてください。Minecraft 26.3、26.2、26.1.2、1.21.1 に対応しており、次の Mod が必要です。
 
 | ローダー | 前提 Mod |
 | --- | --- |
-| NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 以降 |
+| NeoForge 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 以降 |
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 以降 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 以降 |
 
-1.21.1 にはペールオークがないため、ペールオークのテーブルとスツールは 26.1.2 のみです。
+1.21.1 にはペールオークがないため、ペールオークのテーブルとスツールは 26.1.2 以降のみです。
 
 ### レシピ
 
@@ -145,6 +145,7 @@ JDK 25 が必要です。Minecraft 1.21.1 用の JDK 21 は Gradle が自動で�
 ./gradlew :fabric-26.1.2:runClientGameTest     # ゲームを起動して数局遊び、スクリーンショットを撮る
 ./gradlew :fabric-26.1.2:runMultiplayerTest    # 専用サーバーと 2 つのクライアントによる対戦テスト
 ./gradlew :fabric-1.21.1:runSmokeTest          # Minecraft 1.21.1 で各ゲームを 1 局ずつ遊び、スクリーンショットを撮る
+./gradlew :fabric-26.3:runSmokeTest            # 同じことを Minecraft 26.3（と 26.2）で行う
 TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # この README のスクリーンショットを撮る
 ```
 

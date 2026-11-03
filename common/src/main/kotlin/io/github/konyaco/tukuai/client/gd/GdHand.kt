@@ -1,12 +1,12 @@
 package io.github.konyaco.tukuai.client.gd
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PlayingCardHand
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
-import org.lwjgl.glfw.GLFW
 
 /**
  * Your Guandan hand along the bottom of the screen, where cards are picked before playing
@@ -116,7 +116,7 @@ class GdHand(private val host: PanelHost, private val oneRowMost: Int = ONE_ROW_
      * of its row passed over the same way. Right-click drops them all.
      */
     fun click(x: Double, y: Double, button: Int): Boolean {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
             if (picked.isEmpty()) return false
             clear()
             return true

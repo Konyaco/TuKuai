@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client.gd
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTable
@@ -30,7 +31,6 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.util.FormattedCharSequence
-import org.lwjgl.glfw.GLFW
 
 /**
  * The Guandan part of the table screen: your hand along the bottom, in two rows when it
@@ -155,13 +155,13 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
     override fun keyPressed(table: ClientTable, key: Int): Boolean {
         val view = table.view as? GdView ?: return false
         if (owesReturn(table, view)) {
-            if (key != GLFW.GLFW_KEY_SPACE && key != GLFW.GLFW_KEY_ENTER) return false
+            if (key != InputConstants.KEY_SPACE && key != InputConstants.KEY_RETURN) return false
             returnChoice(view)?.let { send(GdAction.Return(it)) }
             return true
         }
         val turn = turn(table, view) ?: return false
         return when (key) {
-            GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_ENTER -> {
+            InputConstants.KEY_SPACE, InputConstants.KEY_RETURN -> {
                 if (turn.reading(selected) != null) {
                     send(GdAction.PlayCards(selected))
                 } else if (selected.isEmpty() && turn.canPass) {
@@ -169,7 +169,7 @@ class GdPanel(private val screen: PanelHost) : GamePanel {
                 }
                 true
             }
-            GLFW.GLFW_KEY_H -> {
+            InputConstants.KEY_H -> {
                 hint(view, turn)
                 true
             }

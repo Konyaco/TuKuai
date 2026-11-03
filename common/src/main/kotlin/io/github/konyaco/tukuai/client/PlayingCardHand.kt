@@ -1,12 +1,12 @@
 package io.github.konyaco.tukuai.client
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.table.Occupant
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
-import org.lwjgl.glfw.GLFW
 
 /**
  * Your own hand of playing cards along the bottom of the screen, where cards are picked
@@ -67,7 +67,7 @@ class PlayingCardHand(private val host: PanelHost) {
      * over the same way. Right-click drops them all.
      */
     fun click(hand: List<PlayingCard>, x: Double, y: Double, button: Int): Boolean {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
             if (selected.isEmpty()) return false
             selected.clear()
             host.refresh()

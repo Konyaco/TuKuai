@@ -1,6 +1,5 @@
 package io.github.konyaco.tukuai.content
 
-import com.mojang.serialization.MapCodec
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.platform.Services
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
@@ -38,8 +37,6 @@ class StoolBlock(properties: BlockBehaviour.Properties) : CompatBlock(properties
     init {
         registerDefaultState(stateDefinition.any().setValue(COLOR, DyeColor.RED).setValue(WOOD, Wood.OAK))
     }
-
-    override fun codec(): MapCodec<out Block> = CODEC
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
         builder.add(COLOR, WOOD)
@@ -95,8 +92,6 @@ class StoolBlock(properties: BlockBehaviour.Properties) : CompatBlock(properties
         val COLOR: EnumProperty<DyeColor> = EnumProperty.create("color", DyeColor::class.java)
 
         val WOOD = Wood.PROPERTY
-
-        val CODEC: MapCodec<StoolBlock> = Block.simpleCodec(::StoolBlock)
 
         /** Height of the top of the cushion, in blocks; see tools/gen_models.py. */
         const val SEAT_HEIGHT = 12.0 / 16.0

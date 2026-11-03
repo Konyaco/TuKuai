@@ -7,6 +7,9 @@ def versionDir = projectDir.parentFile
 def versionProperties = new Properties()
 new File(versionDir, 'gradle.properties').withInputStream { versionProperties.load(it) }
 versionProperties.each { key, value -> ext.set(key, value) }
+// NeoForge 26.2 renamed the mod list's logo and description keys; older versions keep these.
+ext.neoforge_logo_key = versionProperties.getProperty('neoforge_logo_key', 'logoFile')
+ext.neoforge_description_key = versionProperties.getProperty('neoforge_description_key', 'fml.menu.mods.info.description')
 ext.loader = projectDir.name
 
 base {
@@ -31,6 +34,10 @@ sourceSets.main {
     kotlin.srcDir new File(versionDir, 'src/main/kotlin')
     resources.srcDir rootProject.file('common/src/main/resources')
     resources.srcDir new File(versionDir, 'src/main/resources')
+    // A version whose data files are the same as another's names it as resources_from.
+    if (project.hasProperty('resources_from')) {
+        resources.srcDir new File(versionDir.parentFile, "${resources_from}/src/main/resources")
+    }
     // fabric.mod.json or neoforge.mods.toml, the same for every Minecraft version.
     resources.srcDir rootProject.file("common/src/${loader}/resources")
 }
@@ -54,7 +61,16 @@ processResources {
         fabric_language_kotlin_version: fabric_language_kotlin_version,
         neoforge_version              : neoforge_version,
         kotlin_for_forge_version      : kotlin_for_forge_version,
+        neoforge_logo_key             : neoforge_logo_key,
     ]
     inputs.properties properties
+    inputs.property 'neoforge_description_key', neoforge_description_key
     filesMatching(['fabric.mod.json', 'META-INF/neoforge.mods.toml']) { expand properties }
+    // The language files name the mod list's description by the 26.1 key, which newer
+    // NeoForge warns about on every start.
+    if (neoforge_description_key != 'fml.menu.mods.info.description') {
+        filesMatching('assets/*/lang/*.json') {
+            filter { it.replace('"fml.menu.mods.info.description.', "\"${neoforge_description_key}.") }
+        }
+    }
 }

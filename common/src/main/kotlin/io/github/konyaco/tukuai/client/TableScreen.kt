@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.card.Rank
@@ -20,7 +21,6 @@ import net.minecraft.client.gui.screens.Screen
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.DyeColor
-import org.lwjgl.glfw.GLFW
 
 /**
  * The screen opened by right-clicking a card table. The lobby part (seats, rules, the
@@ -623,12 +623,12 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         val t = table
         if (popup == Popup.MENU) return clickMenu(event.x(), event.y())
         if (popup != null || t?.snapshot?.paused == true) return true
-        if (inWorld && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (inWorld && event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
             startTurning()
             return true
         }
         if (t == null || inLobby(t)) return false
-        if (inWorld && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (inWorld && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             val card = tableCardAt(event.x(), event.y())
             if (card != null && panel?.clickTableCard(t, card) == true) {
                 sweeping = true
@@ -653,18 +653,18 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         val mouse = mc.mouseHandler
         turnFrom = mouse.xpos() to mouse.ypos()
         turned = 0.0
-        grabMouse(mc, GLFW.GLFW_CURSOR_DISABLED, mouse.xpos(), mouse.ypos())
+        grabMouse(mc, true, mouse.xpos(), mouse.ypos())
     }
 
     /** Shows the cursor again where it was when turning started. */
     private fun stopTurning() {
         val (x, y) = turnFrom ?: return
         turnFrom = null
-        grabMouse(mc, GLFW.GLFW_CURSOR_NORMAL, x, y)
+        grabMouse(mc, false, x, y)
     }
 
     override fun mouseDragged(event: MouseButtonEvent, dragX: Double, dragY: Double): Boolean {
-        if (turnFrom != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (turnFrom != null && event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
             // Back to screen pixels, then turned as much as the same move would in the world.
             val window = mc.window
             val dx = dragX * window.screenWidth / window.guiScaledWidth
@@ -680,7 +680,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             return true
         }
         val t = table
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && t != null && !inLobby(t) && popup == null) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && t != null && !inLobby(t) && popup == null) {
             if (sweeping) {
                 // Sampled along the way, so a quick sweep does not skip the cards it passes.
                 val steps = maxOf(1, (kotlin.math.hypot(dragX, dragY) / 3).toInt())
@@ -696,7 +696,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
     }
 
     override fun mouseReleased(event: MouseButtonEvent): Boolean {
-        if (turnFrom != null && event.button() == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (turnFrom != null && event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
             val (x, y) = turnFrom!!
             stopTurning()
             // A right click that did not turn the view still does what it does on the screen,
@@ -708,7 +708,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             }
             return true
         }
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             sweeping = false
             table?.let { panel?.mouseReleased(it) }
         }
@@ -723,13 +723,13 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
 
     override fun keyPressed(event: KeyEvent): Boolean {
         val t = table
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE && popup != null) {
+        if (event.key() == InputConstants.KEY_ESCAPE && popup != null) {
             openPopup(null)
             return true
         }
         val free = t != null && !inLobby(t) && popup == null && !t.snapshot.paused
         if (free && panel?.keyPressed(t!!, event.key()) == true) return true
-        if (event.key() == GLFW.GLFW_KEY_TAB) {
+        if (event.key() == InputConstants.KEY_TAB) {
             stopTurning()
             ClientConfig.immersive = !ClientConfig.immersive
             ClientConfig.save()
@@ -827,7 +827,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
 
         fun open(pos: BlockPos) {
             val mc = net.minecraft.client.Minecraft.getInstance()
-            if (mc.screen !is TableScreen) mc.setScreen(TableScreen(pos))
+            if (mc.currentScreen !is TableScreen) mc.openScreen(TableScreen(pos))
         }
 
         /**

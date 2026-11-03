@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.1.2 and 1.21.1">
+  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.3, 26.2, 26.1.2 and 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge and Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT license"></a>
 </p>
@@ -67,15 +67,15 @@
 
 ### Download
 
-Get the jar for your Minecraft version and loader from [Releases](https://github.com/Konyaco/TuKuai/releases/latest), such as `tukuai-fabric-1.21.1-<version>.jar`. Install it on the server and on every player's game. It runs on Minecraft 26.1.2 and 1.21.1, and needs:
+Get the jar for your Minecraft version and loader from [Releases](https://github.com/Konyaco/TuKuai/releases/latest), such as `tukuai-fabric-1.21.1-<version>.jar`. Install it on the server and on every player's game. It runs on Minecraft 26.3, 26.2, 26.1.2 and 1.21.1, and needs:
 
 | Loader | Also install |
 | --- | --- |
-| NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 or newer |
+| NeoForge 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 or newer |
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 or newer |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api) and [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 or newer |
 
-Pale oak tables and stools need 26.1.2, since 1.21.1 has no pale oak.
+Pale oak tables and stools need 26.1.2 or newer, since 1.21.1 has no pale oak.
 
 ### Crafting
 
@@ -145,6 +145,7 @@ Tests:
 ./gradlew :fabric-26.1.2:runClientGameTest     # starts the game, plays a few rounds and takes screenshots
 ./gradlew :fabric-26.1.2:runMultiplayerTest    # a dedicated server with two clients
 ./gradlew :fabric-1.21.1:runSmokeTest          # plays each game once on Minecraft 1.21.1 and takes screenshots
+./gradlew :fabric-26.3:runSmokeTest            # the same on Minecraft 26.3 (and 26.2)
 TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # takes the screenshots in this README
 ```
 

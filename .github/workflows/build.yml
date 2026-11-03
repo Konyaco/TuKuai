@@ -44,6 +44,18 @@ jobs:
           path: versions/*/*/build/libs/tukuai-*-${{ steps.versions.outputs.version }}.jar
           if-no-files-found: error
 
+      - name: Start Fabric 26.3 server
+        run: .github/scripts/server-smoke.sh fabric 26.3
+
+      - name: Start NeoForge 26.3 server
+        run: .github/scripts/server-smoke.sh neoforge 26.3
+
+      - name: Start Fabric 26.2 server
+        run: .github/scripts/server-smoke.sh fabric 26.2
+
+      - name: Start NeoForge 26.2 server
+        run: .github/scripts/server-smoke.sh neoforge 26.2
+
       - name: Start Fabric 26.1.2 server
         run: .github/scripts/server-smoke.sh fabric 26.1.2
 
@@ -111,22 +123,41 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/screenshots"
           find versions/26.1.2/fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
 
-      # Fabric's client game tests start with 1.21.4, so 1.21.1 plays through a world with
-      # its own smoke test on each loader.
+      # The other versions play through a world with a smoke test of their own on each
+      # loader: 1.21.1 has no Fabric client game tests, and 26.2 and 26.3 share one.
+      - name: Run the Fabric 26.3 smoke test
+        if: always()
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-26.3:runSmokeTest --no-daemon --stacktrace
+
+      - name: Run the NeoForge 26.3 smoke test
+        if: always()
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :neoforge-26.3:runSmokeTest --no-daemon --stacktrace
+
+      - name: Run the Fabric 26.2 smoke test
+        if: always()
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-26.2:runSmokeTest --no-daemon --stacktrace
+
+      - name: Run the NeoForge 26.2 smoke test
+        if: always()
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :neoforge-26.2:runSmokeTest --no-daemon --stacktrace
+
       - name: Run the Fabric 1.21.1 smoke test
+        if: always()
         run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-1.21.1:runSmokeTest --no-daemon --stacktrace
 
       - name: Run the NeoForge 1.21.1 smoke test
         if: always()
         run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :neoforge-1.21.1:runSmokeTest --no-daemon --stacktrace
 
-      - name: Keep the 1.21.1 smoke tests' screenshots
+      - name: Keep the smoke tests' screenshots
         if: always()
         run: |
           mkdir -p "${RUNNER_TEMP}/screenshots"
-          for loader in fabric neoforge; do
-            find "versions/1.21.1/${loader}/build/run/smoke/screenshots" -name 'tukuai-*.png' 2>/dev/null | while read -r f; do
-              cp "$f" "${RUNNER_TEMP}/screenshots/1.21.1-${loader}-$(basename "$f")"
+          for minecraft in 26.3 26.2 1.21.1; do
+            for loader in fabric neoforge; do
+              find "versions/${minecraft}/${loader}/build/run/smoke/screenshots" -name 'tukuai-*.png' 2>/dev/null | while read -r f; do
+                cp "$f" "${RUNNER_TEMP}/screenshots/${minecraft}-${loader}-$(basename "$f")"
+              done
             done
           done
 

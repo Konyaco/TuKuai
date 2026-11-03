@@ -9,6 +9,7 @@ import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TablePointer
 import io.github.konyaco.tukuai.client.TableScreen
+import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
 import io.github.konyaco.tukuai.table.TableStatus
@@ -153,7 +154,7 @@ class TableArt {
         for (side in Direction.Plane.HORIZONTAL) {
             poseStack.pushPose()
             poseStack.translate(0.5f, TOP + DISPLAY_HEIGHT / 2, 0.5f)
-            poseStack.mulPose(Axis.YP.rotation(atan2(side.stepX.toFloat(), side.stepZ.toFloat())))
+            poseStack.rotate(Axis.YP.rotation(atan2(side.stepX.toFloat(), side.stepZ.toFloat())))
             poseStack.translate(0f, 0f, DISPLAY_HALF_WIDTH + 0.002f)
             poseStack.scale(scale, -scale, scale)
             lines.forEachIndexed { i, text -> line(poseStack, -font.width(text) / 2f, top + i * LINE_HEIGHT, text) }

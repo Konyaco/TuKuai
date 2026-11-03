@@ -18,7 +18,7 @@ include 'engine'
 
 // A Fabric and a NeoForge project for each Minecraft version, in versions/<minecraft>/<loader>,
 // named like :fabric-26.1.2. The newest version comes first.
-for (minecraft in ['26.1.2', '1.21.1']) {
+for (minecraft in ['26.3', '26.2', '26.1.2', '1.21.1']) {
     for (loader in ['fabric', 'neoforge']) {
         include ":${loader}-${minecraft}"
         project(":${loader}-${minecraft}").projectDir = file("versions/${minecraft}/${loader}")

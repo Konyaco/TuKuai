@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client.pdk
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTable
@@ -29,7 +30,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import org.lwjgl.glfw.GLFW
 
 /**
  * The Pao De Kuai part of the table screen, laid out like Dou Dizhu's: your hand along the
@@ -141,7 +141,7 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
         val view = table.view as? PdkView ?: return false
         val turn = turn(table, view) ?: return false
         return when (key) {
-            GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_ENTER -> {
+            InputConstants.KEY_SPACE, InputConstants.KEY_RETURN -> {
                 if (turn.reading(selected) != null) {
                     send(PdkAction.PlayCards(selected.toList()))
                 } else if (selected.isEmpty() && turn.canPass) {
@@ -149,7 +149,7 @@ class PdkPanel(private val screen: PanelHost) : GamePanel {
                 }
                 true
             }
-            GLFW.GLFW_KEY_H -> {
+            InputConstants.KEY_H -> {
                 hint(view, turn)
                 true
             }
