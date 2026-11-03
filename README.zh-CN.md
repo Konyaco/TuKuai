@@ -121,7 +121,7 @@
 
 ```sh
 ./gradlew build                        # 编译、测试，并打出每个加载器、每个 Minecraft 版本的 jar
-./gradlew :fabric-26.1.2:runClient     # 用 Fabric 启动 Minecraft 26.1.2
+./gradlew :mc26:fabric-26.3:runClient  # 用 Fabric 启动 Minecraft 26.3
 ./gradlew :neoforge-1.21.1:runClient   # 用 NeoForge 启动 Minecraft 1.21.1
 ```
 
@@ -129,8 +129,9 @@
 | --- | --- |
 | `engine` | 规则、电脑和回放，纯 Kotlin，不依赖 Minecraft |
 | `common` | 所有加载器和 Minecraft 版本共用的 Minecraft 代码和资源，按最新版 Minecraft 写 |
-| `versions/<minecraft>` | 某个 Minecraft 版本独有的部分：`gradle.properties` 里的各项版本，让旧版本用上最新版 Minecraft 名字的 `compat` 包，渲染器、物品模型和配方 |
-| `versions/<minecraft>/fabric`、`versions/<minecraft>/neoforge` | 该版本下各加载器的入口和注册 |
+| `mc26` | Minecraft 26.1.2、26.2、26.3 合成的一个 [Stonecutter](https://stonecutter.kikugie.dev/) 项目：`src` 里是 `compat` 包、渲染器、各加载器的入口、物品模型和配方，版本之间不同的地方用 `//?` 注释标出；`versions/<加载器>-<minecraft>/gradle.properties` 是各自的版本号 |
+| `versions/1.21.1` | Minecraft 1.21.1：`gradle.properties` 里的各项版本，让它用上最新版 Minecraft 名字的 `compat` 包，渲染器、物品模型和配方 |
+| `versions/1.21.1/fabric`、`versions/1.21.1/neoforge` | 1.21.1 下各加载器的入口和注册 |
 
 加入新游戏：
 
@@ -141,12 +142,12 @@
 测试：
 
 ```sh
-./gradlew :engine:test                         # 规则与电脑的单元测试
-./gradlew :fabric-26.1.2:runClientGameTest     # 启动游戏实际打几局并截图
-./gradlew :fabric-26.1.2:runMultiplayerTest    # 专用服务器加两个客户端的联机测试
-./gradlew :fabric-1.21.1:runSmokeTest          # 在 Minecraft 1.21.1 上每种玩法各打一局并截图
-./gradlew :fabric-26.3:runSmokeTest            # 在 Minecraft 26.3（以及 26.2）上做同样的测试
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # 拍摄本文的截图
+./gradlew :engine:test                           # 规则与电脑的单元测试
+./gradlew :mc26:fabric-26.1.2:runClientGameTest  # 启动游戏实际打几局并截图
+./gradlew :mc26:fabric-26.1.2:runMultiplayerTest # 专用服务器加两个客户端的联机测试
+./gradlew :fabric-1.21.1:runSmokeTest            # 在 Minecraft 1.21.1 上每种玩法各打一局并截图
+./gradlew :mc26:neoforge-26.3:runSmokeTest       # 在任一 26.x 版本和加载器上做同样的测试
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :mc26:fabric-26.1.2:runClientGameTest   # 拍摄本文的截图
 ```
 
 提交信息格式为 `[type](scope) Title`。依赖版本见 `gradle.properties` 和 `versions/<minecraft>/gradle.properties`。

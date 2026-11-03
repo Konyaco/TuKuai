@@ -121,7 +121,7 @@ JDK 25 が必要です。Minecraft 1.21.1 用の JDK 21 は Gradle が自動で�
 
 ```sh
 ./gradlew build                        # コンパイル、テスト、全ローダー・全 Minecraft バージョンの jar の作成
-./gradlew :fabric-26.1.2:runClient     # Fabric で Minecraft 26.1.2 を起動
+./gradlew :mc26:fabric-26.3:runClient  # Fabric で Minecraft 26.3 を起動
 ./gradlew :neoforge-1.21.1:runClient   # NeoForge で Minecraft 1.21.1 を起動
 ```
 
@@ -129,8 +129,9 @@ JDK 25 が必要です。Minecraft 1.21.1 用の JDK 21 は Gradle が自動で�
 | --- | --- |
 | `engine` | ルール、CPU、リプレイ。Minecraft に依存しない Kotlin コード |
 | `common` | 全ローダー・全 Minecraft バージョン共通の Minecraft コードとリソース。最新の Minecraft に合わせて書かれています |
-| `versions/<minecraft>` | その Minecraft バージョンだけの部分：`gradle.properties` の各バージョン、古いバージョンで最新の Minecraft の名前を使えるようにする `compat` パッケージ、レンダラー、アイテムモデル、レシピ |
-| `versions/<minecraft>/fabric`、`versions/<minecraft>/neoforge` | そのバージョンの各ローダーのエントリポイントと登録処理 |
+| `mc26` | Minecraft 26.1.2・26.2・26.3 をまとめた 1 つの [Stonecutter](https://stonecutter.kikugie.dev/) プロジェクト。`src` に `compat` パッケージ、レンダラー、各ローダーのエントリポイント、アイテムモデル、レシピがあり、バージョンごとに違う箇所は `//?` コメントで示します。`versions/<ローダー>-<minecraft>/gradle.properties` にそれぞれのバージョン |
+| `versions/1.21.1` | Minecraft 1.21.1：`gradle.properties` の各バージョン、最新の Minecraft の名前を使えるようにする `compat` パッケージ、レンダラー、アイテムモデル、レシピ |
+| `versions/1.21.1/fabric`、`versions/1.21.1/neoforge` | 1.21.1 の各ローダーのエントリポイントと登録処理 |
 
 新しいゲームの追加：
 
@@ -141,12 +142,12 @@ JDK 25 が必要です。Minecraft 1.21.1 用の JDK 21 は Gradle が自動で�
 テスト：
 
 ```sh
-./gradlew :engine:test                         # ルールと CPU の単体テスト
-./gradlew :fabric-26.1.2:runClientGameTest     # ゲームを起動して数局遊び、スクリーンショットを撮る
-./gradlew :fabric-26.1.2:runMultiplayerTest    # 専用サーバーと 2 つのクライアントによる対戦テスト
-./gradlew :fabric-1.21.1:runSmokeTest          # Minecraft 1.21.1 で各ゲームを 1 局ずつ遊び、スクリーンショットを撮る
-./gradlew :fabric-26.3:runSmokeTest            # 同じことを Minecraft 26.3（と 26.2）で行う
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # この README のスクリーンショットを撮る
+./gradlew :engine:test                           # ルールと CPU の単体テスト
+./gradlew :mc26:fabric-26.1.2:runClientGameTest  # ゲームを起動して数局遊び、スクリーンショットを撮る
+./gradlew :mc26:fabric-26.1.2:runMultiplayerTest # 専用サーバーと 2 つのクライアントによる対戦テスト
+./gradlew :fabric-1.21.1:runSmokeTest            # Minecraft 1.21.1 で各ゲームを 1 局ずつ遊び、スクリーンショットを撮る
+./gradlew :mc26:neoforge-26.3:runSmokeTest       # 同じことを 26.x の任意のバージョンとローダーで行う
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :mc26:fabric-26.1.2:runClientGameTest   # この README のスクリーンショットを撮る
 ```
 
 コミットメッセージは `[type](scope) Title` の形式です。依存関係のバージョンは `gradle.properties` と `versions/<minecraft>/gradle.properties` にあります。

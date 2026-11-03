@@ -1,16 +1,24 @@
-// Shared setup for every loader project, applied after their plugins. A loader project
-// lives in versions/<minecraft>/<loader>; the Minecraft, Java and loader versions come from
-// versions/<minecraft>/gradle.properties. Each one compiles the engine, the common sources
-// and its Minecraft version's own sources itself, so a release is one jar per loader and
-// version, and the engine never needs its own jar-in-jar packaging.
-def versionDir = projectDir.parentFile
-def versionProperties = new Properties()
-new File(versionDir, 'gradle.properties').withInputStream { versionProperties.load(it) }
-versionProperties.each { key, value -> ext.set(key, value) }
+// Shared setup for every loader project, applied after their plugins. Each one compiles the
+// engine, the common sources and its Minecraft version's own sources itself, so a release is
+// one jar per loader and version, and the engine never needs its own jar-in-jar packaging.
+//
+// There are two kinds of loader project:
+// - Minecraft 26.x: a Stonecutter node in mc26/versions/<loader>-<minecraft>, built by
+//   mc26/build.gradle. Its versions are in its own gradle.properties, and its version's
+//   sources come from mc26/src through Stonecutter, as its default source directories.
+// - Older Minecraft: a project in versions/<minecraft>/<loader>, whose versions are in
+//   versions/<minecraft>/gradle.properties and whose own sources are in versions/<minecraft>/src.
+def stonecutterNode = extensions.findByName('stonecutter') != null
+def versionDir = stonecutterNode ? null : projectDir.parentFile
+if (versionDir != null) {
+    def versionProperties = new Properties()
+    new File(versionDir, 'gradle.properties').withInputStream { versionProperties.load(it) }
+    versionProperties.each { key, value -> ext.set(key, value) }
+}
 // NeoForge 26.2 renamed the mod list's logo and description keys; older versions keep these.
-ext.neoforge_logo_key = versionProperties.getProperty('neoforge_logo_key', 'logoFile')
-ext.neoforge_description_key = versionProperties.getProperty('neoforge_description_key', 'fml.menu.mods.info.description')
-ext.loader = projectDir.name
+ext.neoforge_logo_key = findProperty('neoforge_logo_key') ?: 'logoFile'
+ext.neoforge_description_key = findProperty('neoforge_description_key') ?: 'fml.menu.mods.info.description'
+ext.loader = stonecutterNode ? project.name.split('-')[0] : projectDir.name
 
 base {
     archivesName = "${mod_id}-${loader}-${minecraft_version}"
@@ -26,17 +34,15 @@ kotlin {
     jvmToolchain(java_version.toInteger())
 }
 
-// The common sources are written against the newest Minecraft; versions/<minecraft>/src has
-// what differs for this version, mostly in the compat package.
+// The common sources are the same for every Minecraft version; what differs is in each
+// version's own sources, mostly in the compat package.
 sourceSets.main {
     kotlin.srcDir rootProject.file('engine/src/main/kotlin')
     kotlin.srcDir rootProject.file('common/src/main/kotlin')
-    kotlin.srcDir new File(versionDir, 'src/main/kotlin')
     resources.srcDir rootProject.file('common/src/main/resources')
-    resources.srcDir new File(versionDir, 'src/main/resources')
-    // A version whose data files are the same as another's names it as resources_from.
-    if (project.hasProperty('resources_from')) {
-        resources.srcDir new File(versionDir.parentFile, "${resources_from}/src/main/resources")
+    if (versionDir != null) {
+        kotlin.srcDir new File(versionDir, 'src/main/kotlin')
+        resources.srcDir new File(versionDir, 'src/main/resources')
     }
     // fabric.mod.json or neoforge.mods.toml, the same for every Minecraft version.
     resources.srcDir rootProject.file("common/src/${loader}/resources")
@@ -55,12 +61,12 @@ processResources {
         mod_author                    : mod_author,
         license                       : license,
         minecraft_version             : minecraft_version,
-        fabric_minecraft_range        : fabric_minecraft_range,
+        fabric_minecraft_range        : findProperty('fabric_minecraft_range') ?: '',
         java_version                  : java_version,
-        fabric_loader_version         : fabric_loader_version,
-        fabric_language_kotlin_version: fabric_language_kotlin_version,
-        neoforge_version              : neoforge_version,
-        kotlin_for_forge_version      : kotlin_for_forge_version,
+        fabric_loader_version         : findProperty('fabric_loader_version') ?: '',
+        fabric_language_kotlin_version: findProperty('fabric_language_kotlin_version') ?: '',
+        neoforge_version              : findProperty('neoforge_version') ?: '',
+        kotlin_for_forge_version      : findProperty('kotlin_for_forge_version') ?: '',
         neoforge_logo_key             : neoforge_logo_key,
     ]
     inputs.properties properties

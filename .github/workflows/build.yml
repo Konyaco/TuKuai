@@ -41,7 +41,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tukuai-${{ steps.versions.outputs.version }}
-          path: versions/*/*/build/libs/tukuai-*-${{ steps.versions.outputs.version }}.jar
+          path: |
+            versions/*/*/build/libs/tukuai-*-${{ steps.versions.outputs.version }}.jar
+            mc26/versions/*/build/libs/tukuai-*-${{ steps.versions.outputs.version }}.jar
           if-no-files-found: error
 
       - name: Start Fabric 26.3 server
@@ -76,14 +78,14 @@ jobs:
           path: |
             **/build/reports/tests/**
             versions/*/*/runs/server/logs/**
+            mc26/versions/*/runs/server/logs/**
           if-no-files-found: ignore
 
   client:
     # Starts real clients under a virtual display, one runner each so they run side by side:
-    # Fabric 26.1.2's game tests play rounds at card tables, the other versions play through
-    # a world with a smoke test of their own (1.21.1 has no Fabric client game tests, and
-    # 26.2 and 26.3 share one), and NeoForge 26.1.2 just has to load. Each keeps its
-    # screenshots for the screenshots job below.
+    # Fabric 26.1.2's game tests play rounds at card tables, and every other version and
+    # loader plays through a world with its smoke test (1.21.1 has its own, the 26.x nodes
+    # share one). Each keeps its screenshots for the screenshots job below.
     name: client (${{ matrix.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -93,39 +95,39 @@ jobs:
         include:
           - name: Fabric 26.1.2 game tests
             id: fabric-26.1.2-game
-            run: ./gradlew :fabric-26.1.2:runClientGameTest --no-daemon --stacktrace
-            shots: versions/26.1.2/fabric
+            run: ./gradlew :mc26:fabric-26.1.2:runClientGameTest --no-daemon --stacktrace
+            shots: mc26/versions/fabric-26.1.2
             prefix: ''
           - name: Fabric 26.1.2 two players
             id: fabric-26.1.2-multiplayer
-            run: ./gradlew :fabric-26.1.2:runMultiplayerTest --no-daemon --stacktrace
-            shots: versions/26.1.2/fabric
-            prefix: ''
-          - name: NeoForge 26.1.2
-            id: neoforge-26.1.2
-            run: .github/scripts/client-smoke.sh neoforge 26.1.2
-            shots: ''
+            run: ./gradlew :mc26:fabric-26.1.2:runMultiplayerTest --no-daemon --stacktrace
+            shots: mc26/versions/fabric-26.1.2
             prefix: ''
           - name: Fabric 26.3
             id: fabric-26.3
-            run: ./gradlew :fabric-26.3:runSmokeTest --no-daemon --stacktrace
-            shots: versions/26.3/fabric/build/run/smoke
+            run: ./gradlew :mc26:fabric-26.3:runSmokeTest --no-daemon --stacktrace
+            shots: mc26/versions/fabric-26.3/build/run/smoke
             prefix: 26.3-fabric-
           - name: NeoForge 26.3
             id: neoforge-26.3
-            run: ./gradlew :neoforge-26.3:runSmokeTest --no-daemon --stacktrace
-            shots: versions/26.3/neoforge/build/run/smoke
+            run: ./gradlew :mc26:neoforge-26.3:runSmokeTest --no-daemon --stacktrace
+            shots: mc26/versions/neoforge-26.3/build/run/smoke
             prefix: 26.3-neoforge-
           - name: Fabric 26.2
             id: fabric-26.2
-            run: ./gradlew :fabric-26.2:runSmokeTest --no-daemon --stacktrace
-            shots: versions/26.2/fabric/build/run/smoke
+            run: ./gradlew :mc26:fabric-26.2:runSmokeTest --no-daemon --stacktrace
+            shots: mc26/versions/fabric-26.2/build/run/smoke
             prefix: 26.2-fabric-
           - name: NeoForge 26.2
             id: neoforge-26.2
-            run: ./gradlew :neoforge-26.2:runSmokeTest --no-daemon --stacktrace
-            shots: versions/26.2/neoforge/build/run/smoke
+            run: ./gradlew :mc26:neoforge-26.2:runSmokeTest --no-daemon --stacktrace
+            shots: mc26/versions/neoforge-26.2/build/run/smoke
             prefix: 26.2-neoforge-
+          - name: NeoForge 26.1.2
+            id: neoforge-26.1.2
+            run: ./gradlew :mc26:neoforge-26.1.2:runSmokeTest --no-daemon --stacktrace
+            shots: mc26/versions/neoforge-26.1.2/build/run/smoke
+            prefix: 26.1.2-neoforge-
           - name: Fabric 1.21.1
             id: fabric-1.21.1
             run: ./gradlew :fabric-1.21.1:runSmokeTest --no-daemon --stacktrace
@@ -184,11 +186,9 @@ jobs:
         with:
           name: client-diagnostics-${{ matrix.id }}
           path: |
-            versions/*/fabric/build/run/**/logs/**
-            versions/*/fabric/build/run/clientGameTest/peer-*/output.log
-            versions/*/fabric/runs/**/logs/**
-            versions/*/neoforge/runs/client/logs/**
-            versions/*/neoforge/build/run/smoke/logs/**
+            versions/*/*/build/run/**/logs/**
+            mc26/versions/*/build/run/**/logs/**
+            mc26/versions/fabric-26.1.2/build/run/clientGameTest/peer-*/output.log
           if-no-files-found: ignore
 
   screenshots:

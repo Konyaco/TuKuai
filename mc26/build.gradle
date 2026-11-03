@@ -1,0 +1,111 @@
+// The build of every Minecraft 26.x node, such as :mc26:fabric-26.3: Fabric nodes use Loom
+// and NeoForge nodes use ModDevGradle. The node's gradle.properties has its Minecraft, Java
+// and loader versions.
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+def loader = stonecutter.current.project.split('-')[0]
+apply plugin: loader == 'fabric' ? 'net.fabricmc.fabric-loom' : 'net.neoforged.moddev'
+apply from: rootProject.file('gradle/loader.gradle')
+
+// A second mod that plays through a world by itself and takes screenshots, see SmokeTest:
+// ./gradlew :mc26:fabric-26.3:runSmokeTest
+sourceSets {
+    smoke {
+        compileClasspath += sourceSets.main.compileClasspath + sourceSets.main.output
+        runtimeClasspath += sourceSets.main.runtimeClasspath + sourceSets.main.output
+    }
+}
+
+if (loader == 'fabric') {
+    dependencies {
+        minecraft "com.mojang:minecraft:${minecraft_version}"
+        implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+        implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+        implementation "net.fabricmc:fabric-language-kotlin:${fabric_language_kotlin_version}"
+    }
+
+    loom {
+        mods {
+            tukuai { sourceSet sourceSets.main }
+            'tukuai-smoke' { sourceSet sourceSets.smoke }
+        }
+        runs {
+            client { runDir 'runs/client' }
+            server { runDir 'runs/server' }
+            smokeTest {
+                client()
+                name 'Smoke test'
+                source sourceSets.smoke
+                runDir 'build/run/smoke'
+            }
+        }
+    }
+
+    // 26.1.2 also has the client game tests, which start a real client under a virtual
+    // display, play rounds at card tables and save screenshots:
+    // ./gradlew :mc26:fabric-26.1.2:runClientGameTest
+    if (stonecutter.current.version == '26.1.2') {
+        fabricApi {
+            configureTests {
+                createSourceSet = true
+                modId = "${mod_id}-test"
+                enableGameTests = false
+                enableClientGameTests = true
+                eula = true
+            }
+        }
+
+        // Two clients at one table on a dedicated server, see MultiplayerGameTest. It runs the
+        // client game test with only that test switched on: ./gradlew :mc26:fabric-26.1.2:runMultiplayerTest
+        tasks.register('runMultiplayerTest') {
+            group = 'fabric'
+            description = 'Plays a round with two clients connected to one dedicated server.'
+            dependsOn 'runClientGameTest'
+        }
+        gradle.taskGraph.whenReady { graph ->
+            if (graph.hasTask("${project.path}:runMultiplayerTest")) {
+                tasks.named('runClientGameTest') { environment 'TUKUAI_MULTIPLAYER', '1' }
+            }
+        }
+    }
+} else {
+    repositories {
+        exclusiveContent {
+            forRepository { maven { name = 'Kotlin for Forge'; url = 'https://thedarkcolour.github.io/KotlinForForge/' } }
+            filter { includeGroup 'thedarkcolour' }
+        }
+    }
+
+    neoForge {
+        version = neoforge_version
+        mods {
+            "${mod_id}" { sourceSet sourceSets.main }
+            tukuai_smoke { sourceSet sourceSets.smoke }
+        }
+        runs {
+            client {
+                client()
+                gameDirectory = file('runs/client')
+            }
+            server {
+                server()
+                programArgument '--nogui'
+                gameDirectory = file('runs/server')
+            }
+            smokeTest {
+                client()
+                gameDirectory = file('build/run/smoke')
+                sourceSet = sourceSets.smoke
+                loadedMods = [mods.tukuai, mods.tukuai_smoke]
+            }
+        }
+    }
+
+    dependencies {
+        implementation "thedarkcolour:kotlinforforge-neoforge:${kotlin_for_forge_version}"
+    }
+}
+
+apply from: rootProject.file('gradle/smoke.gradle')

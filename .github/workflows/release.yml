@@ -29,7 +29,7 @@ jobs:
             echo "Tag ${GITHUB_REF_NAME} does not match mod_version ${version}" >&2
             exit 1
           fi
-          minecraft="$(ls versions | sort -t. -k1,1nr -k2,2nr -k3,3nr | paste -sd/ - | sed 's|/| / |g')"
+          minecraft="$({ ls versions; ls mc26/versions | sed 's/^[a-z]*-//'; } | sort -u | sort -t. -k1,1nr -k2,2nr -k3,3nr | paste -sd/ - | sed 's|/| / |g')"
           echo "tag=v${version}" >> "$GITHUB_OUTPUT"
           echo "minecraft=${minecraft}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
@@ -57,7 +57,7 @@ jobs:
           TAG: ${{ steps.versions.outputs.tag }}
         run: |
           gh release create "${TAG}" --target "${GITHUB_SHA}" \
-            versions/*/*/build/libs/tukuai-*-"${VERSION}".jar \
+            versions/*/*/build/libs/tukuai-*-"${VERSION}".jar mc26/versions/*/build/libs/tukuai-*-"${VERSION}".jar \
             --title "土块棋牌室 TuKuai ${VERSION} (Minecraft ${MC})" \
             --notes-file ".github/release-notes/${TAG}.md"
 

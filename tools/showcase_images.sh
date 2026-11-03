@@ -3,11 +3,11 @@
 # in-world shot of every game, the clip in English and Simplified Chinese as animated WebP,
 # and the English clip as a GIF for the mod pages. Needs cwebp, img2webp and ffmpeg.
 #
-#   TUKUAI_SHOWCASE=en_us,zh_cn,zh_tw,ja_jp,ko_kr ./gradlew :fabric-26.1.2:runClientGameTest
+#   TUKUAI_SHOWCASE=en_us,zh_cn,zh_tw,ja_jp,ko_kr ./gradlew :mc26:fabric-26.1.2:runClientGameTest
 #   tools/showcase_images.sh
 set -e
 cd "${0:A:h}/.."
-shots=versions/26.1.2/fabric/build/run/clientGameTest/screenshots
+shots=mc26/versions/fabric-26.1.2/build/run/clientGameTest/screenshots
 frames=$(mktemp -d)
 trap 'rm -r "$frames"' EXIT
 for pair in en_us:en zh_cn:zh-CN zh_tw:zh-TW ja_jp:ja ko_kr:ko; do

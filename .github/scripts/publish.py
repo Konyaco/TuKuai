@@ -121,11 +121,12 @@ def minecraft_range(path, loader):
 
 
 def java_version(minecraft):
-    properties = ROOT / f"versions/{minecraft}/gradle.properties"
-    if properties.exists():
-        match = re.search(r"^java_version=(\d+)", properties.read_text(encoding="utf-8"), re.M)
-        if match:
-            return match.group(1)
+    # Minecraft 26.x versions are Stonecutter nodes in mc26/versions/<loader>-<minecraft>.
+    for properties in [ROOT / f"versions/{minecraft}/gradle.properties", *sorted(ROOT.glob(f"mc26/versions/*-{minecraft}/gradle.properties"))]:
+        if properties.exists():
+            match = re.search(r"^java_version=(\d+)", properties.read_text(encoding="utf-8"), re.M)
+            if match:
+                return match.group(1)
     return None
 
 

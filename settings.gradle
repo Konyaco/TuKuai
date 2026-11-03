@@ -11,14 +11,32 @@ pluginManagement {
 
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+    id 'dev.kikugie.stonecutter' version '0.9.8'
 }
 
 rootProject.name = 'tukuai'
 include 'engine'
 
-// A Fabric and a NeoForge project for each Minecraft version, in versions/<minecraft>/<loader>,
-// named like :fabric-26.1.2. The newest version comes first.
-for (minecraft in ['26.3', '26.2', '26.1.2', '1.21.1']) {
+// Minecraft 26.x is one Stonecutter tree in mc26/: its versions share mc26/src, where
+// //? comments mark what differs between them. Each version and loader is a node in
+// mc26/versions/<loader>-<minecraft>, a project named like :mc26:fabric-26.3. The newest
+// version comes first.
+include 'mc26'
+stonecutter {
+    kotlinController = false
+    centralScript = 'build.gradle'
+    create(':mc26') {
+        for (minecraft in ['26.3', '26.2', '26.1.2']) {
+            for (loader in ['fabric', 'neoforge']) version("${loader}-${minecraft}", minecraft)
+        }
+        // The version mc26/src is written for in git; see mc26/stonecutter.gradle.
+        vcsVersion = 'fabric-26.3'
+    }
+}
+
+// Older Minecraft versions differ too much for that: each has a Fabric and a NeoForge project
+// in versions/<minecraft>/<loader>, named like :fabric-1.21.1, and its own compat sources.
+for (minecraft in ['1.21.1']) {
     for (loader in ['fabric', 'neoforge']) {
         include ":${loader}-${minecraft}"
         project(":${loader}-${minecraft}").projectDir = file("versions/${minecraft}/${loader}")
