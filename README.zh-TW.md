@@ -121,7 +121,7 @@
 
 ```sh
 ./gradlew build                        # 編譯、測試，並打包每個載入器、每個 Minecraft 版本的 jar
-./gradlew :fabric-26.1.2:runClient     # 用 Fabric 啟動 Minecraft 26.1.2
+./gradlew :mc26:fabric-26.3:runClient  # 用 Fabric 啟動 Minecraft 26.3
 ./gradlew :neoforge-1.21.1:runClient   # 用 NeoForge 啟動 Minecraft 1.21.1
 ```
 
@@ -129,8 +129,9 @@
 | --- | --- |
 | `engine` | 規則、電腦和回放，純 Kotlin，不依賴 Minecraft |
 | `common` | 所有載入器和 Minecraft 版本共用的 Minecraft 程式碼和資源，按最新版 Minecraft 撰寫 |
-| `versions/<minecraft>` | 某個 Minecraft 版本獨有的部分：`gradle.properties` 裡的各項版本，讓舊版本用上最新版 Minecraft 名稱的 `compat` 套件，渲染器、物品模型和配方 |
-| `versions/<minecraft>/fabric`、`versions/<minecraft>/neoforge` | 該版本下各載入器的進入點和註冊 |
+| `mc26` | Minecraft 26.1.2、26.2、26.3 合成的一個 [Stonecutter](https://stonecutter.kikugie.dev/) 專案：`src` 裡是 `compat` 套件、渲染器、各載入器的進入點、物品模型和配方，版本之間不同的地方用 `//?` 註解標出；`versions/<載入器>-<minecraft>/gradle.properties` 是各自的版本號 |
+| `versions/1.21.1` | Minecraft 1.21.1：`gradle.properties` 裡的各項版本，讓它用上最新版 Minecraft 名稱的 `compat` 套件，渲染器、物品模型和配方 |
+| `versions/1.21.1/fabric`、`versions/1.21.1/neoforge` | 1.21.1 下各載入器的進入點和註冊 |
 
 加入新遊戲：
 
@@ -141,12 +142,12 @@
 測試：
 
 ```sh
-./gradlew :engine:test                         # 規則與電腦的單元測試
-./gradlew :fabric-26.1.2:runClientGameTest     # 啟動遊戲實際打幾局並截圖
-./gradlew :fabric-26.1.2:runMultiplayerTest    # 專用伺服器加兩個用戶端的連線測試
-./gradlew :fabric-1.21.1:runSmokeTest          # 在 Minecraft 1.21.1 上每種玩法各打一局並截圖
-./gradlew :fabric-26.3:runSmokeTest            # 在 Minecraft 26.3（以及 26.2）上做同樣的測試
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # 拍攝本文的截圖
+./gradlew :engine:test                           # 規則與電腦的單元測試
+./gradlew :mc26:fabric-26.1.2:runClientGameTest  # 啟動遊戲實際打幾局並截圖
+./gradlew :mc26:fabric-26.1.2:runMultiplayerTest # 專用伺服器加兩個用戶端的連線測試
+./gradlew :fabric-1.21.1:runSmokeTest            # 在 Minecraft 1.21.1 上每種玩法各打一局並截圖
+./gradlew :mc26:neoforge-26.3:runSmokeTest       # 在任一 26.x 版本和載入器上做同樣的測試
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :mc26:fabric-26.1.2:runClientGameTest   # 拍攝本文的截圖
 ```
 
 提交訊息格式為 `[type](scope) Title`。依賴版本見 `gradle.properties` 和 `versions/<minecraft>/gradle.properties`。

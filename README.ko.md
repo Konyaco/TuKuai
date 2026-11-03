@@ -121,7 +121,7 @@ JDK 25가 필요합니다. Minecraft 1.21.1에 쓰는 JDK 21은 Gradle이 알아
 
 ```sh
 ./gradlew build                        # 컴파일, 테스트, 모든 로더와 Minecraft 버전의 jar 생성
-./gradlew :fabric-26.1.2:runClient     # Fabric으로 Minecraft 26.1.2 실행
+./gradlew :mc26:fabric-26.3:runClient  # Fabric으로 Minecraft 26.3 실행
 ./gradlew :neoforge-1.21.1:runClient   # NeoForge로 Minecraft 1.21.1 실행
 ```
 
@@ -129,8 +129,9 @@ JDK 25가 필요합니다. Minecraft 1.21.1에 쓰는 JDK 21은 Gradle이 알아
 | --- | --- |
 | `engine` | 규칙, 컴퓨터, 다시 보기. Minecraft에 의존하지 않는 Kotlin 코드 |
 | `common` | 모든 로더와 Minecraft 버전이 함께 쓰는 Minecraft 코드와 리소스. 최신 Minecraft에 맞춰 작성 |
-| `versions/<minecraft>` | 그 Minecraft 버전에만 있는 부분: `gradle.properties`의 각 버전, 이전 버전에서 최신 Minecraft의 이름을 쓰게 해 주는 `compat` 패키지, 렌더러, 아이템 모델, 조합법 |
-| `versions/<minecraft>/fabric`, `versions/<minecraft>/neoforge` | 그 버전의 각 로더 진입점과 등록 |
+| `mc26` | Minecraft 26.1.2, 26.2, 26.3을 묶은 하나의 [Stonecutter](https://stonecutter.kikugie.dev/) 프로젝트. `src`에 `compat` 패키지, 렌더러, 각 로더 진입점, 아이템 모델, 조합법이 있고 버전마다 다른 곳은 `//?` 주석으로 표시합니다. `versions/<로더>-<minecraft>/gradle.properties`에 각각의 버전 |
+| `versions/1.21.1` | Minecraft 1.21.1: `gradle.properties`의 각 버전, 최신 Minecraft의 이름을 쓰게 해 주는 `compat` 패키지, 렌더러, 아이템 모델, 조합법 |
+| `versions/1.21.1/fabric`, `versions/1.21.1/neoforge` | 1.21.1의 각 로더 진입점과 등록 |
 
 새 게임 추가:
 
@@ -141,12 +142,12 @@ JDK 25가 필요합니다. Minecraft 1.21.1에 쓰는 JDK 21은 Gradle이 알아
 테스트:
 
 ```sh
-./gradlew :engine:test                         # 규칙과 컴퓨터의 단위 테스트
-./gradlew :fabric-26.1.2:runClientGameTest     # 게임을 실행해 몇 판 진행하고 스크린샷을 찍음
-./gradlew :fabric-26.1.2:runMultiplayerTest    # 전용 서버와 클라이언트 두 개로 하는 멀티플레이 테스트
-./gradlew :fabric-1.21.1:runSmokeTest          # Minecraft 1.21.1에서 게임마다 한 판씩 하고 스크린샷을 찍음
-./gradlew :fabric-26.3:runSmokeTest            # 같은 테스트를 Minecraft 26.3(과 26.2)에서 실행
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # 이 README의 스크린샷을 찍음
+./gradlew :engine:test                           # 규칙과 컴퓨터의 단위 테스트
+./gradlew :mc26:fabric-26.1.2:runClientGameTest  # 게임을 실행해 몇 판 진행하고 스크린샷을 찍음
+./gradlew :mc26:fabric-26.1.2:runMultiplayerTest # 전용 서버와 클라이언트 두 개로 하는 멀티플레이 테스트
+./gradlew :fabric-1.21.1:runSmokeTest            # Minecraft 1.21.1에서 게임마다 한 판씩 하고 스크린샷을 찍음
+./gradlew :mc26:neoforge-26.3:runSmokeTest       # 같은 테스트를 26.x의 아무 버전과 로더에서 실행
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :mc26:fabric-26.1.2:runClientGameTest   # 이 README의 스크린샷을 찍음
 ```
 
 커밋 메시지는 `[type](scope) Title` 형식입니다. 의존성 버전은 `gradle.properties`와 `versions/<minecraft>/gradle.properties`에 있습니다.

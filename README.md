@@ -121,7 +121,7 @@ Requires JDK 25; Gradle fetches JDK 21 for Minecraft 1.21.1 itself.
 
 ```sh
 ./gradlew build                        # compile, test, and build the jars for every loader and Minecraft version
-./gradlew :fabric-26.1.2:runClient     # start Minecraft 26.1.2 with Fabric
+./gradlew :mc26:fabric-26.3:runClient  # start Minecraft 26.3 with Fabric
 ./gradlew :neoforge-1.21.1:runClient   # start Minecraft 1.21.1 with NeoForge
 ```
 
@@ -129,8 +129,9 @@ Requires JDK 25; Gradle fetches JDK 21 for Minecraft 1.21.1 itself.
 | --- | --- |
 | `engine` | Rules, computer players and replays, in plain Kotlin without Minecraft |
 | `common` | Minecraft code and resources shared by every loader and Minecraft version, written for the newest Minecraft |
-| `versions/<minecraft>` | What differs for one Minecraft version: its versions in `gradle.properties`, the `compat` package that gives older versions the newest Minecraft's names, renderers, item models and recipes |
-| `versions/<minecraft>/fabric`, `versions/<minecraft>/neoforge` | Each loader's entry point and registration for that version |
+| `mc26` | Minecraft 26.1.2, 26.2 and 26.3 as one [Stonecutter](https://stonecutter.kikugie.dev/) project: `src` has the `compat` package, renderers, each loader's entry point, item models and recipes, with `//?` comments where the versions differ; `versions/<loader>-<minecraft>/gradle.properties` has each one's versions |
+| `versions/1.21.1` | Minecraft 1.21.1: its versions in `gradle.properties`, the `compat` package that gives it the newest Minecraft's names, renderers, item models and recipes |
+| `versions/1.21.1/fabric`, `versions/1.21.1/neoforge` | Each loader's entry point and registration for 1.21.1 |
 
 Adding a game:
 
@@ -141,12 +142,12 @@ Adding a game:
 Tests:
 
 ```sh
-./gradlew :engine:test                         # unit tests for the rules and computer players
-./gradlew :fabric-26.1.2:runClientGameTest     # starts the game, plays a few rounds and takes screenshots
-./gradlew :fabric-26.1.2:runMultiplayerTest    # a dedicated server with two clients
-./gradlew :fabric-1.21.1:runSmokeTest          # plays each game once on Minecraft 1.21.1 and takes screenshots
-./gradlew :fabric-26.3:runSmokeTest            # the same on Minecraft 26.3 (and 26.2)
-TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # takes the screenshots in this README
+./gradlew :engine:test                           # unit tests for the rules and computer players
+./gradlew :mc26:fabric-26.1.2:runClientGameTest  # starts the game, plays a few rounds and takes screenshots
+./gradlew :mc26:fabric-26.1.2:runMultiplayerTest # a dedicated server with two clients
+./gradlew :fabric-1.21.1:runSmokeTest            # plays each game once on Minecraft 1.21.1 and takes screenshots
+./gradlew :mc26:neoforge-26.3:runSmokeTest       # the same on any 26.x version and loader
+TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :mc26:fabric-26.1.2:runClientGameTest   # takes the screenshots in this README
 ```
 
 Commit messages follow `[type](scope) Title`. Dependency versions are in `gradle.properties` and `versions/<minecraft>/gradle.properties`.

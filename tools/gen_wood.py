@@ -8,9 +8,10 @@ A table takes its wood from the planks in its recipe, and a stool from its slab.
 the default, so tables and stools saved before they had a wood keep the oak look.
 
 Block states and block models are the same for every Minecraft version and go in common/.
-Item models and recipes differ, so each version under versions/ gets its own:
+Item models and recipes differ, so 26.x (in mc26/) and 1.21.1 (in versions/1.21.1/) each get
+their own:
 
-- 26.1.2 picks an item's model by its block state and writes recipe ingredients as plain ids.
+- 26.x picks an item's model by its block state and writes recipe ingredients as plain ids.
 - 1.21.1 picks it by number (the `tukuai:wood` and `tukuai:color` item properties, see
   ItemModels.kt), writes ingredients as {"item": ...} or {"tag": ...}, and has no pale oak:
   no recipes for it, and birch textures on its block models so they are not missing any.
@@ -20,7 +21,7 @@ import os
 
 COMMON = "common/src/main/resources"
 ASSETS = f"{COMMON}/assets/tukuai"
-V26 = "versions/26.1.2/src/main/resources"
+V26 = "mc26/src/main/resources"
 V1211 = "versions/1.21.1/src/main/resources"
 
 # In the order of Wood in TuKuaiContent: (name, stripped log texture).

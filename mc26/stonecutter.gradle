@@ -1,0 +1,13 @@
+plugins {
+    id 'dev.kikugie.stonecutter'
+}
+
+// The version that mc26/src is written for, and that the IDE shows. Switch it with the
+// "Set active project to ..." tasks in the stonecutter group, and set it back to
+// fabric-26.3 before committing (or run "Reset active project").
+stonecutter.active 'fabric-26.3'
+
+stonecutter.parameters {
+    // //? if fabric { ... } and //? if neoforge { ... } for code of one loader.
+    constants.match(current.project.split('-')[0], 'fabric', 'neoforge')
+}
