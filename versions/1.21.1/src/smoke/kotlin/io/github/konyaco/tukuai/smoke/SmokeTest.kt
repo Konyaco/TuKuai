@@ -20,6 +20,7 @@ import io.github.konyaco.tukuai.table.ServerSettings
 import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
+import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 import kotlin.system.exitProcess
 import net.minecraft.client.Minecraft
@@ -73,6 +74,9 @@ object SmokeTest {
     }
 
     private val mc: Minecraft get() = Minecraft.getInstance()
+
+    /** How long one task on the client or server thread may take; a stuck game fails instead of hanging. */
+    private const val TASK_TIMEOUT_SECONDS = 120L
 
     private fun run() {
         waitFor("the title screen", 6000) { mc.overlay == null && mc.screen is TitleScreen }
@@ -258,11 +262,11 @@ object SmokeTest {
         ticks(2)
     }
 
-    private fun <T> onClient(action: () -> T): T = mc.submit(Supplier { action() }).get()
+    private fun <T> onClient(action: () -> T): T = mc.submit(Supplier { action() }).get(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 
     private fun <T> onServer(action: (MinecraftServer) -> T): T {
         val server = mc.singleplayerServer ?: error("No integrated server")
-        return server.submit(Supplier { action(server) }).get()
+        return server.submit(Supplier { action(server) }).get(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
 
     private fun ticks(count: Int) {

@@ -24,6 +24,7 @@ import io.github.konyaco.tukuai.table.TableOp
 import io.github.konyaco.tukuai.table.TableSnapshot
 import io.github.konyaco.tukuai.table.TableStatus
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 import net.minecraft.client.Minecraft
 import net.minecraft.client.Screenshot
@@ -74,6 +75,9 @@ object SmokeTest {
     }
 
     private val mc: Minecraft get() = Minecraft.getInstance()
+
+    /** How long one task on the client or server thread may take; a stuck game fails instead of hanging. */
+    private const val TASK_TIMEOUT_SECONDS = 120L
 
     private fun run() {
         // NeoForge loads mods before the game client exists.
@@ -268,11 +272,11 @@ object SmokeTest {
         ticks(2)
     }
 
-    private fun <T> onClient(action: () -> T): T = CompletableFuture.supplyAsync({ action() }, mc).get()
+    private fun <T> onClient(action: () -> T): T = CompletableFuture.supplyAsync({ action() }, mc).get(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
 
     private fun <T> onServer(action: (MinecraftServer) -> T): T {
         val server = mc.singleplayerServer ?: error("No integrated server")
-        return CompletableFuture.supplyAsync({ action(server) }, server).get()
+        return CompletableFuture.supplyAsync({ action(server) }, server).get(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     }
 
     private fun ticks(count: Int) {

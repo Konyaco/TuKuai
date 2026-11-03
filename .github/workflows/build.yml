@@ -86,6 +86,7 @@ jobs:
     # screenshots for the screenshots job below.
     name: client (${{ matrix.name }})
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -150,8 +151,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      # 26.3 draws through SDL, which finds no OpenGL visual on Xvfb and falls back to Vulkan,
+      # so it needs Mesa's software Vulkan too.
       - name: Install a virtual display
-        run: sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri mesa-utils
+        run: sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri mesa-utils mesa-vulkan-drivers
 
       - name: Run ${{ matrix.name }}
         run: xvfb-run -a -s "-screen 0 1280x720x24" ${{ matrix.run }}
