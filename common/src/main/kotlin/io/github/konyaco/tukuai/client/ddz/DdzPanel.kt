@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client.ddz
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTable
@@ -29,7 +30,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import org.lwjgl.glfw.GLFW
 
 /**
  * The Dou Dizhu part of the table screen: your hand along the bottom, the other two
@@ -159,7 +159,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
         val view = table.view as? DdzView ?: return false
         if (!view.isMyTurn || view.phase != DdzPhase.PLAYING || table.snapshot.status != TableStatus.PLAYING) return false
         return when (key) {
-            GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_ENTER -> {
+            InputConstants.KEY_SPACE, InputConstants.KEY_RETURN -> {
                 if (selected.isNotEmpty() && Patterns.readingFor(selected, view.toBeat, view.rules) != null) {
                     send(DdzAction.PlayCards(selected.toList()))
                 } else if (selected.isEmpty() && view.toBeat != null) {
@@ -167,7 +167,7 @@ class DdzPanel(private val screen: PanelHost) : GamePanel {
                 }
                 true
             }
-            GLFW.GLFW_KEY_H -> {
+            InputConstants.KEY_H -> {
                 hint(view)
                 true
             }

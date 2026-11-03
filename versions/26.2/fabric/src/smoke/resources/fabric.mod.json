@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "tukuai-smoke",
+  "version": "1.0.0",
+  "name": "TuKuai smoke test",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["io.github.konyaco.tukuai.fabric.smoke.FabricSmokeTest"]
+  },
+  "depends": {
+    "tukuai": "*"
+  }
+}

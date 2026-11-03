@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client.tutu
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
@@ -27,7 +28,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import org.lwjgl.glfw.GLFW
 
 /**
  * The Tutu part of the table screen, laid out as for UNO: your hand along the bottom, the
@@ -116,7 +116,7 @@ class TutuPanel(private val screen: PanelHost) : GamePanel {
     override fun mouseClicked(table: ClientTable, x: Double, y: Double, button: Int): Boolean {
         if (!screen.interactive) return false
         val view = table.view as? TutuView ?: return false
-        if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
+        if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
             if (choosing == null) return false
             choosing = null
             screen.refresh()
@@ -171,11 +171,11 @@ class TutuPanel(private val screen: PanelHost) : GamePanel {
         val view = table.view as? TutuView ?: return false
         if (!view.isMyTurn || table.snapshot.status != TableStatus.PLAYING) return false
         return when (key) {
-            GLFW.GLFW_KEY_D -> {
+            InputConstants.KEY_D -> {
                 if (view.drawn == null && choosing == null) send(TutuAction.Draw)
                 true
             }
-            GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_ENTER -> {
+            InputConstants.KEY_SPACE, InputConstants.KEY_RETURN -> {
                 if (view.drawn != null && choosing == null) send(TutuAction.Pass)
                 true
             }

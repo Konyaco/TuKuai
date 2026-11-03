@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -19,7 +20,6 @@ import net.minecraft.client.gui.screens.Screen
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.DyeColor
-import org.lwjgl.glfw.GLFW
 
 /**
  * Watches a saved game move by move, drawn by the same [GamePanel] as a live game but
@@ -205,12 +205,12 @@ class ReplayScreen(private val name: String, private val replay: Replay, startSe
 
     override fun keyPressed(event: KeyEvent): Boolean {
         when (event.key()) {
-            GLFW.GLFW_KEY_SPACE -> togglePlaying()
-            GLFW.GLFW_KEY_LEFT -> back()
-            GLFW.GLFW_KEY_RIGHT -> forward()
-            GLFW.GLFW_KEY_HOME -> seek(0)
-            GLFW.GLFW_KEY_END -> seek(total)
-            GLFW.GLFW_KEY_TAB -> setSeat(seat + 1)
+            InputConstants.KEY_SPACE -> togglePlaying()
+            InputConstants.KEY_LEFT -> back()
+            InputConstants.KEY_RIGHT -> forward()
+            InputConstants.KEY_HOME -> seek(0)
+            InputConstants.KEY_END -> seek(total)
+            InputConstants.KEY_TAB -> setSeat(seat + 1)
             else -> return super.keyPressed(event)
         }
         return true
@@ -235,7 +235,7 @@ class ReplayScreen(private val name: String, private val replay: Replay, startSe
                 return
             }
             val own = mc.player?.let { replay.players.indexOf(it.name.string) } ?: -1
-            mc.setScreen(ReplayScreen(name, replay, own.coerceAtLeast(0)))
+            mc.openScreen(ReplayScreen(name, replay, own.coerceAtLeast(0)))
         }
 
         /** Replays store each seat as a player name, or `bot:<level>` for a computer player. */

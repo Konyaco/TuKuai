@@ -18,7 +18,6 @@ import net.minecraft.world.level.block.SoundType
 import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockBehaviour
 import net.minecraft.world.level.material.MapColor
-import net.minecraft.world.level.material.PushReaction
 
 /**
  * Blocks, items and types shared by both loaders; each loader registers these exact instances.
@@ -27,14 +26,14 @@ import net.minecraft.world.level.material.PushReaction
  */
 object TuKuaiContent {
     val CARD_TABLE: CardTableBlock = CardTableBlock(
-        blockProperties("card_table").mapColor(Wood::mapColorOf).noOcclusion().pushReaction(PushReaction.BLOCK),
+        blockProperties("card_table").mapColor(Wood::mapColorOf).noOcclusion().pushReaction(IMMOVABLE),
     )
 
     val CARD_TABLE_ITEM: Item = BlockItem(CARD_TABLE, itemProperties("card_table").useBlockDescriptionPrefix())
 
     /** The 5x5 table for up to eight players. */
     val BIG_CARD_TABLE: BigCardTableBlock = BigCardTableBlock(
-        blockProperties("big_card_table").mapColor(Wood::mapColorOf).noOcclusion().pushReaction(PushReaction.BLOCK),
+        blockProperties("big_card_table").mapColor(Wood::mapColorOf).noOcclusion().pushReaction(IMMOVABLE),
     )
 
     val BIG_CARD_TABLE_ITEM: Item = BlockItem(BIG_CARD_TABLE, itemProperties("big_card_table").useBlockDescriptionPrefix())

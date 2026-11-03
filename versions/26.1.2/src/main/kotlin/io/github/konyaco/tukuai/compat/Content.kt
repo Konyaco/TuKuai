@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.compat
 
+import com.mojang.serialization.MapCodec
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.ClickEvent
@@ -20,6 +21,7 @@ import net.minecraft.world.level.block.BaseEntityBlock
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.state.BlockBehaviour
 import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.material.PushReaction
 import net.minecraft.world.phys.BlockHitResult
 
 /** Whether this build has pale oak, which came in 1.21.4. */
@@ -35,6 +37,10 @@ fun Style.withShowText(text: Component): Style = withHoverEvent(HoverEvent.ShowT
  * [shapeAfterNeighbor] for a neighbour changing.
  */
 abstract class CompatBaseEntityBlock(properties: BlockBehaviour.Properties) : BaseEntityBlock(properties) {
+    /** Before 26.3 every block has a codec, which makes another of its class from properties. */
+    final override fun codec(): MapCodec<out BaseEntityBlock> =
+        simpleCodec { properties -> javaClass.getConstructor(BlockBehaviour.Properties::class.java).newInstance(properties) }
+
     /** Right-click holding [stack]: true when the block used it, false to go on as with an empty hand. */
     protected open fun useItem(stack: ItemStack, state: BlockState, level: Level, pos: BlockPos, player: Player, hand: InteractionHand, hit: BlockHitResult): Boolean =
         false
@@ -75,6 +81,10 @@ abstract class CompatBaseEntityBlock(properties: BlockBehaviour.Properties) : Ba
 
 /** [CompatBaseEntityBlock] for a block without a block entity. */
 abstract class CompatBlock(properties: BlockBehaviour.Properties) : Block(properties) {
+    /** Before 26.3 every block has a codec, which makes another of its class from properties. */
+    final override fun codec(): MapCodec<out Block> =
+        simpleCodec { properties -> javaClass.getConstructor(BlockBehaviour.Properties::class.java).newInstance(properties) }
+
     protected open fun useItem(stack: ItemStack, state: BlockState, level: Level, pos: BlockPos, player: Player, hand: InteractionHand, hit: BlockHitResult): Boolean =
         false
 
@@ -92,3 +102,6 @@ abstract class CompatBlock(properties: BlockBehaviour.Properties) : Block(proper
 
 /** Hurts a player on the server. */
 fun Player.hurtOnServer(level: ServerLevel, source: DamageSource, amount: Float): Boolean = hurtServer(level, source, amount)
+
+/** Pistons can neither push nor break the block. 26.3 renames it IMMOVEABLE. */
+val IMMOVABLE: PushReaction = PushReaction.BLOCK

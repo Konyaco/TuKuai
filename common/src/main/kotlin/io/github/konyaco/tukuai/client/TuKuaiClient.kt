@@ -8,6 +8,8 @@ import io.github.konyaco.tukuai.client.mahjong.MjUi
 import io.github.konyaco.tukuai.client.pdk.PdkUi
 import io.github.konyaco.tukuai.client.tutu.TutuUi
 import io.github.konyaco.tukuai.client.uno.UnoUi
+import io.github.konyaco.tukuai.compat.currentScreen
+import io.github.konyaco.tukuai.compat.isLoading
 import io.github.konyaco.tukuai.platform.ClientPlatform
 import io.github.konyaco.tukuai.platform.Services
 
@@ -32,7 +34,7 @@ object TuKuaiClient {
     fun tick() {
         if (!ready) {
             val mc = net.minecraft.client.Minecraft.getInstance()
-            if (mc.overlay == null && mc.screen != null) {
+            if (!mc.isLoading && mc.currentScreen != null) {
                 ready = true
                 // CI waits for this line to know the client finished loading with TuKuai in it.
                 TuKuai.LOGGER.info("TuKuai client ready")

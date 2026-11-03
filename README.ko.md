@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="최신 릴리스"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.1.2 / 1.21.1">
+  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.3 / 26.2 / 26.1.2 / 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge와 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 라이선스"></a>
 </p>
@@ -67,15 +67,15 @@
 
 ### 다운로드
 
-[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 Minecraft 버전과 로더에 맞는 jar(예: `tukuai-fabric-1.21.1-<버전>.jar`)를 받으세요. 서버와 모든 플레이어의 게임에 설치해야 합니다. Minecraft 26.1.2와 1.21.1을 지원하며, 다음 모드가 필요합니다.
+[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 Minecraft 버전과 로더에 맞는 jar(예: `tukuai-fabric-1.21.1-<버전>.jar`)를 받으세요. 서버와 모든 플레이어의 게임에 설치해야 합니다. Minecraft 26.3, 26.2, 26.1.2, 1.21.1을 지원하며, 다음 모드가 필요합니다.
 
 | 로더 | 필수 모드 |
 | --- | --- |
-| NeoForge 26.1.2 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 이상 |
+| NeoForge 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 이상 |
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 이상 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api), [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 이상 |
 
-1.21.1에는 창백한 참나무가 없어서, 창백한 참나무 카드 테이블과 의자는 26.1.2에서만 쓸 수 있습니다.
+1.21.1에는 창백한 참나무가 없어서, 창백한 참나무 카드 테이블과 의자는 26.1.2 이상에서만 쓸 수 있습니다.
 
 ### 조합법
 
@@ -145,6 +145,7 @@ JDK 25가 필요합니다. Minecraft 1.21.1에 쓰는 JDK 21은 Gradle이 알아
 ./gradlew :fabric-26.1.2:runClientGameTest     # 게임을 실행해 몇 판 진행하고 스크린샷을 찍음
 ./gradlew :fabric-26.1.2:runMultiplayerTest    # 전용 서버와 클라이언트 두 개로 하는 멀티플레이 테스트
 ./gradlew :fabric-1.21.1:runSmokeTest          # Minecraft 1.21.1에서 게임마다 한 판씩 하고 스크린샷을 찍음
+./gradlew :fabric-26.3:runSmokeTest            # 같은 테스트를 Minecraft 26.3(과 26.2)에서 실행
 TUKUAI_SHOWCASE=en_us,zh_cn ./gradlew :fabric-26.1.2:runClientGameTest   # 이 README의 스크린샷을 찍음
 ```
 

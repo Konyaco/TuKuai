@@ -51,4 +51,4 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlin_for_forge_version}"
 }
 
-apply from: file('../smoke.gradle')
+apply from: rootProject.file('gradle/smoke.gradle')

@@ -93,7 +93,7 @@ object ClientTables {
         val table = ClientTable(pos.immutable(), snapshot, ticks)
         val previous = tables.put(table.pos, table)
         table.ui?.onUpdate(previous?.takeIf { it.snapshot.gameId == snapshot.gameId }, table)
-        val screen = Minecraft.getInstance().screen
+        val screen = Minecraft.getInstance().currentScreen
         if (screen is TableScreen && screen.pos == table.pos) screen.onTableChanged(table) else remindTurn(previous, table)
     }
 

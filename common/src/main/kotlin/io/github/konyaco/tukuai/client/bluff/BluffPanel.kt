@@ -1,5 +1,6 @@
 package io.github.konyaco.tukuai.client.bluff
 
+import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.client.CardArt
 import io.github.konyaco.tukuai.client.ClientTable
 import io.github.konyaco.tukuai.client.GamePanel
@@ -24,7 +25,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import org.lwjgl.glfw.GLFW
 
 /**
  * The creeper bluff part of the table screen: your hand along the bottom, the other players
@@ -121,11 +121,11 @@ class BluffPanel(private val screen: PanelHost) : GamePanel {
         val view = table.view as? BluffView ?: return false
         if (!myTurn(table, view)) return false
         return when (key) {
-            GLFW.GLFW_KEY_SPACE, GLFW.GLFW_KEY_ENTER -> {
+            InputConstants.KEY_SPACE, InputConstants.KEY_RETURN -> {
                 if (view.phase == BluffPhase.PENALTY) send(BluffAction.Light) else if (canPlay(view)) send(BluffAction.Play(selected.toList()))
                 true
             }
-            GLFW.GLFW_KEY_C -> {
+            InputConstants.KEY_C -> {
                 if (view.canCall) send(BluffAction.Call)
                 true
             }

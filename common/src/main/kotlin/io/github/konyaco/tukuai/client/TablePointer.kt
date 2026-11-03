@@ -28,7 +28,7 @@ object TablePointer {
 
     /** The cards of the table at [pos] as they should be drawn this frame. */
     fun dress(pos: BlockPos, cards: List<TableCard>): List<TableCard> {
-        val screen = Minecraft.getInstance().screen as? TableScreen
+        val screen = Minecraft.getInstance().currentScreen as? TableScreen
         val table = ClientTables[pos]
         if (screen == null || screen.pos != pos || !screen.inWorld || table == null) {
             if (drawnAt == pos) forget()
@@ -60,7 +60,7 @@ object TablePointer {
      */
     fun cardAt(pos: BlockPos, mouseX: Double, mouseY: Double, width: Int, height: Int): TableCard? {
         if (drawnAt != pos || drawn.none { it.mine } || width <= 0 || height <= 0) return null
-        val camera = Minecraft.getInstance().gameRenderer.mainCamera
+        val camera = Minecraft.getInstance().worldCamera
         val inverse = camera.viewRotationProjection(Matrix4f()).invert()
         val x = (mouseX / width * 2 - 1).toFloat()
         val y = (1 - mouseY / height * 2).toFloat()

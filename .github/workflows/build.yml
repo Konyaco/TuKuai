@@ -44,6 +44,18 @@ jobs:
           path: versions/*/*/build/libs/tukuai-*-${{ steps.versions.outputs.version }}.jar
           if-no-files-found: error
 
+      - name: Start Fabric 26.3 server
+        run: .github/scripts/server-smoke.sh fabric 26.3
+
+      - name: Start NeoForge 26.3 server
+        run: .github/scripts/server-smoke.sh neoforge 26.3
+
+      - name: Start Fabric 26.2 server
+        run: .github/scripts/server-smoke.sh fabric 26.2
+
+      - name: Start NeoForge 26.2 server
+        run: .github/scripts/server-smoke.sh neoforge 26.2
+
       - name: Start Fabric 26.1.2 server
         run: .github/scripts/server-smoke.sh fabric 26.1.2
 
@@ -67,13 +79,63 @@ jobs:
           if-no-files-found: ignore
 
   client:
-    # Starts a real Fabric 26.1.2 client under a virtual display, plays a round at a card
-    # table and prints the screenshots into the log as base64 so they can be read back. On
-    # pull requests it also force-pushes them to the ci-screenshots branch, which is easier
-    # to fetch than the log.
+    # Starts real clients under a virtual display, one runner each so they run side by side:
+    # Fabric 26.1.2's game tests play rounds at card tables, the other versions play through
+    # a world with a smoke test of their own (1.21.1 has no Fabric client game tests, and
+    # 26.2 and 26.3 share one), and NeoForge 26.1.2 just has to load. Each keeps its
+    # screenshots for the screenshots job below.
+    name: client (${{ matrix.name }})
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Fabric 26.1.2 game tests
+            id: fabric-26.1.2-game
+            run: ./gradlew :fabric-26.1.2:runClientGameTest --no-daemon --stacktrace
+            shots: versions/26.1.2/fabric
+            prefix: ''
+          - name: Fabric 26.1.2 two players
+            id: fabric-26.1.2-multiplayer
+            run: ./gradlew :fabric-26.1.2:runMultiplayerTest --no-daemon --stacktrace
+            shots: versions/26.1.2/fabric
+            prefix: ''
+          - name: NeoForge 26.1.2
+            id: neoforge-26.1.2
+            run: .github/scripts/client-smoke.sh neoforge 26.1.2
+            shots: ''
+            prefix: ''
+          - name: Fabric 26.3
+            id: fabric-26.3
+            run: ./gradlew :fabric-26.3:runSmokeTest --no-daemon --stacktrace
+            shots: versions/26.3/fabric/build/run/smoke
+            prefix: 26.3-fabric-
+          - name: NeoForge 26.3
+            id: neoforge-26.3
+            run: ./gradlew :neoforge-26.3:runSmokeTest --no-daemon --stacktrace
+            shots: versions/26.3/neoforge/build/run/smoke
+            prefix: 26.3-neoforge-
+          - name: Fabric 26.2
+            id: fabric-26.2
+            run: ./gradlew :fabric-26.2:runSmokeTest --no-daemon --stacktrace
+            shots: versions/26.2/fabric/build/run/smoke
+            prefix: 26.2-fabric-
+          - name: NeoForge 26.2
+            id: neoforge-26.2
+            run: ./gradlew :neoforge-26.2:runSmokeTest --no-daemon --stacktrace
+            shots: versions/26.2/neoforge/build/run/smoke
+            prefix: 26.2-neoforge-
+          - name: Fabric 1.21.1
+            id: fabric-1.21.1
+            run: ./gradlew :fabric-1.21.1:runSmokeTest --no-daemon --stacktrace
+            shots: versions/1.21.1/fabric/build/run/smoke
+            prefix: 1.21.1-fabric-
+          - name: NeoForge 1.21.1
+            id: neoforge-1.21.1
+            run: ./gradlew :neoforge-1.21.1:runSmokeTest --no-daemon --stacktrace
+            shots: versions/1.21.1/neoforge/build/run/smoke
+            prefix: 1.21.1-neoforge-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -89,52 +151,64 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      # 26.3 draws through SDL, which finds no OpenGL visual on Xvfb and falls back to Vulkan,
+      # so it needs Mesa's software Vulkan too.
       - name: Install a virtual display
-        run: sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri mesa-utils
+        run: sudo apt-get update -q && sudo apt-get install -yq xvfb libgl1-mesa-dri mesa-utils mesa-vulkan-drivers
 
-      - name: Run client game tests
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-26.1.2:runClientGameTest --no-daemon --stacktrace
+      - name: Run ${{ matrix.name }}
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ${{ matrix.run }}
 
-      # The two-player test runs in the same run folder, which Loom clears first.
-      - name: Keep the game test's screenshots
-        if: always()
+      - name: Keep the screenshots
+        if: always() && matrix.shots != ''
+        env:
+          SHOTS: ${{ matrix.shots }}
+          PREFIX: ${{ matrix.prefix }}
         run: |
           mkdir -p "${RUNNER_TEMP}/screenshots"
-          find versions/26.1.2/fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
-
-      - name: Run the two-player game test
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-26.1.2:runMultiplayerTest --no-daemon --stacktrace
-
-      - name: Keep the two-player test's screenshots
-        if: always()
-        run: |
-          mkdir -p "${RUNNER_TEMP}/screenshots"
-          find versions/26.1.2/fabric -path '*screenshots*' -name '*tukuai-*.png' -exec cp {} "${RUNNER_TEMP}/screenshots/" \;
-
-      # Fabric's client game tests start with 1.21.4, so 1.21.1 plays through a world with
-      # its own smoke test on each loader.
-      - name: Run the Fabric 1.21.1 smoke test
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :fabric-1.21.1:runSmokeTest --no-daemon --stacktrace
-
-      - name: Run the NeoForge 1.21.1 smoke test
-        if: always()
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew :neoforge-1.21.1:runSmokeTest --no-daemon --stacktrace
-
-      - name: Keep the 1.21.1 smoke tests' screenshots
-        if: always()
-        run: |
-          mkdir -p "${RUNNER_TEMP}/screenshots"
-          for loader in fabric neoforge; do
-            find "versions/1.21.1/${loader}/build/run/smoke/screenshots" -name 'tukuai-*.png' 2>/dev/null | while read -r f; do
-              cp "$f" "${RUNNER_TEMP}/screenshots/1.21.1-${loader}-$(basename "$f")"
-            done
+          find "${SHOTS}" -path '*screenshots*' -name '*tukuai-*.png' 2>/dev/null | while read -r f; do
+            cp "$f" "${RUNNER_TEMP}/screenshots/${PREFIX}$(basename "$f")"
           done
 
-      - name: Start NeoForge 26.1.2 client
-        run: xvfb-run -a -s "-screen 0 1280x720x24" .github/scripts/client-smoke.sh neoforge 26.1.2
+      - name: Upload the screenshots
+        if: always() && matrix.shots != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshots-${{ matrix.id }}
+          path: ${{ runner.temp }}/screenshots
+          if-no-files-found: ignore
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-diagnostics-${{ matrix.id }}
+          path: |
+            versions/*/fabric/build/run/**/logs/**
+            versions/*/fabric/build/run/clientGameTest/peer-*/output.log
+            versions/*/fabric/runs/**/logs/**
+            versions/*/neoforge/runs/client/logs/**
+            versions/*/neoforge/build/run/smoke/logs/**
+          if-no-files-found: ignore
+
+  screenshots:
+    # Prints every client's screenshots into the log as base64 so they can be read back. On
+    # pull requests it also force-pushes them to the ci-screenshots branch, which is easier
+    # to fetch than the log.
+    needs: client
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Collect the screenshots
+        uses: actions/download-artifact@v8
+        with:
+          pattern: screenshots-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/screenshots
 
       - name: Print screenshots
-        if: always()
         run: |
           find "${RUNNER_TEMP}/screenshots" -name '*tukuai-*.png' | sort | while read -r f; do
             echo "BEGIN_SCREENSHOT $(basename "$f")"
@@ -144,7 +218,7 @@ jobs:
           done
 
       - name: Publish screenshots
-        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -157,16 +231,3 @@ jobs:
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "Screenshots of ${HEAD_SHA}"
           git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/heads/ci-screenshots
-
-      - name: Upload diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: client-diagnostics
-          path: |
-            versions/*/fabric/build/run/**/logs/**
-            versions/*/fabric/build/run/clientGameTest/peer-*/output.log
-            versions/*/fabric/runs/**/logs/**
-            versions/*/neoforge/runs/client/logs/**
-            versions/*/neoforge/build/run/smoke/logs/**
-          if-no-files-found: ignore
