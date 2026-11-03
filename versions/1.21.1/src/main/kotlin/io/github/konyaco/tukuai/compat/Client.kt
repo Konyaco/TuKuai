@@ -153,6 +153,18 @@ object ViewMatrices {
     val viewRotationProjection = Matrix4f()
 }
 
+/** Draws with [draw] over everything drawn so far on the screen, its widgets too, raised as tooltips are. */
+fun GuiGraphics.drawOnTop(draw: () -> Unit) {
+    flush()
+    pose().pushPose()
+    pose().translate(0f, 0f, 300f)
+    try {
+        draw()
+    } finally {
+        pose().popPose()
+    }
+}
+
 /** The camera's rotation and projection, with the camera at the origin. */
 @Suppress("UnusedReceiverParameter")
 fun Camera.viewRotationProjection(dest: Matrix4f): Matrix4f = dest.set(ViewMatrices.viewRotationProjection)
