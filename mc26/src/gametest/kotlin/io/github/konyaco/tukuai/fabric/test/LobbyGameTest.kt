@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.fabric.test
 
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.ClientTables
+import io.github.konyaco.tukuai.client.RulesScreen
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.compat.currentScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
@@ -163,6 +164,17 @@ class LobbyGameTest : FabricClientGameTest {
             context.waitTicks(5)
             shot(context, "after-game-end-prompt")
             context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
+
+            // The first pages of every game's rule book, to read its wording.
+            for (game in GameRegistry.all) {
+                for (section in listOf("table", "goal")) {
+                    context.setScreen { RulesScreen(null, table, game.id) }
+                    context.runOnClient<RuntimeException> { (it.currentScreen as RulesScreen).showSection(section) }
+                    context.waitTicks(5)
+                    shot(context, "rules-${game.id}-$section")
+                }
+            }
+            context.setScreen { null }
         }
     }
 
