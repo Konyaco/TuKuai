@@ -7,6 +7,7 @@ import io.github.konyaco.tukuai.client.GamePanel
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PanelText
 import io.github.konyaco.tukuai.client.PlayingCardHand
+import io.github.konyaco.tukuai.client.SeatBoxes
 import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.compat.*
@@ -142,40 +143,13 @@ class BluffPanel(private val screen: PanelHost) : GamePanel {
         PanelText.title(g, table, screen.interactive, width)
         for (seat in 0 until view.players) {
             if (seat == me) continue
-            val (x, y) = slotOf(view, me, seat)
+            val (x, y) = SeatBoxes.of(view.players, me, seat, width, BOX)
             renderOpponent(g, table, view, seat, x, y)
         }
         if (!view.finished) renderMiddle(g, table, view)
         renderSelf(g, table, view, me)
         picker.render(g, sortedHand(view), mouseX, mouseY)
         if (view.finished) renderResult(g, table, view)
-    }
-
-    /**
-     * Where the box of each other player goes. Up to four at the table: on your right, across
-     * and on your left; with more, from your right up the right side, across the top and down
-     * the left, clear of the middle.
-     */
-    private fun slotOf(view: BluffView, me: Seat, seat: Seat): Pair<Int, Int> {
-        val rel = (seat - me).mod(view.players)
-        val right = width - 8 - BOX
-        val across = width / 2 - BOX / 2
-        if (view.players <= 4) {
-            val place = when {
-                view.players == 2 -> 1
-                view.players == 3 -> if (rel == 1) 0 else 2
-                else -> rel - 1
-            }
-            return listOf(right to 76, across to 4, 8 to 76)[place]
-        }
-        val slots = listOf(right to 124, right to 76, width / 2 + 6 to 4, width / 2 - 6 - BOX to 4, 8 to 76, 8 to 124, right to 28)
-        val used = when (view.players - 1) {
-            4 -> listOf(0, 1, 4, 5)
-            5 -> listOf(0, 1, 2, 4, 5)
-            6 -> listOf(0, 1, 2, 3, 4, 5)
-            else -> listOf(0, 1, 6, 2, 3, 4, 5)
-        }
-        return slots[used[(rel - 1).coerceIn(0, used.size - 1)]]
     }
 
     /** A player's name, cards left, creeper or hearts, and what they laid down last this round. */
