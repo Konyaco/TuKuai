@@ -21,7 +21,7 @@
   "tukuai.table.bot": "컴퓨터 (%s)",
   "tukuai.table.bot_seat": "컴퓨터 %2$s (%1$s)",
   "tukuai.table.bot_level": "컴퓨터 난이도: %s",
-  "tukuai.table.sit": "여기 앉기",
+  "tukuai.table.sit": "앉기",
   "tukuai.table.sit.away": "자리를 떠난 플레이어 대신 앉습니다.",
   "tukuai.table.stand": "일어나기",
   "tukuai.table.sit_back": "자리로 돌아가기",

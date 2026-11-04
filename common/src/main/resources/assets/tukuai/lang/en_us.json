@@ -21,7 +21,7 @@
   "tukuai.table.bot": "%s CPU",
   "tukuai.table.bot_seat": "%1$s CPU %2$s",
   "tukuai.table.bot_level": "Computer: %s",
-  "tukuai.table.sit": "Sit here",
+  "tukuai.table.sit": "Sit",
   "tukuai.table.sit.away": "Takes the seat of a player who walked away.",
   "tukuai.table.stand": "Stand up",
   "tukuai.table.sit_back": "Back to seat",

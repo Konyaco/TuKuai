@@ -21,7 +21,7 @@
   "tukuai.table.bot": "CPU（%s）",
   "tukuai.table.bot_seat": "CPU %2$s（%1$s）",
   "tukuai.table.bot_level": "CPU の強さ：%s",
-  "tukuai.table.sit": "ここに座る",
+  "tukuai.table.sit": "座る",
   "tukuai.table.sit.away": "席を離れたプレイヤーの代わりに座ります。",
   "tukuai.table.stand": "立つ",
   "tukuai.table.sit_back": "席に戻る",
