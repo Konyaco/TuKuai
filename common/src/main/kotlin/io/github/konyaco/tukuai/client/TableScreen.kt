@@ -370,9 +370,9 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             val (cellX, y) = seatCell(t, i, left, top)
             // In two columns the buttons share the right half of a cell half as wide.
             val x = if (narrow) cellX + NAME_WIDTH + 2 else left + 150
-            val w = if (narrow) 35 else 70
+            val w = if (narrow) 30 else 70
             val gap = if (narrow) 3 else 4
-            val botW = if (narrow) 35 else 76
+            val botW = if (narrow) 40 else 76
             when (seat.occupant) {
                 null -> {
                     button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
