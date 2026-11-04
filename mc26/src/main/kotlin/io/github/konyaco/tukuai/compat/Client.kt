@@ -54,6 +54,12 @@ fun invertMouseX(options: Options): Boolean = options.invertMouseX().get()
 
 fun invertMouseY(options: Options): Boolean = options.invertMouseY().get()
 
+/** Draws with [draw] over everything drawn so far on the screen, its widgets too. */
+fun GuiGraphicsExtractor.drawOnTop(draw: () -> Unit) {
+    nextStratum()
+    draw()
+}
+
 /** The camera's rotation and projection, with the camera at the origin. */
 fun Camera.viewRotationProjection(dest: Matrix4f): Matrix4f = getViewRotationProjectionMatrix(dest)
 

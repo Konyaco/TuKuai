@@ -25,12 +25,14 @@ import java.util.function.Supplier
 import kotlin.system.exitProcess
 import net.minecraft.client.Minecraft
 import net.minecraft.client.Screenshot
+import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.screens.TitleScreen
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.Registries
+import net.minecraft.network.chat.contents.TranslatableContents
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.Difficulty
@@ -113,6 +115,17 @@ object SmokeTest {
         onClient { mc.setScreen(TableScreen(table)) }
         ticks(20)
         shot("2-screen-lobby")
+        // The list of games drops down over the lobby's buttons; 1.21.1 draws in order, so this checks it ends up on top.
+        onClient {
+            val screen = mc.screen as TableScreen
+            val game = screen.children().filterIsInstance<Button>().first { b ->
+                (b.message.siblings.firstOrNull()?.contents as? TranslatableContents)?.key == "tukuai.table.game"
+            }
+            screen.mouseClicked(game.x + 10.0, game.y + 10.0, 0)
+        }
+        ticks(5)
+        shot("2-screen-lobby-games")
+        onClient { mc.screen?.keyPressed(256, 0, 0) }
         onClient { RulesScreen.open(mc.screen, ClientTables[table], "doudizhu") }
         ticks(20)
         shot("3-screen-rules")

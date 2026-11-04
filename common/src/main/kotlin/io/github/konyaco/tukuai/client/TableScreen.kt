@@ -50,6 +50,18 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
     /** A match that was stopped before anyone opened the screen ends on its standings. */
     private var popup: Popup? = table?.snapshot?.takeIf { it.matchOver && it.status == TableStatus.LOBBY }?.let { Popup.STANDINGS }
 
+    /** A setting the lobby picks from a list that drops down under its button. */
+    private enum class Choice { GAME, RULES, TIMER, ROUNDS, BOTS, HARM }
+
+    /**
+     * One line of a [Choice]'s list: what it says, a note on its right (such as why it cannot
+     * be picked), whether it is the one chosen now, and whether it cannot be picked here.
+     */
+    private class Option(val label: Component, val note: Component?, val chosen: Boolean, val blocked: Boolean = false, val pick: () -> Unit)
+
+    /** The list open under one of the lobby's buttons, if any. */
+    private var choice: Choice? = null
+
     /** True while [init] lays out a popup: the game panel still keeps up, but its buttons are not shown. */
     private var hidePanelButtons = false
 
@@ -99,11 +111,13 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
     fun openLobby() {
         showLobby = true
         popup = null
+        choice = null
         rebuildWidgets()
     }
 
     private fun openPopup(next: Popup?) {
         popup = next
+        choice = null
         rebuildWidgets()
     }
 
@@ -180,16 +194,35 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
 
     // ---- After a game --------------------------------------------------------------------------
 
+    /**
+     * Under a finished game: play again, or fill the seats first when someone left; the
+     * replay; and, mid-match, ending the match here rather than only from the menu.
+     */
     override fun finishButtons(table: ClientTable, centerX: Int, y: Int) {
         val s = table.snapshot
-        if (s.matchOver) {
-            button(Component.translatable("tukuai.table.standings").withColor(YELLOW and 0xFFFFFF), centerX - 100, y, 98) {
+        val ending = mayEnd(s)
+        val replay = Component.translatable("tukuai.table.replay")
+        val end = Component.translatable("tukuai.table.end.short")
+        val replayW = if (ending) font.width(replay) + 16 else 98
+        val endW = if (ending) font.width(end) + 16 else 0
+        val firstW = if (ending) 90 else 98
+        var x = centerX - (firstW + 4 + replayW + (if (ending) 4 + endW else 0)) / 2
+        when {
+            s.matchOver -> button(Component.translatable("tukuai.table.standings").withColor(YELLOW and 0xFFFFFF), x, y, firstW) {
                 openPopup(Popup.STANDINGS)
             }
-        } else {
-            readyButton(s, centerX - 100, y, 98, again = true)
+            // Someone stood up or walked off: the seats come first, in the lobby.
+            s.seats.any { it.occupant == null } -> button(Component.translatable("tukuai.table.fill_seats").withColor(YELLOW and 0xFFFFFF), x, y, firstW) {
+                openLobby()
+            }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.fill_seats.tip")))
+            else -> readyButton(s, x, y, firstW, again = true)
         }
-        button(Component.translatable("tukuai.table.replay"), centerX + 2, y, 98) { send(TableOp.REPLAY) }
+        x += firstW + 4
+        button(replay, x, y, replayW) { send(TableOp.REPLAY) }
+        if (ending) {
+            button(end, x + replayW + 4, y, endW) { openPopup(Popup.END) }
+                .setTooltip(Tooltip.create(Component.translatable("tukuai.table.end.tip")))
+        }
     }
 
     /**
@@ -218,11 +251,21 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         val b = button(text, x, y, w, me != null && full && s.status != TableStatus.PLAYING) {
             send(if (mine) TableOp.UNREADY else TableOp.START)
         }
+        // What keeps the game from starting, when it is not up to the others.
+        val missing = when {
+            s.status == TableStatus.PLAYING -> null
+            me == null -> Component.translatable("tukuai.table.start.need_seat")
+            !full -> Component.translatable("tukuai.table.start.need_full")
+            else -> null
+        }
         if (shared) {
             val waiting = voters.filter { !s.seats[it].ready }.joinToString(", ") { seatName(s.seats[it].occupant, it).string }
             val tip = Component.translatable("tukuai.table.ready.tip")
             if (waiting.isNotEmpty()) tip.append("\n").append(Component.translatable("tukuai.table.ready.waiting", waiting))
+            if (missing != null) tip.append("\n").append(missing)
             b.setTooltip(Tooltip.create(tip))
+        } else if (missing != null) {
+            b.setTooltip(Tooltip.create(missing))
         }
     }
 
@@ -233,12 +276,20 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
     /** Centred, but pushed left on narrow screens so the panel stays clear of the top-right buttons. */
     private fun lobbyLeft() = maxOf(8, minOf((width - lobbyWidth) / 2, width - CORNER - 2 - 8 - lobbyWidth))
 
-    /** Centred, but below the buttons in the top right corner on a screen too narrow to keep clear of them. */
+    /**
+     * Centred, but below the buttons in the top right corner on a screen too narrow to keep
+     * clear of them. The panel keeps one size whatever the game and its seats, so nothing
+     * moves away from under the mouse while the player goes through the games and rules.
+     */
     private fun lobbyTop(t: ClientTable): Int {
-        val centred = (height - (SEATS_Y + 46 + seatRows(t) * 24 + hintHeight(t))) / 2
+        // The panel reaches 8 pixels above the title and 26 below the bottom row of buttons, and the hint below that.
+        val centred = (height - (8 + lobbyBottomRow(0) + 26 + hintHeight(t))) / 2 + 8
         val underButtons = lobbyLeft() + lobbyWidth + 8 > width - CORNER - 2
         return if (underButtons) maxOf(centred, 56) else centred
     }
+
+    /** The row of buttons along the bottom of the lobby, below room for the most seats. */
+    private fun lobbyBottomRow(top: Int) = top + SEATS_Y + MAX_SEAT_ROWS * 24 + 6
 
     /** More than four seats go in two columns, each seat in a narrower cell. */
     private fun twoColumns(t: ClientTable) = t.snapshot.seats.size > 4
@@ -249,11 +300,34 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
     private fun seatCell(t: ClientTable, i: Int, left: Int, top: Int): Pair<Int, Int> {
         if (!twoColumns(t)) return left to top + SEATS_Y + i * 24
         val rows = seatRows(t)
-        return left + (i / rows) * (lobbyWidth / 2 + 4) to top + SEATS_Y + (i % rows) * 24
+        return left + (i / rows) * (CELL_WIDTH + CELL_GAP) to top + SEATS_Y + (i % rows) * 24
     }
 
     /** Until the player has opened the rule book, a line at the bottom of the lobby points to it. */
     private fun hintHeight(t: ClientTable) = if (!ClientConfig.guideSeen && t.snapshot.status != TableStatus.PLAYING) 12 else 0
+
+    /** Where the button of a [Choice] sits in the lobby: x, y, width and height. */
+    private fun choiceRect(c: Choice, t: ClientTable): IntArray {
+        val left = lobbyLeft()
+        val top = lobbyTop(t)
+        return when (c) {
+            Choice.GAME -> intArrayOf(left, top + 16, 148, 20)
+            Choice.RULES -> intArrayOf(left + 152, top + 16, 148, 20)
+            Choice.TIMER -> intArrayOf(left, top + 40, 97, 20)
+            Choice.ROUNDS -> intArrayOf(left + 101, top + 40, 98, 20)
+            Choice.BOTS -> intArrayOf(left, lobbyBottomRow(top), 96, 20)
+            // Beside the leaderboard, for a game that may hurt its players.
+            Choice.HARM -> intArrayOf(left + lobbyWidth - 64 - 4 - 92, top - 3, 92, 14)
+        }
+    }
+
+    /** The button that opens the list of a [Choice], showing what is chosen now. */
+    private fun choiceButton(c: Choice, t: ClientTable, text: Component, active: Boolean): Button {
+        val (x, y, w, h) = choiceRect(c, t)
+        return button(Component.empty().append(text).append(Component.literal(" ▾").withColor(GRAY and 0xFFFFFF)), x, y, w, active, h) {
+            choice = if (choice == c) null else c
+        }
+    }
 
     private fun initLobby(t: ClientTable) {
         val s = t.snapshot
@@ -261,59 +335,67 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         val top = lobbyTop(t)
         val game = GameRegistry[s.gameId]
         val canEdit = s.status != TableStatus.PLAYING
+        val mayChange = s.host == null || s.host == s.you
+        // A list that can no longer be used closes, as when a game started meanwhile.
+        if (choice != null && !choiceOpen(choice!!, t)) choice = null
 
         button(Component.translatable("tukuai.table.leaderboard"), left + lobbyWidth - 64, top - 3, 64, h = 14) {
             openPopup(Popup.LEADERBOARD)
         }
-        val games = GameRegistry.all.map { it.id }.filter { GameUis[it] != null }
-        button(Component.translatable("tukuai.table.game", gameName(s.gameId)), left, top + 16, 148, canEdit && games.size > 1) {
-            send(TableOp.GAME, text = games[(games.indexOf(s.gameId) + 1).mod(games.size)])
+        // Mid-match, ending it sits after the game count, where there is room for it.
+        if (mayEnd(s)) {
+            val end = Component.translatable("tukuai.table.end.short")
+            val x = left + font.width(Component.translatable("tukuai.table.title")) + 8 + font.width(Scoreboard.roundLine(t)) + 6
+            val w = font.width(end) + 12
+            val limit = left + lobbyWidth - 64 - 4 - (if (game?.mayHarm == true) 96 else 0)
+            if (x + w <= limit) {
+                button(end, x, top - 3, w, h = 14) { openPopup(Popup.END) }
+                    .setTooltip(Tooltip.create(Component.translatable("tukuai.table.end.tip")))
+            }
         }
-        // Only rules this table has room for; eight players need a big table.
-        val presets = game?.presets?.map { it.id }?.filter { game.seatCount(it) <= t.maxSeats }?.ifEmpty { null } ?: listOf(s.presetId)
-        button(Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), left + 152, top + 16, 148, canEdit) {
-            send(TableOp.PRESET, text = presets[(presets.indexOf(s.presetId) + 1).mod(presets.size)])
-        }
-        val timers = listOf(0, 15, 30, 60)
-        button(timerText(s.turnSeconds), left, top + 40, 97, canEdit) {
-            send(TableOp.TIMER, timers[(timers.indexOf(s.turnSeconds) + 1).mod(timers.size)])
-        }
-        button(matchText(s.matchRounds), left + 101, top + 40, 98, canEdit) {
-            send(TableOp.ROUNDS, ROUND_CHOICES[(ROUND_CHOICES.indexOf(s.matchRounds) + 1).mod(ROUND_CHOICES.size)])
-        }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.match.tip")))
+        choiceButton(Choice.GAME, t, Component.translatable("tukuai.table.game", gameName(s.gameId)), choiceOpen(Choice.GAME, t))
+        choiceButton(Choice.RULES, t, Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), choiceOpen(Choice.RULES, t))
+        choiceButton(Choice.TIMER, t, timerText(s.turnSeconds), canEdit)
+        choiceButton(Choice.ROUNDS, t, matchText(s.matchRounds), canEdit)
+            .setTooltip(Tooltip.create(Component.translatable("tukuai.table.match.tip")))
         spectateButton(s, left + 203, top + 40, 97, canEdit)
-        // Beside the leaderboard, for a game that may hurt its players.
-        if (game?.mayHarm == true) hurtButton(s, left + lobbyWidth - 64 - 4 - 92, top - 3, 92, canEdit)
+        if (game?.mayHarm == true) {
+            val tip = Component.translatable("tukuai.table.hurt.tip")
+            if (!mayChange) tip.append("\n").append(Component.translatable("tukuai.table.spectate.host_only", seatName(s.seats.getOrNull(s.host ?: -1)?.occupant)))
+            choiceButton(Choice.HARM, t, harmText(s.harm), canEdit && mayChange).setTooltip(Tooltip.create(tip))
+        }
 
         val narrow = twoColumns(t)
         s.seats.forEachIndexed { i, seat ->
             val (cellX, y) = seatCell(t, i, left, top)
             // In two columns the buttons share the right half of a cell half as wide.
-            val x = if (narrow) cellX + 74 else left + 150
-            val w = if (narrow) 36 else 70
-            val botW = if (narrow) 36 else 76
+            val x = if (narrow) cellX + NAME_WIDTH + 2 else left + 150
+            val w = if (narrow) 30 else 70
+            val gap = if (narrow) 3 else 4
+            val botW = if (narrow) 40 else 76
             when (seat.occupant) {
                 null -> {
                     button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
-                    button(Component.translatable("tukuai.table.add_bot"), x + w + 4, y, botW, canEdit) {
+                    button(Component.translatable("tukuai.table.add_bot"), x + w + gap, y, botW, canEdit) {
                         send(TableOp.ADD_BOT, i, ClientConfig.botLevel.ordinal)
                     }
                 }
-                is Occupant.Computer -> button(Component.translatable("tukuai.table.remove_bot"), x, y, if (narrow) 76 else 70, canEdit) {
-                    send(TableOp.REMOVE_BOT, i)
+                // A player may take a computer's seat, or the seat of someone who walked away, without waiting.
+                is Occupant.Computer -> {
+                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
+                    button(Component.translatable("tukuai.table.remove_bot"), x + w + gap, y, botW, canEdit) { send(TableOp.REMOVE_BOT, i) }
                 }
                 is Occupant.Human -> if (s.you == i) {
-                    button(Component.translatable("tukuai.table.stand"), x, y, if (narrow) 76 else 70) { send(TableOp.STAND) }
+                    button(Component.translatable("tukuai.table.stand"), x, y, if (narrow) w + gap + botW else 70) { send(TableOp.STAND) }
+                } else if (!seat.present) {
+                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
+                        .setTooltip(Tooltip.create(Component.translatable("tukuai.table.sit.away")))
                 }
             }
         }
 
-        val bottom = top + SEATS_Y + seatRows(t) * 24 + 6
-        button(botLevelText(ClientConfig.botLevel), left, bottom, 96) {
-            ClientConfig.botLevel = BotLevel.entries[(ClientConfig.botLevel.ordinal + 1) % BotLevel.entries.size]
-            ClientConfig.save()
-            rebuildWidgets()
-        }
+        val bottom = lobbyBottomRow(top)
+        choiceButton(Choice.BOTS, t, botLevelText(ClientConfig.botLevel), true)
         button(Component.translatable("tukuai.table.fill_bots"), left + 100, bottom, 96, canEdit && s.seats.any { it.occupant == null }) {
             send(TableOp.ADD_BOT, -1, ClientConfig.botLevel.ordinal)
         }
@@ -328,6 +410,114 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         }
     }
 
+    // ---- Lists that drop down from the lobby's buttons ---------------------------------------
+
+    /** Whether the list of [c] may be opened now: the table is between games, and only the host changes the harm. */
+    private fun choiceOpen(c: Choice, t: ClientTable): Boolean {
+        val s = t.snapshot
+        if (!inLobby(t)) return false
+        if (c == Choice.BOTS) return true
+        if (s.status == TableStatus.PLAYING) return false
+        return when (c) {
+            Choice.GAME -> games().size > 1
+            Choice.HARM -> GameRegistry[s.gameId]?.mayHarm == true && (s.host == null || s.host == s.you)
+            else -> true
+        }
+    }
+
+    /** The games this client can draw, in the order the mod lists them. */
+    private fun games() = GameRegistry.all.map { it.id }.filter { GameUis[it] != null }
+
+    /** What the list of [c] holds, with the one chosen now marked. */
+    private fun options(c: Choice, t: ClientTable): List<Option> {
+        val s = t.snapshot
+        return when (c) {
+            Choice.GAME -> games().map { id ->
+                val seats = GameRegistry[id]?.let { g -> g.presets.map { g.seatCount(it.id) }.filter { it <= t.maxSeats } }.orEmpty()
+                val note = when {
+                    seats.isEmpty() -> null
+                    seats.min() == seats.max() -> Component.translatable("tukuai.table.players", seats.min())
+                    else -> Component.translatable("tukuai.table.players_range", seats.min(), seats.max())
+                }
+                Option(gameName(id), note, id == s.gameId) { send(TableOp.GAME, text = id) }
+            }
+            Choice.RULES -> {
+                val game = GameRegistry[s.gameId] ?: return emptyList()
+                game.presets.map { p ->
+                    // Rules for more players than this table seats need the big table, and say so.
+                    val tooMany = game.seatCount(p.id) > t.maxSeats
+                    val why = if (tooMany) Component.translatable("tukuai.table.needs_big", Component.translatable("block.tukuai.big_card_table")) else null
+                    Option(presetName(s.gameId, p.id), why, p.id == s.presetId, tooMany) { send(TableOp.PRESET, text = p.id) }
+                }
+            }
+            Choice.TIMER -> TIMER_CHOICES.map { Option(timerText(it), null, it == s.turnSeconds) { send(TableOp.TIMER, it) } }
+            Choice.ROUNDS -> ROUND_CHOICES.map { Option(matchText(it), null, it == s.matchRounds) { send(TableOp.ROUNDS, it) } }
+            Choice.HARM -> HARM_NAMES.indices.map { Option(harmText(it), null, it == s.harm) { send(TableOp.HURT, it) } }
+            Choice.BOTS -> BotLevel.entries.map { level ->
+                Option(botLevelText(level), null, level == ClientConfig.botLevel) {
+                    ClientConfig.botLevel = level
+                    ClientConfig.save()
+                    rebuildWidgets()
+                }
+            }
+        }
+    }
+
+    /** Where the open list is drawn: x, y, width, and its options. It drops down from its button, or up where there is no room below. */
+    private fun choiceBox(c: Choice, t: ClientTable): Pair<IntArray, List<Option>> {
+        val opts = options(c, t)
+        val (bx, by, bw, bh) = choiceRect(c, t)
+        val w = maxOf(bw, opts.maxOfOrNull { 16 + font.width(it.label) + (it.note?.let { n -> 8 + font.width(n) } ?: 0) } ?: 0)
+        val h = opts.size * CHOICE_ROW + 4
+        val x = minOf(bx, width - 4 - w).coerceAtLeast(4)
+        val y = if (by + bh + 1 + h <= height - 4) by + bh + 1 else maxOf(4, by - 1 - h)
+        return intArrayOf(x, y, w, h) to opts
+    }
+
+    private fun renderChoice(g: GuiGraphicsExtractor, t: ClientTable, mouseX: Int, mouseY: Int) {
+        val c = choice ?: return
+        val (box, opts) = choiceBox(c, t)
+        val (x, y, w, h) = box
+        g.drawOnTop {
+            // Solid, unlike the lobby's panel, so the buttons under it do not show through.
+            g.fill(x, y, x + w, y + h, PANEL or 0xFF000000.toInt())
+            panelBox(g, x, y, x + w, y + h)
+            opts.forEachIndexed { i, o ->
+                val rowY = y + 2 + i * CHOICE_ROW
+                val hovered = inBox(mouseX, mouseY, x, rowY, w, CHOICE_ROW)
+                if (o.chosen) g.fill(x + 1, rowY, x + w - 1, rowY + CHOICE_ROW, CHOSEN_ROW)
+                if (hovered && !o.blocked) g.fill(x + 1, rowY, x + w - 1, rowY + CHOICE_ROW, HOVER_ROW)
+                val color = when {
+                    o.blocked -> DIM_TEXT
+                    o.chosen -> GOLD
+                    else -> WHITE
+                }
+                if (o.chosen) g.text(font, "✔", x + 4, rowY + 3, GOLD, false)
+                g.text(font, o.label, x + 14, rowY + 3, color, false)
+                o.note?.let { rightText(g, it, x + w - 6, rowY + 3, GRAY) }
+            }
+        }
+    }
+
+    /** A click on an option picks it; anywhere else closes the list without doing what is under it. */
+    private fun clickChoice(t: ClientTable?, mx: Double, my: Double): Boolean {
+        val c = choice ?: return false
+        choice = null
+        if (t == null) return true
+        val (box, opts) = choiceBox(c, t)
+        val (x, y, w, _) = box
+        val i = Math.floorDiv(my.toInt() - y - 2, CHOICE_ROW)
+        if (mx.toInt() in x until x + w && i in opts.indices) {
+            val o = opts[i]
+            if (o.blocked) {
+                choice = c
+            } else if (!o.chosen) {
+                o.pick()
+            }
+        }
+        return true
+    }
+
     /** Whether others may see every hand. Only the host changes it; the server checks too. */
     private fun spectateButton(s: TableSnapshot, x: Int, y: Int, w: Int, canEdit: Boolean) {
         val mayChange = s.host == null || s.host == s.you
@@ -338,21 +528,11 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             .setTooltip(Tooltip.create(tip))
     }
 
-    /** How much the game hurts its players in the world, as a creeper going off does: not, a little, or to death. Only the host changes it. */
-    private fun hurtButton(s: TableSnapshot, x: Int, y: Int, w: Int, canEdit: Boolean) {
-        val mayChange = s.host == null || s.host == s.you
-        val text = Component.translatable("tukuai.table.hurt.${HARM_NAMES.getOrElse(s.harm) { HARM_NAMES.last() }}")
-        val tip = Component.translatable("tukuai.table.hurt.tip")
-        if (!mayChange) tip.append("\n").append(Component.translatable("tukuai.table.spectate.host_only", seatName(s.seats.getOrNull(s.host ?: -1)?.occupant)))
-        button(text, x, y, w, canEdit && mayChange, h = 14) { send(TableOp.HURT, (s.harm + 1).mod(HARM_NAMES.size)) }
-            .setTooltip(Tooltip.create(tip))
-    }
-
     private fun renderLobby(g: GuiGraphicsExtractor, t: ClientTable) {
         val s = t.snapshot
         val left = lobbyLeft()
         val top = lobbyTop(t)
-        val panelBottom = top + SEATS_Y + seatRows(t) * 24 + 32 + hintHeight(t)
+        val panelBottom = lobbyBottomRow(top) + 26 + hintHeight(t)
         panelBox(g, left - 8, top - 8, left + lobbyWidth + 8, panelBottom)
         if (hintHeight(t) > 0) {
             g.text(font, Component.translatable("tukuai.guide.first_time"), left, panelBottom - 14, YELLOW, false)
@@ -380,7 +560,12 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             val nameY = if (seat.games > 0) y + 1 else y + 6
             val nameX = if (narrow) cellX + 10 else left + 40
             val pointsText = if (s.rounds > 0) Scoreboard.signed(s.tally.getOrNull(i) ?: 0) else ""
-            val nameEnd = if (narrow) cellX + 72 - (if (pointsText.isEmpty()) 0 else font.width(pointsText) + 3) else Int.MAX_VALUE
+            val ready = seat.ready && i in voters && voters.size > 1
+            val nameEnd = if (narrow) {
+                cellX + NAME_WIDTH - (if (pointsText.isEmpty()) 0 else font.width(pointsText) + 3) - (if (ready) font.width("✔") + 2 else 0)
+            } else {
+                Int.MAX_VALUE
+            }
             val name = if (narrow) Component.literal(font.plainSubstrByWidth(seatName(seat.occupant).string, nameEnd - nameX)) else seatName(seat.occupant)
             g.text(font, name, nameX, nameY, color, false)
             if (seat.games > 0) {
@@ -388,10 +573,14 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             }
             if (s.rounds > 0) {
                 val points = s.tally.getOrNull(i) ?: 0
-                val right = if (narrow) cellX + 72 else left + 146
+                val right = if (narrow) cellX + NAME_WIDTH else left + 146
                 g.text(font, pointsText, right - font.width(pointsText), y + 6, Scoreboard.pointsColor(points), false)
             }
-            if (narrow) return@forEachIndexed
+            if (narrow) {
+                // No room for the tags, but who is ready still shows.
+                if (ready) g.text(font, "✔", nameX + font.width(name) + 2, nameY, GREEN, false)
+                return@forEachIndexed
+            }
             var tagX = nameX + font.width(name) + 4
             if (seat.occupant is Occupant.Human && !seat.present) {
                 val away = Component.translatable("tukuai.table.away")
@@ -403,7 +592,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
                 g.text(font, host, tagX, nameY, YELLOW, false)
                 tagX += font.width(host) + 4
             }
-            if (seat.ready && i in voters && voters.size > 1) g.text(font, "✔", tagX, nameY, GREEN, false)
+            if (ready) g.text(font, "✔", tagX, nameY, GREEN, false)
         }
     }
 
@@ -615,10 +804,14 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
                 null -> {}
             }
         }
-        super.extractRenderState(g, mouseX, mouseY, partialTick)
+        // Under an open list the buttons do not light up, and the list is drawn over them.
+        val overChoice = t != null && choice != null && choiceBox(choice!!, t).first.let { (x, y, w, h) -> inBox(mouseX, mouseY, x, y, w, h) }
+        super.extractRenderState(g, if (overChoice) -1 else mouseX, if (overChoice) -1 else mouseY, partialTick)
+        if (t != null && choice != null) renderChoice(g, t, mouseX, mouseY)
     }
 
     override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
+        if (clickChoice(table, event.x(), event.y())) return true
         if (super.mouseClicked(event, doubleClick)) return true
         val t = table
         if (popup == Popup.MENU) return clickMenu(event.x(), event.y())
@@ -723,6 +916,10 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
 
     override fun keyPressed(event: KeyEvent): Boolean {
         val t = table
+        if (event.key() == InputConstants.KEY_ESCAPE && choice != null) {
+            choice = null
+            return true
+        }
         if (event.key() == InputConstants.KEY_ESCAPE && popup != null) {
             openPopup(null)
             return true
@@ -806,6 +1003,23 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         /** Where the rows of seats start in the lobby, below the game and rules buttons. */
         private const val SEATS_Y = 72
 
+        /** The most rows of seats the lobby has: four seats, or eight in two columns. */
+        private const val MAX_SEAT_ROWS = 4
+
+        /** A seat's cell in two columns, the gap between the columns, and the room for its name and points. */
+        private const val CELL_WIDTH = 148
+        private const val CELL_GAP = 4
+        private const val NAME_WIDTH = 72
+
+        /** The height of one line in a list that drops down. */
+        private const val CHOICE_ROW = 14
+        private const val CHOSEN_ROW = 0x30FFD24A
+        private const val HOVER_ROW = 0x30FFFFFF
+        private const val DIM_TEXT = 0xFF606060.toInt()
+
+        /** Turn time limits to choose from in the lobby, in seconds; 0 is none. */
+        private val TIMER_CHOICES = listOf(0, 15, 30, 60)
+
         /** The language key ending for each harm setting, in [TableSnapshot.harm] order. */
         private val HARM_NAMES = listOf("off", "light", "lethal")
 
@@ -852,6 +1066,9 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         fun gameName(gameId: String): Component = Component.translatable("tukuai.game.$gameId")
 
         fun presetName(gameId: String, presetId: String): Component = Component.translatable("tukuai.preset.$gameId.$presetId")
+
+        /** How much a game that may hurt its players does, see [TableSnapshot.harm]. */
+        fun harmText(harm: Int): Component = Component.translatable("tukuai.table.hurt.${HARM_NAMES.getOrElse(harm) { HARM_NAMES.last() }}")
 
         fun timerText(seconds: Int): Component =
             if (seconds == 0) Component.translatable("tukuai.table.timer.off") else Component.translatable("tukuai.table.timer", seconds)
