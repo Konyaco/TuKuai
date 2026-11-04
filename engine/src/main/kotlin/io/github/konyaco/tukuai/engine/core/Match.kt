@@ -8,6 +8,9 @@ interface MatchHandle {
     val gameId: String
     val seatCount: Int
     val toAct: Seat?
+
+    /** See [GameDefinition.actors]. */
+    val actors: List<Seat>
     val result: GameResult?
 
     /** How many actions have been applied; clients use it to notice missed updates. */
@@ -58,6 +61,7 @@ class Match<R : Any, S : Any, A : Any, V : Any>(
     override val gameId: String get() = game.id
     override val seatCount: Int = game.seatCount(rules)
     override val toAct: Seat? get() = game.toAct(state)
+    override val actors: List<Seat> get() = game.actors(state)
     override val result: GameResult? get() = game.result(state)
     override val step: Int get() = actions.size
     override val mayHarm: Boolean get() = game.mayHarm

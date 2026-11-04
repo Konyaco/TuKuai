@@ -34,6 +34,13 @@ interface GameDefinition<R : Any, S : Any, A : Any, V : Any> {
     /** The seat that must act next, or null once the game is over. */
     fun toAct(state: S): Seat?
 
+    /**
+     * Every seat that may act now, in any order. Most games have just [toAct]; in a game
+     * where several players decide at once, each without seeing the others' choice, this
+     * lists them all and [toAct] is the first of them.
+     */
+    fun actors(state: S): List<Seat> = listOfNotNull(toAct(state))
+
     /** @throws IllegalActionException when [seat] may not make [action] now */
     fun apply(state: S, seat: Seat, action: A): S
 
