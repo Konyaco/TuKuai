@@ -19,6 +19,7 @@ STYLE_ROW = 11  # The other face styles start on this row, 54 cards each; see Ca
 TUTU_ROW = 19  # Tutu cards start on this row, after the face styles; see CardArt.TUTU_FIRST.
 BLUFF_ROW = 24  # The creeper head of creeper bluff, after the Tutu cards; see CardArt.CREEPER_SIDE.
 MAHJONG_ROW = 25  # Mahjong tile faces, characters, dots and bamboo 1-9, then a blank face; see CardArt.MAHJONG_FIRST.
+CAVE_ROW = 27  # Cave expedition: the veins, the hazards, the torch, the chest and the emerald; see CardArt.CAVE_FIRST.
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
@@ -1009,6 +1010,242 @@ def mahjong_tiles():
     return tiles
 
 
+# ---- Cave expedition -------------------------------------------------------------------------
+
+STONE = [(125, 125, 125, 255), (116, 116, 116, 255), (136, 136, 136, 255), (104, 104, 104, 255)]
+ORE_COLORS = {  # Same order as Ore in the engine: a dark and a light speck for each.
+    "coal": [(36, 36, 38, 255), (66, 66, 70, 255)],
+    "iron": [(196, 150, 116, 255), (226, 192, 160, 255)],
+    "gold": [(236, 196, 40, 255), (252, 238, 120, 255)],
+    "diamond": [(60, 206, 196, 255), (176, 250, 240, 255)],
+}
+ORE_VALUES = {"coal": [2, 3, 4, 5], "iron": [6, 7, 8, 9], "gold": [10, 11, 12, 13], "diamond": [14, 15, 16, 17]}
+EMERALD = [(23, 168, 72, 255), (64, 214, 110, 255), (150, 246, 176, 255), (12, 110, 46, 255)]
+
+# Where the ore lies in a 16x16 block: "a" a dark speck, "b" a light one.
+ORE_SPECKS = [
+    "................",
+    "..ab.......ba...",
+    "..aab.....aab...",
+    "...a.......a....",
+    "......ab........",
+    ".....aab....ab..",
+    "......a....aab..",
+    "............a...",
+    "..ba............",
+    ".aab.....ab.....",
+    "..a.....aab.....",
+    ".........a...ba.",
+    "....ab......aab.",
+    "...aab.......a..",
+    "....a...........",
+    "................",
+]
+
+
+def stone_block(seed):
+    rnd = random.Random(seed)
+    return [[rnd.choice(STONE) for _ in range(16)] for _ in range(16)]
+
+
+def paste_block(card, block, x0, y0, k):
+    """A 16x16 block of colours, each pixel k by k."""
+    for y, row in enumerate(block):
+        for x, c in enumerate(row):
+            if c is None:
+                continue
+            for dy in range(k):
+                for dx in range(k):
+                    put(card, x0 + x * k + dx, y0 + y * k + dy, c)
+
+
+def ore_block(ore):
+    block = stone_block(23)
+    for y, row in enumerate(ORE_SPECKS):
+        for x, ch in enumerate(row):
+            if ch in "ab":
+                block[y][x] = ORE_COLORS[ore]["ab".index(ch)]
+    return block
+
+
+def outlined_number(card, label, cy, color, shadow=BLACK):
+    """[label] in the 5x7 font doubled, centred on the card at height cy, with a dark rim."""
+    rows = scaled(label_rows(label), 2)
+    x0 = 16 - len(rows[0]) // 2
+    y0 = cy - len(rows) // 2
+    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (1, 1)]:
+        bitmap(card, rows, x0 + dx, y0 + dy, shadow)
+    bitmap(card, rows, x0, y0, color)
+
+
+def vein_card(ore, value):
+    """A block of [ore] on rock, and what the vein is worth in emeralds under it."""
+    card = blank((70, 70, 74, 255))
+    rnd = random.Random(31)
+    for y in range(2, CARD_H - 2):
+        for x in range(2, CARD_W - 2):
+            put(card, x, y, rnd.choice(STONE[1:]) if rnd.random() < 0.25 else (84, 84, 88, 255))
+    # The block, one block pixel to a card pixel, with a dark rim.
+    for y in range(4, 22):
+        for x in range(7, 25):
+            put(card, x, y, (40, 40, 44, 255))
+    paste_block(card, ore_block(ore), 8, 5, 1)
+    outlined_number(card, str(value), 32, WHITE)
+    return card
+
+
+def lava_block():
+    rnd = random.Random(41)
+    shades = [(207, 92, 20, 255), (232, 128, 24, 255), (250, 176, 44, 255), (252, 222, 92, 255), (180, 64, 16, 255)]
+    block = []
+    for y in range(16):
+        row = []
+        for x in range(16):
+            wave = math.sin(x * 0.8 + y * 0.5) + math.sin(y * 1.1 - x * 0.3)
+            row.append(shades[int((wave + 2) / 4 * 4.99)] if rnd.random() > 0.15 else rnd.choice(shades))
+        block.append(row)
+    return block
+
+
+def creeper_face_block():
+    face = ["........",
+            "........",
+            ".kk..kk.",
+            ".kk..kk.",
+            "...kk...",
+            "..kkkk..",
+            "..kkkk..",
+            "..k..k.."]
+    rnd = random.Random(13)
+    greens = [(94, 196, 80, 255), (70, 170, 60, 255), (118, 214, 100, 255), (52, 140, 46, 255)]
+    small = [[(24, 32, 22, 255) if face[y][x] == "k" else rnd.choice(greens) for x in range(8)] for y in range(8)]
+    return [[small[y // 2][x // 2] for x in range(16)] for y in range(16)]
+
+
+def gravel_block():
+    rnd = random.Random(53)
+    shades = [(130, 122, 118, 255), (108, 100, 98, 255), (152, 144, 140, 255), (88, 80, 78, 255), (124, 104, 92, 255)]
+    return [[rnd.choice(shades) for _ in range(16)] for _ in range(16)]
+
+
+def spider_face_block():
+    """A cave spider looking out: dark blue-green with rows of red eyes."""
+    face = ["dddddddd",
+            "dddddddd",
+            "deeddeed",
+            "dEEddEEd",
+            "dddeeddd",
+            "dddEEddd",
+            "dmddddmd",
+            "dmddddmd"]
+    rnd = random.Random(61)
+    darks = [(22, 52, 58, 255), (18, 44, 50, 255), (30, 64, 70, 255)]
+    colors = {"e": (178, 20, 20, 255), "E": (240, 40, 40, 255), "m": (12, 20, 22, 255)}
+    small = [[colors.get(face[y][x]) or rnd.choice(darks) for x in range(8)] for y in range(8)]
+    return [[small[y // 2][x // 2] for x in range(16)] for y in range(16)]
+
+
+HAZARD_BLOCKS = {"lava": lava_block, "creeper": creeper_face_block, "gravel": gravel_block, "spider": spider_face_block}
+
+
+def hazard_card(hazard):
+    """A hazard on a dark red card, with warning stripes along the top and the bottom."""
+    card = blank((60, 20, 20, 255))
+    for y in range(2, CARD_H - 2):
+        for x in range(2, CARD_W - 2):
+            stripe = (y < 6 or y > CARD_H - 7) and ((x + y) // 3) % 2 == 0
+            put(card, x, y, (236, 196, 40, 255) if stripe else (60, 20, 20, 255))
+    for y in range(8, 36):
+        for x in range(3, 29):
+            put(card, x, y, (24, 10, 10, 255))
+    # The block doubled would not fit; it is drawn one and a half times as large by sampling.
+    block = HAZARD_BLOCKS[hazard]()
+    for y in range(24):
+        for x in range(24):
+            put(card, 4 + x, 10 + y, block[y * 16 // 24][x * 16 // 24])
+    return card
+
+
+def torch_card():
+    """A torch on dark rock: the card that stands before each player still in the cave."""
+    card = blank((36, 38, 46, 255))
+    rnd = random.Random(71)
+    for y in range(2, CARD_H - 2):
+        for x in range(2, CARD_W - 2):
+            put(card, x, y, rnd.choice([(36, 38, 46, 255), (42, 44, 54, 255), (30, 32, 40, 255)]))
+    # The glow around the flame.
+    for y in range(2, 26):
+        for x in range(2, CARD_W - 2):
+            d = math.hypot(x + 0.5 - 16, y + 0.5 - 12)
+            if d < 11 and rnd.random() < 1 - d / 11:
+                put(card, x, y, (96, 78, 44, 255))
+    for y in range(16, 38):
+        for x in range(14, 18):
+            put(card, x, y, (112, 80, 44, 255) if x < 16 else (86, 60, 34, 255))
+    flame = ["..y.", ".yoy", "yowy", "ywwy", ".yy."]
+    colors = {"y": (250, 176, 44, 255), "o": (252, 222, 92, 255), "w": (255, 250, 220, 255)}
+    for dy, row in enumerate(flame):
+        for dx, ch in enumerate(row):
+            if ch in colors:
+                for k in range(4):
+                    put(card, 13 + dx * 2 - 1 + k % 2, 6 + dy * 2 + k // 2, colors[ch])
+    return card
+
+
+def chest_block(top):
+    """A cell whose top 32x32 is the front, or the lid, of a chest."""
+    cell = Image.new("RGBA", (CARD_W, CARD_H), CLEAR)
+    rnd = random.Random(83 if top else 89)
+    wood = [(160, 112, 52, 255), (146, 100, 44, 255), (172, 124, 60, 255)]
+    rim = (82, 54, 26, 255)
+    for y in range(16):
+        for x in range(16):
+            edge = x in (0, 15) or y in (0, 15) or (not top and y == 6)
+            c = rim if edge else rnd.choice(wood)
+            if not top and 6 <= x <= 9 and 5 <= y <= 8:
+                c = (60, 60, 64, 255) if x in (6, 9) or y in (5, 8) else (200, 200, 206, 255)
+            for k in range(4):
+                cell.putpixel((x * 2 + k % 2, y * 2 + k // 2), c)
+    return cell
+
+
+def emerald_block():
+    """A cell whose top 32x32 is a cut emerald, for the little emeralds on the table and in the screens."""
+    cell = Image.new("RGBA", (CARD_W, CARD_H), CLEAR)
+    rows = ["....aaaaaaaa....",
+            "...abbbbbbbba...",
+            "..abccccccccba..",
+            ".abccbbbbbbccba.",
+            "abccbbbbbbbbccba",
+            "abcbbbccccbbbcba",
+            "abcbbcccccbbbcba",
+            "abcbbccccbbbbcba",
+            "abcbbbcccbbbbcba",
+            "abcbbbbbbbbbbcba",
+            "abccbbbbbbbbccba",
+            ".abccbbbbbbccba.",
+            "..abccccccccba..",
+            "...abbbbbbbba...",
+            "....aaaaaaaa....",
+            "................"]
+    # Solid all over, as a block of emerald, since the table draws it as a little cube.
+    colors = {"a": EMERALD[3], "b": EMERALD[0], "c": EMERALD[1], ".": EMERALD[3]}
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            c = colors[ch]
+            for k in range(4):
+                cell.putpixel((x * 2 + k % 2, y * 2 + k // 2), c)
+    return cell
+
+
+def cave_cards():
+    """Same order as CaveDeck.VEINS, then one card of each hazard, the torch, the chest's front and lid, and the emerald."""
+    cards = [vein_card(ore, value) for ore in ORE_COLORS for value in ORE_VALUES[ore]]
+    cards += [hazard_card(h) for h in HAZARD_BLOCKS]
+    cards += [torch_card(), chest_block(False), chest_block(True), emerald_block()]
+    return cards
+
+
 def atlas():
     sheet = Image.new("RGBA", (ATLAS_W, ATLAS_H), CLEAR)
     cards = [face(r, s) for s in SUITS for r in RANKS] + [joker(False), joker(True)]
@@ -1032,6 +1269,8 @@ def atlas():
         sheet.paste(card, (i * CARD_W, BLUFF_ROW * CARD_H))
     for i, tile in enumerate(mahjong_tiles()):
         sheet.paste(tile, ((i % COLS) * CARD_W, (MAHJONG_ROW + i // COLS) * CARD_H))
+    for i, card in enumerate(cave_cards()):
+        sheet.paste(card, ((i % COLS) * CARD_W, (CAVE_ROW + i // COLS) * CARD_H))
     # The paper colour of a card's edges, for cards drawn with thickness on the table.
     for y in range(8):
         for x in range(8):

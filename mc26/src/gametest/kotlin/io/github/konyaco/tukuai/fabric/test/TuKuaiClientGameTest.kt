@@ -19,6 +19,10 @@ import io.github.konyaco.tukuai.engine.bluff.BluffCodecs
 import io.github.konyaco.tukuai.engine.bluff.BluffEventKind
 import io.github.konyaco.tukuai.engine.bluff.BluffPhase
 import io.github.konyaco.tukuai.engine.bluff.BluffView
+import io.github.konyaco.tukuai.client.cave.CaveUi
+import io.github.konyaco.tukuai.engine.cave.CaveAction
+import io.github.konyaco.tukuai.engine.cave.CaveCodecs
+import io.github.konyaco.tukuai.engine.cave.CaveView
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdView
@@ -83,6 +87,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         if (only == "tutu") return onlyGame(context) { server, table -> playTutu(context, server, table) }
         if (only == "bluff") return onlyGame(context) { server, table -> playBluff(context, server, table) }
         if (only == "mahjong") return onlyGame(context) { server, table -> playMahjong(context, server, table) }
+        if (only == "cave") return onlyGame(context) { server, table -> playCave(context, server, table) }
         if (only != null && only != "game") return
         context.worldBuilder().create().use { world ->
             world.clientLevel.waitForChunksRender()
@@ -302,6 +307,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
 
         playTutu(context, server, table)
         playBluff(context, server, table)
+        playCave(context, server, table)
         playPaoDeKuai(context, server, table)
         playMahjong(context, server, table)
     }
@@ -449,6 +455,104 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         }
         context.waitTicks(5)
         shot(context, "bluff-10-replay")
+        context.setScreen { null }
+        act(server, table, TableOp.AUTO, 0)
+    }
+
+    /**
+     * Switches the table to the cave expedition for four and plays a game of it: the lobby, the
+     * rule book on hazards, choosing at the same time as the computers, going deeper a few
+     * times and heading back, a round ending on the table, the end and the replay.
+     */
+    private fun playCave(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        act(server, table, TableOp.GAME, text = "cave")
+        repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
+        act(server, table, TableOp.HURT, TableSnapshot.HARM_OFF)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "cave" && it.harm == TableSnapshot.HARM_OFF && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "cave-1-lobby")
+        readRules(context, "cave", "danger")
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "cave" && it.status == TableStatus.PLAYING } == true }, 200)
+        val cave = { ClientTables[table]?.view as? CaveView }
+        // Everyone in the cave chooses at once: the first card is up and all four have yet to.
+        context.waitFor({ cave()?.let { it.path.size == 1 } == true }, 100)
+        check(cave()!!.deciding.size == 4) { "Not everyone was choosing at the start: ${cave()!!.deciding}" }
+        context.input.lookAt(table)
+        context.waitTicks(12)
+        shot(context, "cave-2-world-start")
+
+        // Go deeper until three cards are up, then head back with what we carry.
+        context.setScreen { TableScreen(table) }
+        var choices = 0
+        while (true) {
+            context.waitFor({ cave()?.let { it.isMyTurn || it.finished || !it.inside[0] } == true }, 2400)
+            val view = cave()!!
+            if (view.finished) {
+                act(server, table, TableOp.START)
+                context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING && cave()?.finished == false }, 200)
+                continue
+            }
+            if (!view.isMyTurn) {
+                // We were caught or everyone else left; wait for the next round.
+                context.waitFor({ cave()?.let { v -> v.round > view.round || v.finished } == true }, 2400)
+                continue
+            }
+            if (view.path.size >= 3 && view.pack[0] > 0) break
+            check(++choices < 60) { "Never had emeralds to bring back" }
+            act(server, table, TableOp.ACT, data = CaveCodecs.ACTION.encode(CaveAction.Deeper))
+            context.waitFor({ cave()?.let { v -> v.log.size > view.log.size || v.myChoice != null } == true }, 100)
+        }
+        context.waitTicks(10)
+        shot(context, "cave-3-screen-choose")
+        context.setScreen { null }
+        context.waitTicks(5)
+        shot(context, "cave-4-world-path")
+
+        val before = cave()!!
+        act(server, table, TableOp.ACT, data = CaveCodecs.ACTION.encode(CaveAction.Back))
+        context.waitFor({ cave()?.let { !it.inside[0] || it.round > before.round || it.finished } == true }, 400)
+        val after = cave()!!
+        check(after.chest[0] >= before.chest[0] + before.pack[0]) { "Heading back did not bank what we carried: $before -> $after" }
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "cave-5-screen-back")
+
+        // Let the computer play for us and catch a round as it ends on the table.
+        act(server, table, TableOp.AUTO, 1)
+        context.setScreen { null }
+        context.waitFor({ CaveUi.ending(ClientTables[table]!!) != null || cave()?.finished == true }, 6000)
+        context.waitTicks(4)
+        shot(context, "cave-6-world-ended")
+        var waited = 0
+        while (status(server, table) != TableStatus.FINISHED) {
+            check(waited < 12000) { "The cave game did not finish" }
+            context.waitTicks(10)
+            waited += 10
+        }
+        context.waitFor({ cave()?.finished == true }, 200)
+        val end = cave()!!
+        check(end.round == end.rules.rounds && end.winners.isNotEmpty()) { "The cave game ended oddly: $end" }
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "cave-7-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "cave-8-world-result")
+
+        act(server, table, TableOp.REPLAY)
+        context.waitFor({ it.screen is ReplayScreen }, 100)
+        context.runOnClient<RuntimeException> {
+            val replay = it.screen as ReplayScreen
+            replay.pause()
+            replay.seek(replay.total / 2)
+        }
+        context.waitTicks(5)
+        shot(context, "cave-9-replay")
         context.setScreen { null }
         act(server, table, TableOp.AUTO, 0)
     }

@@ -43,6 +43,11 @@ class ClientTable(val pos: BlockPos, val snapshot: TableSnapshot, private val re
         return scene ?: emptyList()
     }
 
+    /** Works the cards out again on the next frame, for a game whose table changes as time passes rather than with each update. */
+    fun redraw() {
+        sceneKey = null
+    }
+
     /** The most seats the table block in the world has room for. */
     val maxSeats: Int
         get() = (Minecraft.getInstance().level?.getBlockState(pos)?.block as? CardTableBlock)?.maxSeats ?: 4
