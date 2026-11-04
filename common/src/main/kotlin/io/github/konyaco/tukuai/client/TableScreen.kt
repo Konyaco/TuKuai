@@ -194,16 +194,35 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
 
     // ---- After a game --------------------------------------------------------------------------
 
+    /**
+     * Under a finished game: play again, or fill the seats first when someone left; the
+     * replay; and, mid-match, ending the match here rather than only from the menu.
+     */
     override fun finishButtons(table: ClientTable, centerX: Int, y: Int) {
         val s = table.snapshot
-        if (s.matchOver) {
-            button(Component.translatable("tukuai.table.standings").withColor(YELLOW and 0xFFFFFF), centerX - 100, y, 98) {
+        val ending = mayEnd(s)
+        val replay = Component.translatable("tukuai.table.replay")
+        val end = Component.translatable("tukuai.table.end.short")
+        val replayW = if (ending) font.width(replay) + 16 else 98
+        val endW = if (ending) font.width(end) + 16 else 0
+        val firstW = if (ending) 90 else 98
+        var x = centerX - (firstW + 4 + replayW + (if (ending) 4 + endW else 0)) / 2
+        when {
+            s.matchOver -> button(Component.translatable("tukuai.table.standings").withColor(YELLOW and 0xFFFFFF), x, y, firstW) {
                 openPopup(Popup.STANDINGS)
             }
-        } else {
-            readyButton(s, centerX - 100, y, 98, again = true)
+            // Someone stood up or walked off: the seats come first, in the lobby.
+            s.seats.any { it.occupant == null } -> button(Component.translatable("tukuai.table.fill_seats").withColor(YELLOW and 0xFFFFFF), x, y, firstW) {
+                openLobby()
+            }.setTooltip(Tooltip.create(Component.translatable("tukuai.table.fill_seats.tip")))
+            else -> readyButton(s, x, y, firstW, again = true)
         }
-        button(Component.translatable("tukuai.table.replay"), centerX + 2, y, 98) { send(TableOp.REPLAY) }
+        x += firstW + 4
+        button(replay, x, y, replayW) { send(TableOp.REPLAY) }
+        if (ending) {
+            button(end, x + replayW + 4, y, endW) { openPopup(Popup.END) }
+                .setTooltip(Tooltip.create(Component.translatable("tukuai.table.end.tip")))
+        }
     }
 
     /**
@@ -323,6 +342,17 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         button(Component.translatable("tukuai.table.leaderboard"), left + lobbyWidth - 64, top - 3, 64, h = 14) {
             openPopup(Popup.LEADERBOARD)
         }
+        // Mid-match, ending it sits after the game count, where there is room for it.
+        if (mayEnd(s)) {
+            val end = Component.translatable("tukuai.table.end.short")
+            val x = left + font.width(Component.translatable("tukuai.table.title")) + 8 + font.width(Scoreboard.roundLine(t)) + 6
+            val w = font.width(end) + 12
+            val limit = left + lobbyWidth - 64 - 4 - (if (game?.mayHarm == true) 96 else 0)
+            if (x + w <= limit) {
+                button(end, x, top - 3, w, h = 14) { openPopup(Popup.END) }
+                    .setTooltip(Tooltip.create(Component.translatable("tukuai.table.end.tip")))
+            }
+        }
         choiceButton(Choice.GAME, t, Component.translatable("tukuai.table.game", gameName(s.gameId)), choiceOpen(Choice.GAME, t))
         choiceButton(Choice.RULES, t, Component.translatable("tukuai.table.rules", presetName(s.gameId, s.presetId)), choiceOpen(Choice.RULES, t))
         choiceButton(Choice.TIMER, t, timerText(s.turnSeconds), canEdit)
@@ -350,11 +380,16 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
                         send(TableOp.ADD_BOT, i, ClientConfig.botLevel.ordinal)
                     }
                 }
-                is Occupant.Computer -> button(Component.translatable("tukuai.table.remove_bot"), x, y, if (narrow) w + gap + botW else 70, canEdit) {
-                    send(TableOp.REMOVE_BOT, i)
+                // A player may take a computer's seat, or the seat of someone who walked away, without waiting.
+                is Occupant.Computer -> {
+                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
+                    button(Component.translatable("tukuai.table.remove_bot"), x + w + gap, y, botW, canEdit) { send(TableOp.REMOVE_BOT, i) }
                 }
                 is Occupant.Human -> if (s.you == i) {
                     button(Component.translatable("tukuai.table.stand"), x, y, if (narrow) w + gap + botW else 70) { send(TableOp.STAND) }
+                } else if (!seat.present) {
+                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
+                        .setTooltip(Tooltip.create(Component.translatable("tukuai.table.sit.away")))
                 }
             }
         }

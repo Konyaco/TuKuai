@@ -278,12 +278,24 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             auto[seat] = false
             changed()
             mount(level, player, seat)
-        } else if (occupant == null && idle) {
+        } else if (mayTake(player, seat)) {
             takeSeat(level, player, seat)
         } else if (occupant is Occupant.Human && paused && seatOf(player.uuid) == null) {
             takeOver(level, player, seat)
         }
         return true
+    }
+
+    /**
+     * Whether [player] may sit down in [seat] between games: it is free, a computer holds it,
+     * or the player in it walked away. Changing players after a game needs no waiting.
+     */
+    private fun mayTake(player: ServerPlayer, seat: Seat): Boolean {
+        if (!idle) return false
+        return when (val occupant = seats[seat]) {
+            null, is Occupant.Computer -> true
+            is Occupant.Human -> occupant.uuid != player.uuid && !present[seat]
+        }
     }
 
     private fun takeSeat(level: ServerLevel, player: ServerPlayer, seat: Seat) {
@@ -370,7 +382,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
                     nearestSeat(player, seats.indices.filter { seats[it] is Occupant.Human })?.let { takeOver(level, player, it) }
                 } else if (seat !in seats.indices) {
                     return
-                } else if (occupant == null && idle) {
+                } else if (mayTake(player, seat)) {
                     takeSeat(level, player, seat)
                 } else if (occupant is Occupant.Human && occupant.uuid != player.uuid && mine == null && paused) {
                     takeOver(level, player, seat)

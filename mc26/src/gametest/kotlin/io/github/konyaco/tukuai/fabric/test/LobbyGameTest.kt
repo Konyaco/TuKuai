@@ -10,7 +10,9 @@ import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.network.TableActionPayload
 import io.github.konyaco.tukuai.table.CardTableBlockEntity
+import io.github.konyaco.tukuai.table.ServerSettings
 import io.github.konyaco.tukuai.table.TableOp
+import io.github.konyaco.tukuai.table.TableStatus
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestServerContext
@@ -32,7 +34,9 @@ import org.lwjgl.glfw.GLFW
  * The lobby of a big table for every game and a few of their rules, from two seats to
  * eight: its buttons stay where they are as the game and the rules change. A game is picked
  * from the list under the game button with the mouse, and at a 3x3 table the rules for more
- * than four are in the list but cannot be picked. `TUKUAI_ONLY=lobby` runs just this;
+ * than four are in the list but cannot be picked. After a game the result offers ending the
+ * match, and once a seat empties it sends the player to fill the seats; in the lobby a
+ * player may take a computer's seat. `TUKUAI_ONLY=lobby` runs just this;
  * `TUKUAI_LANG` picks the language of the pictures.
  */
 class LobbyGameTest : FabricClientGameTest {
@@ -124,6 +128,41 @@ class LobbyGameTest : FabricClientGameTest {
             context.waitFor({ ClientTables[table]?.snapshot?.seats?.all { it.occupant != null } == true }, 100)
             context.waitTicks(5)
             shot(context, "lobby-doudizhu-bots")
+
+            // After a game: play again, the replay, and ending the match are all under the result.
+            server.runOnServer<RuntimeException> {
+                val field = ServerSettings::class.java.getDeclaredField("botDelaySeconds")
+                field.isAccessible = true
+                field.set(null, 0.0)
+            }
+            act(server, table, TableOp.START)
+            context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.PLAYING }, 200)
+            act(server, table, TableOp.AUTO, 1)
+            context.waitFor({ ClientTables[table]?.snapshot?.status == TableStatus.FINISHED }, 6000)
+            context.waitTicks(20)
+            shot(context, "after-game")
+            context.computeOnClient<Boolean, RuntimeException> { mc -> button(mc, "tukuai.table.end.short").active }.let { check(it) { "No way to end the match after a game" } }
+
+            // A computer is sent off (as a player standing up would leave it): the seats come first.
+            act(server, table, TableOp.REMOVE_BOT, 1)
+            context.waitFor({ ClientTables[table]?.snapshot?.seats?.get(1)?.occupant == null }, 100)
+            context.waitTicks(5)
+            hover(context, "tukuai.table.fill_seats")
+            context.waitTicks(15)
+            shot(context, "after-game-seat-empty")
+            click(context, "tukuai.table.fill_seats")
+            context.waitTicks(10)
+            shot(context, "after-game-lobby")
+
+            // In the lobby a player may take a computer's seat straight away, and end the match from there.
+            act(server, table, TableOp.SIT, 2)
+            context.waitFor({ ClientTables[table]?.snapshot?.you == 2 }, 100)
+            check(ClientTables[table]!!.snapshot.seats[0].occupant == null) { "Moving to a computer's seat did not free the old one" }
+            context.waitTicks(5)
+            click(context, "tukuai.table.end.short")
+            context.waitTicks(5)
+            shot(context, "after-game-end-prompt")
+            context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
         }
     }
 
