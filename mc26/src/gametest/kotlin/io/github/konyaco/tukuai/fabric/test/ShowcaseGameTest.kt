@@ -9,6 +9,7 @@ import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.bluff.BluffView
+import io.github.konyaco.tukuai.engine.cave.CaveView
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.doudizhu.DdzPhase
 import io.github.konyaco.tukuai.engine.doudizhu.DdzView
@@ -68,6 +69,9 @@ import org.lwjgl.glfw.GLFW
  * UNO table after UNO. After Creeper Bluff and Mahjong, every game is shot once more at the
  * UNO table as it looks in the world, see [gameShots]. The first language also takes the
  * crafting recipes, which have no words in them once cut down.
+ *
+ * `TUKUAI_SHOWCASE_GAMES=cave` takes only the in-world shots of the games it lists, for a game
+ * new to the README, in a few minutes per language instead of twelve.
  */
 class ShowcaseGameTest : FabricClientGameTest {
     private companion object {
@@ -79,17 +83,43 @@ class ShowcaseGameTest : FabricClientGameTest {
 
         /** The floor reaches this far to either side; the side walls stand just past it. */
         const val ROOM_X = 9
+
+        /** The games [gameShots] shoots in the world, each with the rules preset it is shot with. */
+        val ALL_GAMES = listOf("doudizhu" to "", "paodekuai" to "", "guandan" to "", "tutu" to "party", "uno" to "", "cave" to "")
     }
 
     override fun runTest(context: ClientGameTestContext) {
-        val languages = System.getenv("TUKUAI_SHOWCASE")?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() } ?: return
+        val languages = list("TUKUAI_SHOWCASE") ?: return
+        val only = list("TUKUAI_SHOWCASE_GAMES")
         context.input.resizeWindow(1280, 720)
         for (lang in languages) {
             setLanguage(context, lang)
-            context.worldBuilder().create().use { world -> shoot(context, world, lang, crafting = lang == languages.first()) }
+            context.worldBuilder().create().use { world ->
+                if (only != null) shootGames(context, world, lang, only) else shoot(context, world, lang, crafting = lang == languages.first())
+            }
         }
         context.runOnClient<RuntimeException> { it.options.hideGui = false }
         setLanguage(context, "en_us")
+    }
+
+    private fun list(name: String): List<String>? =
+        System.getenv(name)?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }?.takeIf { it.isNotEmpty() }
+
+    /** Only the in-world shots of [games], at the UNO table, as [gameShots] takes them in a full run. */
+    private fun shootGames(context: ClientGameTestContext, world: TestSingleplayerContext, lang: String, games: List<String>) {
+        val server = world.server
+        val (_, uno) = server.computeOnServer<Pair<BlockPos, BlockPos>, RuntimeException> { s -> buildRoom(s) }
+        command(server, "time set 6000")
+        command(server, "weather clear")
+        context.runOnClient<RuntimeException> {
+            it.options.hideGui = true
+            ClientConfig.immersive = false
+        }
+        teleport(server, 0.5, 0.0, 0.5, uno)
+        act(server, uno, TableOp.SIT, 0)
+        context.waitTicks(40)
+        world.clientLevel.waitForChunksRender()
+        gameShots(context, server, uno, lang, ALL_GAMES.filter { it.first in games })
     }
 
     private fun setLanguage(context: ClientGameTestContext, code: String) {
@@ -398,13 +428,12 @@ class ShowcaseGameTest : FabricClientGameTest {
      * stays seated throughout, so the game goes on; the client never draws its own player
      * through another camera, so the seat looks empty.
      */
-    private fun gameShots(context: ClientGameTestContext, server: TestServerContext, table: BlockPos, lang: String) {
+    private fun gameShots(context: ClientGameTestContext, server: TestServerContext, table: BlockPos, lang: String, games: List<Pair<String, String>> = ALL_GAMES) {
         fun shot(name: String) {
             context.takeScreenshot(TestScreenshotOptions.of("showcase-$lang-$name").disableCounterPrefix())
         }
         val middle = Vec3(table.x + 0.5, table.y + 0.75, table.z + 0.5)
         setFov(context, 60)
-        val games = listOf("doudizhu" to "", "paodekuai" to "", "guandan" to "", "tutu" to "party", "uno" to "")
         for ((game, preset) in games) {
             act(server, table, TableOp.END)
             context.waitFor({ ClientTables[table]?.snapshot?.status != TableStatus.PLAYING }, 100)
@@ -439,7 +468,25 @@ class ShowcaseGameTest : FabricClientGameTest {
                 }
             }
 
-            for (attempt in 0 until 3) {
+            if (game == "cave") {
+                // Deep in a round, with a few cards on the path and most of the table still inside.
+                // The computer plays for us until then; it waits a moment before it chooses, long
+                // enough to take back control, and the round then waits for our choice.
+                fun cave() = ClientTables[table]?.view as? CaveView
+                fun deep() = cave()?.let { it.isMyTurn && it.path.size >= 5 && it.inside.count { inside -> inside } >= 3 } == true
+                for (deal in 0 until 5) {
+                    if (status(server, table) != TableStatus.PLAYING) {
+                        act(server, table, TableOp.START)
+                        context.waitFor({ cave()?.finished == false }, 200)
+                    }
+                    act(server, table, TableOp.AUTO, 1)
+                    context.waitFor({ cave()?.finished == true || deep() }, 12000)
+                    act(server, table, TableOp.AUTO, 0)
+                    if (context.computeOnClient<Boolean, RuntimeException> { deep() }) break
+                }
+                // Let the cards and the emeralds settle.
+                context.waitTicks(40)
+            } else for (attempt in 0 until 3) {
                 if (status(server, table) != TableStatus.PLAYING) {
                     act(server, table, TableOp.START)
                     context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == game && it.status == TableStatus.PLAYING } == true }, 200)

@@ -15,7 +15,7 @@
 
 <p align="center"><img src="docs/images/zh-CN/clip.webp" alt="书房里的牌桌上，玩家和两个村民打完一整局斗地主" width="100%"></p>
 
-<p align="center"><b>7 种玩法</b> · <b>2 到 8 人</b> · <b>空位电脑补</b> · <b>每局都能回放</b> · <b>Fabric 和 NeoForge</b></p>
+<p align="center"><b>8 种玩法</b> · <b>2 到 8 人</b> · <b>空位电脑补</b> · <b>每局都能回放</b> · <b>Fabric 和 NeoForge</b></p>
 
 ## 玩法
 
@@ -46,11 +46,15 @@
   </tr>
   <tr>
     <td><img src="docs/images/zh-CN/pdk-world.webp" alt="跑得快"></td>
-    <td><img src="docs/images/zh-CN/ddz-table.webp" alt="斗地主的牌桌界面"></td>
+    <td><img src="docs/images/zh-CN/cave-world.webp" alt="矿洞探险"></td>
   </tr>
   <tr>
     <td valign="top"><b>跑得快</b> · 3 人<br>各自为战，谁先出完谁赢。每人 16 张或 15 张，可选有没有大必压。</td>
-    <td valign="top"><b>上手容易</b><br>坐下就能看到手牌、比分和<b>提示</b>按钮。点 <b>?</b> 打开规则书，每种玩法都有图解。</td>
+    <td valign="top"><b>矿洞探险</b> · 2 到 8 人<br>大家一起下矿洞，每翻开一张矿石牌，洞里的人平分绿宝石。每翻一张，所有人同时暗中决定继续深入还是返回营地，把背包里的绿宝石存进箱子。同一种险情第二次出现时，还在洞里的人背包清空。</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/zh-CN/ddz-table.webp" alt="斗地主的牌桌界面"></td>
+    <td valign="middle"><b>上手容易</b><br>坐下就能看到手牌、比分和<b>提示</b>按钮。点 <b>?</b> 打开规则书，每种玩法都有图解。</td>
   </tr>
 </table>
 
@@ -92,7 +96,7 @@
 ### 上手
 
 1. **放下牌桌**。牌桌占 3×3 格，会从点击的方块向前展开，前方和左右需留出空地。
-2. **右键打开牌桌**，点「坐这里」入座，空位可点「加电脑」补上。
+2. **右键打开牌桌**，点「坐下」入座，空位可点「添加电脑」补上。
 3. **选择游戏和规则**，点「开始」。
 
 凳子放在牌桌有座位一侧的外边正中，右键凳子即可坐到对应座位。大方桌占 5×5 格，每边两个座位，最多坐 8 人。
