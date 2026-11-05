@@ -3,6 +3,7 @@ package io.github.konyaco.tukuai.client
 import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.PlayingCard
+import io.github.konyaco.tukuai.engine.cave.CaveCard
 import io.github.konyaco.tukuai.engine.core.GameRegistry
 import io.github.konyaco.tukuai.engine.core.GuideBlock
 import io.github.konyaco.tukuai.engine.core.GuideSection
@@ -78,35 +79,44 @@ class RulesScreen(
     /** Room for the text, leaving space for the scroll bar on the right. */
     private fun textWidth() = pageRight() - pageLeft() - 12
 
-    private fun viewTop() = TOP + 22
+    /** Where the sections and the page start, under the game tabs; lower when the tabs take two rows. */
+    private var top = TOP
+
+    private fun viewTop() = top + 22
 
     private fun viewBottom() = height - MARGIN - 4
 
     private fun maxScroll() = (pageHeight - (viewBottom() - viewTop())).coerceAtLeast(0)
 
-    private fun sectionStep() = minOf(20, (height - TOP - MARGIN) / sections.size.coerceAtLeast(1))
+    private fun sectionStep() = minOf(20, (height - top - MARGIN) / sections.size.coerceAtLeast(1))
 
     override fun init() {
-        var x = MARGIN
-        // The tabs share the row left of the done button, narrowing alike when there are too many to fit.
-        val widths = games.map { maxOf(60, font.width(TableScreen.gameName(it)) + 16) }
-        val room = width - 2 * MARGIN - 60 - 4 - 4 * games.size
-        val fit = if (widths.sum() <= room) 1f else room.toFloat() / widths.sum()
-        for ((i, id) in games.withIndex()) {
-            val label = TableScreen.gameName(id)
-            val w = (widths[i] * fit).toInt()
-            val b = button(label, x, 6, w) {
-                openGame(id)
-                rebuildWidgets()
+        // The tabs share the row left of the done button. When they do not all fit, they take two
+        // rows, and if even those are too narrow, the tabs in a row narrow alike.
+        val widths = games.map { font.width(TableScreen.gameName(it)) + 16 }
+        val room = width - 2 * MARGIN - 60 - 4
+        val rows = if (widths.sum() + 4 * games.size <= room) listOf(games.indices.toList()) else games.indices.chunked((games.size + 1) / 2)
+        top = TOP + (rows.size - 1) * TAB_ROW
+        rows.forEachIndexed { row, tabs ->
+            val total = tabs.sumOf { widths[it] }
+            val fit = minOf(1f, (room - 4 * tabs.size).toFloat() / total)
+            var x = MARGIN
+            for (i in tabs) {
+                val id = games[i]
+                val w = (widths[i] * fit).toInt()
+                val b = button(TableScreen.gameName(id), x, 6 + row * TAB_ROW, w) {
+                    openGame(id)
+                    rebuildWidgets()
+                }
+                b.active = id != game
+                x += w + 4
             }
-            b.active = id != game
-            x += w + 4
         }
         button(CommonComponents.GUI_DONE, width - MARGIN - 60, 6, 60) { onClose() }
 
         val step = sectionStep()
         sections.forEachIndexed { i, s ->
-            val b = button(sectionTitle(s), MARGIN, TOP + i * step, sideWidth(), step - 2) {
+            val b = button(sectionTitle(s), MARGIN, top + i * step, sideWidth(), step - 2) {
                 section = i
                 scroll = 0
                 rebuildWidgets()
@@ -281,6 +291,7 @@ class RulesScreen(
         is PlayingCard -> CardArt.face(card)
         is UnoFace -> CardArt.unoFace(card)
         is TutuFace -> CardArt.tutu(card)
+        is CaveCard -> CardArt.cave(card)
         else -> null
     }
 
@@ -289,10 +300,10 @@ class RulesScreen(
     override fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) {
         val left = pageLeft()
         val right = pageRight()
-        g.fill(left - 6, TOP, right, height - MARGIN, 0xC0101010.toInt())
+        g.fill(left - 6, top, right, height - MARGIN, 0xC0101010.toInt())
         sections.getOrNull(section)?.let { s ->
-            g.text(font, sectionTitle(s), left, TOP + 6, TableScreen.YELLOW, true)
-            g.fill(left, TOP + 17, right - 6, TOP + 18, 0x60FFFFFF)
+            g.text(font, sectionTitle(s), left, top + 6, TableScreen.YELLOW, true)
+            g.fill(left, top + 17, right - 6, top + 18, 0x60FFFFFF)
         }
         val top = viewTop()
         val bottom = viewBottom()
@@ -314,7 +325,7 @@ class RulesScreen(
         if (myTurn()) {
             // Below the list of sections, where there is always room.
             val lines = font.split(Component.translatable("tukuai.guide.your_turn"), sideWidth())
-            val y0 = TOP + sections.size * sectionStep() + 6
+            val y0 = this.top + sections.size * sectionStep() + 6
             lines.forEachIndexed { i, line -> g.text(font, line, MARGIN, y0 + i * LINE, TableScreen.YELLOW, true) }
         }
         super.extractRenderState(g, mouseX, mouseY, partialTick)
@@ -379,6 +390,9 @@ class RulesScreen(
         private const val MARGIN = 8
         /** Where the sections and the page start, below the game tabs. */
         private const val TOP = 32
+
+        /** How far down a second row of game tabs goes. */
+        private const val TAB_ROW = 24
         private const val LINE = 10
         private const val BULLET_INDENT = 10
         private const val YELLOW_RGB = 0xFFDD55

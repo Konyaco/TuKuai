@@ -2,6 +2,7 @@ package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.client.bluff.BluffUi
+import io.github.konyaco.tukuai.client.cave.CaveUi
 import io.github.konyaco.tukuai.client.ddz.DdzUi
 import io.github.konyaco.tukuai.client.gd.GdUi
 import io.github.konyaco.tukuai.client.mahjong.MjUi
@@ -26,6 +27,7 @@ object TuKuaiClient {
         GameUis.register(PdkUi)
         GameUis.register(GdUi)
         GameUis.register(BluffUi)
+        GameUis.register(CaveUi)
         GameUis.register(MjUi)
     }
 

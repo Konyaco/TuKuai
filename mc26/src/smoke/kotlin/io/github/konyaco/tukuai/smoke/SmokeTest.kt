@@ -129,7 +129,7 @@ object SmokeTest {
         onClient { mc.openScreen(TableScreen(table)) }
         ticks(10)
 
-        for (game in listOf("doudizhu", "uno", "tutu", "bluff", "paodekuai", "guandan", "mahjong")) play(table, game)
+        for (game in listOf("doudizhu", "uno", "tutu", "bluff", "paodekuai", "guandan", "mahjong", "cave")) play(table, game)
 
         // The hotbar shows the items in their woods and colours.
         onClient { mc.openScreen(null) }
@@ -158,7 +158,8 @@ object SmokeTest {
         }
         ticks(20)
         shot("5-$game-immersive")
-        check(onClient { cardsUnderMouse(table) }) { "No card of the player's could be pointed at on the table in $game" }
+        // The cave has no hand to pick cards from: there is nothing of the player's to point at.
+        if (game != "cave") check(onClient { cardsUnderMouse(table) }) { "No card of the player's could be pointed at on the table in $game" }
         onClient {
             ClientConfig.immersive = false
             (mc.currentScreen as? TableScreen)?.refresh()

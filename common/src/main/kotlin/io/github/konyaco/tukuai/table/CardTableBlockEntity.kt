@@ -105,15 +105,21 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     /** Set once all nine parts of the table are known to be in place, see [checkParts]. */
     private var partsChecked = false
 
-    /** A computer's move being worked out on [BOT_THREADS], for [thinkingFor] at [thinkingStep]. */
-    private var thinking: CompletableFuture<ByteArray>? = null
-    private var thinkingFor: MatchHandle? = null
-    private var thinkingStep = -1
+    /** The computers' moves being worked out on [BOT_THREADS], by seat. */
+    private val thinking = HashMap<Seat, Plan>()
+
+    /** A computer's move being worked out for [match] as it stood at [step]. */
+    private class Plan(val future: CompletableFuture<ByteArray>, val match: MatchHandle, val step: Int)
 
     /** File name of the last finished game's replay, if it was saved since the world loaded. */
     private var lastReplay: String? = null
     private var turnTicks = 0
-    private var actDelay = 0
+
+    /** How long each seat's computer waits before it acts, in ticks from the start of the turn. */
+    private var actDelays = IntArray(0)
+
+    /** The seats that could act when the turn last moved on, see [startTurn]. */
+    private var lastActors: List<Seat> = emptyList()
 
     private val game: GameDefinition<*, *, *, *> get() = GameRegistry[gameId] ?: DouDizhu
 
@@ -233,8 +239,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private fun endMatch(level: ServerLevel) {
         ready.fill(false)
         if (status == TableStatus.PLAYING) {
-            thinking?.cancel(false)
-            thinking = null
+            stopThinking()
             match = null
             dealtIn = emptyMap()
             auto.fill(false)
@@ -321,7 +326,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         timeouts[seat] = 0
         takeSeat(level, player, seat)
         // Whoever is to act gets a full turn from now.
-        lastStep = -1
+        restartTurn()
     }
 
     /**
@@ -470,7 +475,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             }
             TableOp.ACT -> {
                 val m = match ?: return
-                if (mine == null || m.result != null || m.toAct != mine) {
+                if (mine == null || m.result != null || mine !in m.actors) {
                     sentRevision.remove(player.uuid)
                     return
                 }
@@ -517,7 +522,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         auto.fill(false)
         timeouts.fill(0)
         ready = BooleanArray(m.seatCount)
-        lastStep = -1
+        restartTurn()
         changed()
         level.playSound(null, worldPosition, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1f, 1f)
     }
@@ -600,37 +605,59 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     /** Nothing moves while [paused]; the turn starts afresh once someone is back. */
     private fun pause() {
-        thinking?.cancel(false)
-        thinking = null
+        stopThinking()
         if (lastStep != -1) {
-            lastStep = -1
+            restartTurn()
             changed()
         }
     }
 
+    private fun stopThinking() {
+        thinking.values.forEach { it.future.cancel(false) }
+        thinking.clear()
+    }
+
+    /** Makes the next tick start the turn clock afresh for whoever is to act. */
+    private fun restartTurn() {
+        lastStep = -1
+        lastActors = emptyList()
+    }
+
+    /**
+     * Moves every seat that may act now, see [MatchHandle.actors]: a computer once it has
+     * thought, a player who is away through the stand-in, and one who ran out of time too.
+     * Most games have one seat to act; where several decide at once, each move changes the
+     * game, so who may still act is looked at again before every one.
+     */
     private fun driveTurn(level: ServerLevel, m: MatchHandle) {
-        val seat = m.toAct ?: return
-        if (m.step != lastStep) resetTurnClock(level, m)
+        val actors = m.actors
+        if (actors.isEmpty()) return
+        if (m.step != lastStep) startTurn(level, m)
         turnTicks++
-        when (val occupant = seats.getOrNull(seat)) {
-            is Occupant.Computer -> driveComputer(level, m, seat, occupant.level)
-            is Occupant.Human -> {
-                val away = auto[seat] || !present[seat]
-                if (away) {
-                    if (turnTicks >= actDelay) {
+        for (seat in thinking.keys - actors.toSet()) thinking.remove(seat)?.future?.cancel(false)
+        for (seat in actors) {
+            if (m.result != null || seat !in m.actors) continue
+            val delay = actDelays.getOrElse(seat) { 0 }
+            when (val occupant = seats.getOrNull(seat)) {
+                is Occupant.Computer -> driveComputer(level, m, seat, occupant.level, delay)
+                is Occupant.Human -> {
+                    val away = auto[seat] || !present[seat]
+                    if (away) {
+                        if (turnTicks >= delay) {
+                            m.playBot(seat, STAND_IN)
+                            afterStep(level, m)
+                        }
+                    } else if (turnSeconds > 0 && turnTicks >= turnSeconds * 20) {
+                        timeouts[seat]++
+                        if (timeouts[seat] >= TIMEOUTS_BEFORE_AUTO) auto[seat] = true
                         m.playBot(seat, STAND_IN)
                         afterStep(level, m)
                     }
-                } else if (turnSeconds > 0 && turnTicks >= turnSeconds * 20) {
-                    timeouts[seat]++
-                    if (timeouts[seat] >= TIMEOUTS_BEFORE_AUTO) auto[seat] = true
+                }
+                null -> {
                     m.playBot(seat, STAND_IN)
                     afterStep(level, m)
                 }
-            }
-            null -> {
-                m.playBot(seat, STAND_IN)
-                afterStep(level, m)
             }
         }
     }
@@ -638,48 +665,55 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     /**
      * The computer thinks on a worker thread while it "considers" its move, so a hard
      * computer never holds up the server tick. If thinking takes far too long, a quick
-     * NORMAL move is played instead.
+     * NORMAL move is played instead. It acts [delay] ticks into the turn.
      */
-    private fun driveComputer(level: ServerLevel, m: MatchHandle, seat: Seat, botLevel: BotLevel) {
-        var plan = thinking
-        if (plan == null || thinkingFor !== m || thinkingStep != m.step) {
-            plan?.cancel(false)
+    private fun driveComputer(level: ServerLevel, m: MatchHandle, seat: Seat, botLevel: BotLevel, delay: Int) {
+        var plan = thinking[seat]
+        if (plan == null || plan.match !== m || plan.step != m.step) {
+            plan?.future?.cancel(false)
             val think = m.prepareBot(seat, botLevel)
-            plan = CompletableFuture.supplyAsync({ think() }, BOT_THREADS)
-            thinking = plan
-            thinkingFor = m
-            thinkingStep = m.step
+            plan = Plan(CompletableFuture.supplyAsync({ think() }, BOT_THREADS), m, m.step)
+            thinking[seat] = plan
         }
-        if (turnTicks < actDelay) return
-        if (plan.isDone) {
-            thinking = null
+        if (turnTicks < delay) return
+        if (plan.future.isDone) {
+            thinking.remove(seat)
             val action = try {
-                plan.join()
+                plan.future.join()
             } catch (e: Exception) {
                 TuKuai.LOGGER.warn("A computer player failed to choose a move", e)
                 null
             }
             if (action == null || m.submit(seat, action) != null) m.playBot(seat, BotLevel.EASY)
             afterStep(level, m)
-        } else if (turnTicks >= actDelay + MAX_THINK_TICKS) {
-            plan.cancel(false)
-            thinking = null
+        } else if (turnTicks >= delay + MAX_THINK_TICKS) {
+            plan.future.cancel(false)
+            thinking.remove(seat)
             m.playBot(seat, BotLevel.NORMAL)
             afterStep(level, m)
         }
     }
 
-    private fun resetTurnClock(level: ServerLevel, m: MatchHandle) {
+    /**
+     * Starts the turn clock for whoever may act after the latest move. When several seats
+     * decide at once and one of them just did, the rest keep the time they had: the clock
+     * only starts afresh when the seats to act are not just fewer of the same.
+     */
+    private fun startTurn(level: ServerLevel, m: MatchHandle) {
+        val actors = m.actors
+        val fewer = actors.isNotEmpty() && actors.size < lastActors.size && lastActors.containsAll(actors)
         lastStep = m.step
+        lastActors = actors
+        if (fewer) return
         turnTicks = 0
-        // Somewhere between a bit quicker and a bit slower than the configured average.
-        actDelay = (ServerSettings.botDelaySeconds * 20 * (0.65 + level.random.nextDouble() * 0.7)).toInt()
+        // Each somewhere between a bit quicker and a bit slower than the configured average.
+        actDelays = IntArray(m.seatCount) { (ServerSettings.botDelaySeconds * 20 * (0.65 + level.random.nextDouble() * 0.7)).toInt() }
     }
 
     private fun afterStep(level: ServerLevel, m: MatchHandle) {
         val harmed = m.takeHarmed()
         if (harm != TableSnapshot.HARM_OFF && m.mayHarm) harmed.mapTo(harms) { it to ticks + HARM_DELAY }
-        resetTurnClock(level, m)
+        startTurn(level, m)
         changed()
         // Each client plays the sound for a move itself, since only the game's client side knows what kind of move it was.
         val result = m.result ?: return
@@ -775,10 +809,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private fun snapshot(level: ServerLevel, you: Seat?, view: ByteArray?, leaders: List<LeaderEntry>): TableSnapshot {
         val m = match
-        val actor = m?.toAct
         val waiting = paused
-        val timed = actor != null && m.result == null && !waiting && seats.getOrNull(actor) is Occupant.Human &&
-            !auto[actor] && present[actor] && turnSeconds > 0
+        val timed = m != null && m.result == null && !waiting && turnSeconds > 0 &&
+            m.actors.any { seats.getOrNull(it) is Occupant.Human && !auto[it] && present[it] }
         return TableSnapshot(
             gameId = gameId,
             presetId = presetId,
@@ -864,7 +897,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             val id = runCatching { UUID.fromString(uuid) }.getOrNull() ?: return@mapNotNull null
             seat.toIntOrNull()?.takeIf { it in 0 until count }?.let { id to it }
         }.toMap()
-        lastStep = -1
+        restartTurn()
         revision++
     }
 

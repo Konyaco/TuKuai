@@ -8,6 +8,7 @@ import io.github.konyaco.tukuai.client.GameUi
 import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.client.TableParticles
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.render.TableArt
 import io.github.konyaco.tukuai.content.CardTableBlock
@@ -25,7 +26,6 @@ import kotlin.math.sin
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
-import net.minecraft.core.particles.ParticleOptions
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
@@ -213,7 +213,7 @@ object TutuUi : GameUi {
                 TutuEventKind.PLAY -> {
                     if (event.card!!.face.kind == TutuKind.EGG) {
                         ClientTables.playAt(pos, SoundEvents.CHICKEN_EGG, 1f, 1f)
-                        burst(pos, ParticleTypes.POOF, 0.5f, 0.5f, 8)
+                        TableParticles.burst(pos, ParticleTypes.POOF, 0.5f, 0.5f, 8)
                     }
                     when (event.face!!.kind) {
                         TutuKind.NUMBER -> ClientTables.playAt(pos, SoundEvents.BOOK_PAGE_TURN, 1f, 1.1f)
@@ -231,14 +231,14 @@ object TutuUi : GameUi {
                 TutuEventKind.CACTUS -> {
                     ClientTables.playAt(pos, SoundEvents.PLAYER_HURT_SWEET_BERRY_BUSH, 1f, 1f)
                     table.seatPlaces().getOrNull(event.seat)?.let {
-                        burst(pos, ParticleTypes.DAMAGE_INDICATOR, it.side.stepX * HAND_DISTANCE + it.shiftX, it.side.stepZ * HAND_DISTANCE + it.shiftZ, 4)
+                        TableParticles.burst(pos, ParticleTypes.DAMAGE_INDICATOR, it.side.stepX * HAND_DISTANCE + it.shiftX, it.side.stepZ * HAND_DISTANCE + it.shiftZ, 4)
                     }
                 }
                 TutuEventKind.BOOM -> {
                     ClientTables.playAt(pos, SoundEvents.GENERIC_EXPLODE, 0.7f, 1.3f)
                     facing(table)?.let { first ->
                         val (x, z) = bombSpots(first, 1).single()
-                        burst(pos, ParticleTypes.EXPLOSION, x, z, 2)
+                        TableParticles.burst(pos, ParticleTypes.EXPLOSION, x, z, 2)
                     }
                 }
                 TutuEventKind.PASS -> {}
@@ -264,18 +264,6 @@ object TutuUi : GameUi {
     private fun facing(table: ClientTable): Direction? {
         val state = Minecraft.getInstance().level?.getBlockState(table.pos) ?: return null
         return if (state.hasProperty(CardTableBlock.FACING)) state.getValue(CardTableBlock.FACING) else null
-    }
-
-    /** A few particles just above the table top, [x] and [z] blocks from its middle. */
-    private fun burst(pos: BlockPos, particle: ParticleOptions, x: Float, z: Float, count: Int) {
-        val level = Minecraft.getInstance().level ?: return
-        repeat(count) {
-            level.addParticle(
-                particle,
-                pos.x + 0.5 + x + (Math.random() - 0.5) * 0.3, pos.y + CardTableBlock.TOP_HEIGHT + 0.2, pos.z + 0.5 + z + (Math.random() - 0.5) * 0.3,
-                0.0, 0.05, 0.0,
-            )
-        }
     }
 
     val COLORS: Map<TutuColor, Int> = mapOf(

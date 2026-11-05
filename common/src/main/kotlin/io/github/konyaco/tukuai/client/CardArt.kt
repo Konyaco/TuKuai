@@ -4,6 +4,8 @@ import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.engine.card.Decks
 import io.github.konyaco.tukuai.engine.card.PlayingCard
+import io.github.konyaco.tukuai.engine.cave.CaveCard
+import io.github.konyaco.tukuai.engine.cave.CaveDeck
 import io.github.konyaco.tukuai.engine.mahjong.Tile
 import io.github.konyaco.tukuai.engine.tutu.TutuCard
 import io.github.konyaco.tukuai.engine.tutu.TutuColor
@@ -21,7 +23,8 @@ import io.github.konyaco.tukuai.engine.uno.UnoKind
  * in rows of 14. Faces 0..53 follow [Decks.STANDARD_54], then come the card backs,
  * and two 16×16 hats sit below them. The UNO cards start on row 6, see [uno], the
  * other face styles on row 11, see [face], the Tutu cards on row 19, see [tutu], the creeper head of creeper
- * bluff on row 24, see [CREEPER_SIDE], and mahjong tile faces from row 25, see [tile]. Right of the cards are a patch of plain paper
+ * bluff on row 24, see [CREEPER_SIDE], mahjong tile faces from row 25, see [tile], and the cave expedition from row 27,
+ * see [cave]. Right of the cards are a patch of plain paper
  * for the edges of cards on the table and a 16×16 tile of pale cloth for the table top.
  */
 object CardArt {
@@ -120,6 +123,25 @@ object CardArt {
     /** A mahjong tile face with nothing on it, for tiles whose face nobody can see. */
     const val TILE_BLANK = MAHJONG_FIRST + 27
 
+    /** The cave expedition: its veins in [CaveDeck.VEINS] order, then one card for each hazard. */
+    private const val CAVE_FIRST = 27 * COLUMNS
+
+    /** A cave card; all cards of one hazard look the same. */
+    fun cave(card: CaveCard): Int = when (card) {
+        is CaveCard.Vein -> CAVE_FIRST + CaveDeck.VEINS.indexOf(card)
+        is CaveCard.Danger -> CAVE_FIRST + CaveDeck.VEINS.size + card.hazard.ordinal
+    }
+
+    /** The torch that stands before each player still in the cave. */
+    const val TORCH = CAVE_FIRST + 20
+
+    /** The front of the little chest before each player at the cave; its lid is the next sprite. */
+    const val CHEST_SIDE = TORCH + 1
+    const val CHEST_TOP = TORCH + 2
+
+    /** An emerald, for the little emeralds on the table and in the screens; the cube uses its top 32×32. */
+    const val EMERALD = TORCH + 3
+
     fun u(sprite: Int): Int = (sprite % COLUMNS) * WIDTH
 
     fun v(sprite: Int): Int = (sprite / COLUMNS) * HEIGHT
@@ -141,6 +163,11 @@ object CardArt {
     /** A creeper's face, [size] GUI pixels square. */
     fun drawCreeper(g: GuiGraphicsExtractor, x: Int, y: Int, size: Int) {
         g.blitTexture(ATLAS, x, y, u(CREEPER_SIDE).toFloat(), v(CREEPER_SIDE).toFloat(), size, size, WIDTH, WIDTH, TEXTURE_WIDTH, TEXTURE_HEIGHT)
+    }
+
+    /** An emerald, [size] GUI pixels square. */
+    fun drawEmerald(g: GuiGraphicsExtractor, x: Int, y: Int, size: Int) {
+        g.blitTexture(ATLAS, x, y, u(EMERALD).toFloat(), v(EMERALD).toFloat(), size, size, WIDTH, WIDTH, TEXTURE_WIDTH, TEXTURE_HEIGHT)
     }
 
     /** The landlord's hat, or the farmer's straw hat when [landlord] is false. */

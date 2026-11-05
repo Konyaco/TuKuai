@@ -9,9 +9,9 @@ import io.github.konyaco.tukuai.client.PanelHost
 import io.github.konyaco.tukuai.client.PlayingCardScene
 import io.github.konyaco.tukuai.client.SeatPlace
 import io.github.konyaco.tukuai.client.TableCard
+import io.github.konyaco.tukuai.client.TableParticles
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.render.TableArt
-import io.github.konyaco.tukuai.content.CardTableBlock
 import io.github.konyaco.tukuai.engine.bluff.Bluff
 import io.github.konyaco.tukuai.engine.bluff.BluffCodecs
 import io.github.konyaco.tukuai.engine.bluff.BluffEvent
@@ -23,9 +23,7 @@ import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.card.Rank
 import io.github.konyaco.tukuai.engine.card.Suit
 import io.github.konyaco.tukuai.engine.doudizhu.DDZ_ORDER
-import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
-import net.minecraft.core.particles.ParticleOptions
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
@@ -186,23 +184,11 @@ object BluffUi : GameUi {
             val (x, z) = place?.let(::creeperSpot) ?: (0f to 0f)
             if (fuse.boom) {
                 ClientTables.playAt(table.pos, SoundEvents.GENERIC_EXPLODE, 0.8f, 1.1f)
-                burst(table.pos, ParticleTypes.EXPLOSION, x, z, 3)
+                TableParticles.burst(table.pos, ParticleTypes.EXPLOSION, x, z, 3, height = 0.25, rise = 0.04)
             } else {
                 ClientTables.playAt(table.pos, SoundEvents.FIRE_EXTINGUISH, 0.6f, 1.6f)
-                burst(table.pos, ParticleTypes.SMOKE, x, z, 6)
+                TableParticles.burst(table.pos, ParticleTypes.SMOKE, x, z, 6, height = 0.25, rise = 0.04)
             }
-        }
-    }
-
-    /** A few particles just above the table top, [x] and [z] blocks from its middle. */
-    private fun burst(pos: BlockPos, particle: ParticleOptions, x: Float, z: Float, count: Int) {
-        val level = Minecraft.getInstance().level ?: return
-        repeat(count) {
-            level.addParticle(
-                particle,
-                pos.x + 0.5 + x + (Math.random() - 0.5) * 0.3, pos.y + CardTableBlock.TOP_HEIGHT + 0.25, pos.z + 0.5 + z + (Math.random() - 0.5) * 0.3,
-                0.0, 0.04, 0.0,
-            )
         }
     }
 

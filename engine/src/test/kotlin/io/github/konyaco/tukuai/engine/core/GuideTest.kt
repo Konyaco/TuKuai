@@ -5,6 +5,9 @@ import io.github.konyaco.tukuai.engine.bluff.BluffGuide
 import io.github.konyaco.tukuai.engine.bluff.BluffPenalty
 import io.github.konyaco.tukuai.engine.bluff.BluffRules
 import io.github.konyaco.tukuai.engine.card.PlayingCard
+import io.github.konyaco.tukuai.engine.cave.Cave
+import io.github.konyaco.tukuai.engine.cave.CaveGuide
+import io.github.konyaco.tukuai.engine.cave.CaveRules
 import io.github.konyaco.tukuai.engine.doudizhu.DdzGuide
 import io.github.konyaco.tukuai.engine.doudizhu.DdzRules
 import io.github.konyaco.tukuai.engine.doudizhu.DouDizhu
@@ -38,7 +41,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GuideTest {
-    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff, SichuanMahjong)
+    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff, SichuanMahjong, Cave)
 
     /** The English language file, read with a regex since the engine has no JSON library. */
     private val english: Map<String, String> by lazy {
@@ -232,6 +235,15 @@ class GuideTest {
         )
         val before = keysOfTable(BluffGuide.sections(base))
         for (rules in changed) assertNotEquals(before, keysOfTable(BluffGuide.sections(rules)), "$rules reads like the classic rules")
+    }
+
+    @Test
+    fun `every cave rule changes what the table section says`() {
+        assertEquals(2, fieldCount(CaveRules::class.java), "CaveRules changed; describe the new rule in CaveGuide.table")
+        val base = CaveRules.CLASSIC
+        val changed = listOf(base.copy(players = 3), base.copy(rounds = 3))
+        val before = keysOfTable(CaveGuide.sections(base))
+        for (rules in changed) assertNotEquals(before, keysOfTable(CaveGuide.sections(rules)), "$rules reads like the classic rules")
     }
 
     @Test
