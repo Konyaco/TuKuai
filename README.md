@@ -15,7 +15,7 @@
 
 <p align="center"><img src="docs/images/en/clip.webp" alt="A whole deal of Dou Dizhu at a card table in a library, against two villagers" width="100%"></p>
 
-<p align="center"><b>7 games</b> · <b>2 to 8 players</b> · <b>computers for any empty seat</b> · <b>replays of every game</b> · <b>Fabric and NeoForge</b></p>
+<p align="center"><b>8 games</b> · <b>2 to 8 players</b> · <b>computers for any empty seat</b> · <b>replays of every game</b> · <b>Fabric and NeoForge</b></p>
 
 ## The games
 
@@ -46,11 +46,15 @@
   </tr>
   <tr>
     <td><img src="docs/images/en/pdk-world.webp" alt="Pao De Kuai"></td>
-    <td><img src="docs/images/en/ddz-table.webp" alt="The table screen in a game of Dou Dizhu"></td>
+    <td><img src="docs/images/en/cave-world.webp" alt="Cave Expedition"></td>
   </tr>
   <tr>
     <td valign="top"><b>Pao De Kuai</b> · 3 players<br>Every player for themselves, and the first to empty their hand wins. 16 or 15 cards each, with or without having to beat.</td>
-    <td valign="top"><b>Easy to pick up</b><br>Sit down and the table screen shows your hand, the scores and a <b>Hint</b> button. The rule book behind the <b>?</b> button explains every game with pictures.</td>
+    <td valign="top"><b>Cave Expedition</b> · 2 to 8 players<br>Everyone goes down into a cave together, and the ore on each card turned up is shared out among those still inside. After every card all of them choose at once, unseen, to go deeper or to head back and bank their emeralds. When a hazard turns up a second time, whoever is still inside drops everything.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/en/ddz-table.webp" alt="The table screen in a game of Dou Dizhu"></td>
+    <td valign="middle"><b>Easy to pick up</b><br>Sit down and the table screen shows your hand, the scores and a <b>Hint</b> button. The rule book behind the <b>?</b> button explains every game with pictures.</td>
   </tr>
 </table>
 
@@ -92,7 +96,7 @@ In creative mode, all three are in the Functional Blocks tab.
 ### First game
 
 1. **Place a card table.** It takes 3×3 blocks and spreads out from the block you click, so leave room in front and to both sides.
-2. **Right-click it**, click "Sit here", and click "Add computer" on any empty seat.
+2. **Right-click it**, click "Sit", and click "Add computer" on any empty seat.
 3. **Choose a game and its rules**, then click "Start".
 
 Place a stool just outside the middle of a side with a seat, and right-click it to sit there. The big card table takes 5×5 blocks and seats two to a side, up to eight.
