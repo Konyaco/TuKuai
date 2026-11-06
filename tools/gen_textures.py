@@ -20,6 +20,7 @@ TUTU_ROW = 19  # Tutu cards start on this row, after the face styles; see CardAr
 BLUFF_ROW = 24  # The creeper head of creeper bluff, after the Tutu cards; see CardArt.CREEPER_SIDE.
 MAHJONG_ROW = 25  # Mahjong tile faces, characters, dots and bamboo 1-9, then a blank face; see CardArt.MAHJONG_FIRST.
 CAVE_ROW = 27  # Cave expedition: the veins, the hazards, the torch, the chest and the emerald; see CardArt.CAVE_FIRST.
+MAHJONG_EXTRA_ROW = 29  # More mahjong faces: winds, dragons, the red fives and the flowers; see CardArt.MAHJONG_EXTRA.
 EDGE_X, EDGE_Y = 448, 0  # Right of the cards, see CardArt.EDGE_U.
 FELT_X, FELT_Y = 464, 0  # The table cloth, tinted when drawn; see CardArt.FELT_U.
 
@@ -1001,6 +1002,259 @@ def mj_bamboo(rank):
     return tile
 
 
+# Winds and dragons, 16 wide, drawn in strokes two pixels thick.
+HONOURS = {
+    "east": [".......##.......",
+             "################",
+             ".......##.......",
+             "..############..",
+             "..##...##...##..",
+             "..############..",
+             "..##...##...##..",
+             "..############..",
+             ".......##.......",
+             "......####......",
+             ".....######.....",
+             "....##.##.##....",
+             "...##..##..##...",
+             "..##...##...##..",
+             ".##....##....##.",
+             "##.....##.....##",
+             ".......##......."],
+    "south": [".......##.......",
+              "################",
+              ".......##.......",
+              ".##############.",
+              ".##..........##.",
+              ".##..##..##..##.",
+              ".##...####...##.",
+              ".##..######..##.",
+              ".##....##....##.",
+              ".##..######..##.",
+              ".##....##....##.",
+              ".##....##....##.",
+              ".##....##..####.",
+              ".##........###..",
+              "................",
+              "................",
+              "................"],
+    "west": ["################",
+             "................",
+             ".....##..##.....",
+             ".....##..##.....",
+             ".##############.",
+             ".##..##..##..##.",
+             ".##..##..##..##.",
+             ".##.##....##.##.",
+             ".####......####.",
+             ".##..........##.",
+             ".##..........##.",
+             ".##############.",
+             ".##..........##.",
+             "................",
+             "................",
+             "................",
+             "................"],
+    "north": [".....##...##....",
+              ".....##...##....",
+              ".....##...##..##",
+              ".....##...##.##.",
+              ".....##...####..",
+              ".######...###...",
+              ".....##...##....",
+              ".....##...##....",
+              ".....##...##....",
+              ".....##...##....",
+              "...####...##...#",
+              ".####.##..##..##",
+              "##....##...####.",
+              "................",
+              "................",
+              "................",
+              "................"],
+    "red": [".......##.......",
+            ".......##.......",
+            "################",
+            "##.....##.....##",
+            "##.....##.....##",
+            "##.....##.....##",
+            "##.....##.....##",
+            "################",
+            ".......##.......",
+            ".......##.......",
+            ".......##.......",
+            ".......##.......",
+            ".......##.......",
+            ".......##.......",
+            "................",
+            "................",
+            "................"],
+    "green": ["..#..#....#..#..",
+              "...##......##...",
+              ".##..#....#..##.",
+              "##....#..#....##",
+              "................",
+              "######..######..",
+              ".....#..#....#..",
+              "######..#....##.",
+              "#.......##.......",
+              "######...##..##.",
+              ".....#....###...",
+              ".....#....##....",
+              ".....#...####...",
+              ".....#..##..##..",
+              "...##..##....##.",
+              "................",
+              "................"],
+}
+
+
+def mj_honour(name, color):
+    tile = mj_blank()
+    rows = [r[:16].ljust(16, ".") for r in HONOURS[name]]
+    while rows and set(rows[-1]) == {"."}:
+        rows.pop()
+    bitmap(tile, rows, 8, 22 - len(rows) // 2, color)
+    return tile
+
+
+def mj_white():
+    """The white dragon: a blue frame on a plain face."""
+    tile = mj_blank()
+    for y in range(7, 37):
+        for x in range(7, 25):
+            outer = x in (7, 8, 23, 24) or y in (7, 8, 35, 36)
+            inner = (x in (11, 20) and 11 <= y <= 32) or (y in (11, 32) and 11 <= x <= 20)
+            if outer or inner:
+                put(tile, x, y, MJ_BLUE)
+    return tile
+
+
+def mj_red_five(suit):
+    """A red five: the same face as the other fives, all in red."""
+    if suit == "m":
+        tile = mj_blank()
+        bitmap(tile, NUMERALS[5], 8, 5, MJ_RED)
+        bitmap(tile, WAN, 7, 20, MJ_RED)
+        return tile
+    tile = mj_blank()
+    if suit == "p":
+        for cx, cy, r, _ in DOT_LAYOUTS[5]:
+            coin(tile, cx, cy, r, MJ_RED)
+        return tile
+    for spot in BAMBOO_LAYOUTS[5]:
+        stick(tile, spot[0], spot[1], MJ_RED, h=16)
+    return tile
+
+
+FLOWER_INK = {
+    "season": MJ_RED,
+    "flower": MJ_BLUE,
+}
+
+
+def disc(img, cx, cy, r, color):
+    for y in range(int(cy - r - 1), int(cy + r + 2)):
+        for x in range(int(cx - r - 1), int(cx + r + 2)):
+            if math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= r:
+                put(img, x, y, color)
+
+
+def line(img, x0, y0, x1, y1, color, w=1):
+    n = int(math.ceil(max(abs(x1 - x0), abs(y1 - y0), 1)))
+    for i in range(n + 1):
+        x = x0 + (x1 - x0) * i / n
+        y = y0 + (y1 - y0) * i / n
+        for dx in range(w):
+            for dy in range(w):
+                put(img, int(round(x)) + dx, int(round(y)) + dy, color)
+
+
+def blossom(img, cx, cy, r, petal, heart):
+    for k in range(5):
+        a = math.radians(k * 72 - 90)
+        disc(img, cx + math.cos(a) * r, cy + math.sin(a) * r, r * 0.75, petal)
+    disc(img, cx, cy, r * 0.5, heart)
+
+
+def mj_flower(index):
+    """The four seasons, then plum, orchid, bamboo and chrysanthemum, each with its number in the corner."""
+    tile = mj_blank()
+    season = index < 4
+    number = index % 4 + 1
+    text(tile, str(number), 3, 3, FLOWER_INK["season" if season else "flower"])
+    green = MJ_GREEN
+    if index == 0:  # Spring: a sprout with two leaves and a pink bud.
+        line(tile, 16, 38, 16, 18, MJ_GREEN_DARK, 2)
+        for k in range(8):
+            line(tile, 16 - k, 28 - k // 2, 16 - k, 30 - k // 3, green)
+            line(tile, 17 + k, 24 - k // 2, 17 + k, 26 - k // 3, green)
+        disc(tile, 17, 15, 4, (236, 120, 160, 255))
+    elif index == 1:  # Summer: the sun.
+        for k in range(12):
+            a = math.radians(k * 30)
+            line(tile, 16 + math.cos(a) * 9, 23 + math.sin(a) * 9, 16 + math.cos(a) * 13, 23 + math.sin(a) * 13, (236, 150, 30, 255), 1)
+        disc(tile, 16, 23, 7, (244, 186, 40, 255))
+        disc(tile, 15, 22, 3, (252, 220, 110, 255))
+    elif index == 2:  # Autumn: a red leaf on its stem.
+        pts = [(16, 10), (19, 17), (26, 15), (22, 23), (27, 28), (19, 28), (16, 34), (13, 28), (5, 28), (10, 23), (6, 15), (13, 17)]
+        for y in range(8, 36):
+            for x in range(4, 29):
+                if point_in_polygon(x + 0.5, y + 0.5, pts):
+                    put(tile, x, y, (206, 82, 34, 255))
+        line(tile, 16, 14, 16, 39, (130, 50, 24, 255))
+    elif index == 3:  # Winter: a snowflake.
+        ice = (70, 140, 210, 255)
+        for k in range(6):
+            a = math.radians(k * 60 + 90)
+            ex, ey = 16 + math.cos(a) * 12, 23 + math.sin(a) * 12
+            line(tile, 16, 23, ex, ey, ice)
+            mx, my = 16 + math.cos(a) * 7, 23 + math.sin(a) * 7
+            for side in (-1, 1):
+                b = a + side * math.radians(45)
+                line(tile, mx, my, mx + math.cos(b) * 4, my + math.sin(b) * 4, ice)
+        disc(tile, 16, 23, 2, ice)
+    elif index == 4:  # Plum: a dark branch with pink blossoms.
+        line(tile, 6, 38, 14, 28, (90, 60, 40, 255), 2)
+        line(tile, 14, 28, 24, 12, (90, 60, 40, 255), 2)
+        line(tile, 14, 28, 25, 30, (90, 60, 40, 255), 1)
+        for cx, cy in ((22, 12), (11, 21), (24, 29)):
+            blossom(tile, cx, cy, 3, (236, 140, 170, 255), (200, 50, 80, 255))
+    elif index == 5:  # Orchid: long leaves and a purple flower.
+        for k, (x1, y1) in enumerate(((5, 14), (27, 18), (10, 10))):
+            line(tile, 16, 39, x1, y1, green if k != 1 else MJ_GREEN_DARK)
+            line(tile, 17, 39, x1 + 1, y1, green if k != 1 else MJ_GREEN_DARK)
+        blossom(tile, 18, 16, 3, (150, 90, 200, 255), (240, 220, 90, 255))
+    elif index == 6:  # Bamboo: two stalks with nodes and leaves.
+        for x in (11, 20):
+            for y in range(8, 40):
+                put(tile, x, y, green)
+                put(tile, x + 1, y, MJ_GREEN_LIGHT)
+                put(tile, x + 2, y, MJ_GREEN_DARK)
+            for y in (15, 24, 33):
+                line(tile, x - 1, y, x + 3, y, MJ_GREEN_DARK)
+        for x0, y0, x1, y1 in ((14, 14, 24, 9), (23, 22, 29, 18), (10, 28, 3, 23)):
+            line(tile, x0, y0, x1, y1, MJ_GREEN_DARK)
+            line(tile, x0, y0 + 1, x1, y1 + 1, green)
+    else:  # Chrysanthemum: a yellow flower of many petals on a stem.
+        line(tile, 16, 26, 16, 40, MJ_GREEN_DARK)
+        line(tile, 16, 34, 22, 30, green)
+        for k in range(16):
+            a = math.radians(k * 22.5)
+            line(tile, 16, 19, 16 + math.cos(a) * 8, 19 + math.sin(a) * 8, (236, 180, 30, 255))
+        disc(tile, 16, 19, 3, (200, 120, 20, 255))
+    return tile
+
+
+def mahjong_extra():
+    """Same order as CardArt.MAHJONG_EXTRA: the winds east, south, west, north; the red, green and white dragons; the red fives of characters, dots and bamboo; the eight flowers."""
+    tiles = [mj_honour(n, MJ_INK) for n in ("east", "south", "west", "north")]
+    tiles += [mj_honour("red", MJ_RED), mj_honour("green", MJ_GREEN), mj_white()]
+    tiles += [mj_red_five(s) for s in "mps"]
+    tiles += [mj_flower(i) for i in range(8)]
+    return tiles
+
+
 def mahjong_tiles():
     """Same order as Tile.id in the engine: characters, dots, bamboo, each 1 to 9; then a blank face."""
     tiles = [mj_characters(r) for r in range(1, 10)]
@@ -1271,6 +1525,8 @@ def atlas():
         sheet.paste(tile, ((i % COLS) * CARD_W, (MAHJONG_ROW + i // COLS) * CARD_H))
     for i, card in enumerate(cave_cards()):
         sheet.paste(card, ((i % COLS) * CARD_W, (CAVE_ROW + i // COLS) * CARD_H))
+    for i, tile in enumerate(mahjong_extra()):
+        sheet.paste(tile, ((i % COLS) * CARD_W, (MAHJONG_EXTRA_ROW + i // COLS) * CARD_H))
     # The paper colour of a card's edges, for cards drawn with thickness on the table.
     for y in range(8):
         for x in range(8):

@@ -3,6 +3,7 @@ package io.github.konyaco.tukuai.engine.mahjong.sichuan
 import io.github.konyaco.tukuai.engine.core.Seat
 import io.github.konyaco.tukuai.engine.mahjong.ClaimKind
 import io.github.konyaco.tukuai.engine.mahjong.Meld
+import io.github.konyaco.tukuai.engine.mahjong.MjTableView
 import io.github.konyaco.tukuai.engine.mahjong.Tile
 import io.github.konyaco.tukuai.engine.mahjong.TileSuit
 
@@ -13,22 +14,22 @@ import io.github.konyaco.tukuai.engine.mahjong.TileSuit
  */
 data class ScView(
     /** The seat this view is for, or null for a spectator. */
-    val seat: Seat?,
+    override val seat: Seat?,
     val rules: ScRules,
     val phase: ScPhase,
-    val dealer: Seat,
+    override val dealer: Seat,
     /** See [ScState.turn]. */
     val turn: Seat,
-    val toAct: Seat?,
+    override val toAct: Seat?,
     /** This seat's concealed tiles in order, with [drawn] among them. */
-    val hand: List<Tile>,
+    override val hand: List<Tile>,
     /** The tile this seat just drew, if it is their turn after a draw. */
-    val drawn: Tile?,
-    val handCounts: List<Int>,
+    override val drawn: Tile?,
+    override val handCounts: List<Int>,
     /** Each seat's concealed tiles where they may be seen: winners', and everyone's once the hand is over or in a replay. */
-    val shown: List<List<Tile>>,
-    val melds: List<List<Meld>>,
-    val discards: List<List<Tile>>,
+    override val shown: List<List<Tile>>,
+    override val melds: List<List<Meld>>,
+    override val discards: List<List<Tile>>,
     /** Each seat's void suit, once everyone has picked; this seat's own as soon as it has. */
     val voids: List<TileSuit?>,
     /** Who has made their pick, while everyone picks tiles to pass on or a void suit. */
@@ -38,20 +39,31 @@ data class ScView(
     val gave: List<Tile>,
     val got: List<Tile>,
     /** The discard or kong tile being answered, and who discarded it or made the kong. */
-    val claimTile: Tile?,
-    val claimFrom: Seat?,
+    override val claimTile: Tile?,
+    override val claimFrom: Seat?,
     /** What this seat may answer to [claimTile] when it is asked; it may always pass. */
     val options: List<ClaimKind>,
-    val wallSize: Int,
-    val drawnFront: Int,
-    val drawnBack: Int,
+    override val wallSize: Int,
+    override val drawnFront: Int,
+    override val drawnBack: Int,
     val wins: List<ScWin>,
     val scores: List<Int>,
     val log: List<ScEvent>,
-) {
+) : MjTableView {
     val finished: Boolean get() = phase == ScPhase.OVER
 
-    val wallLeft: Int get() = wallSize - drawnFront - drawnBack
+    override val handOver: Boolean get() = finished
+
+    override val claimingDiscard: Boolean get() = phase == ScPhase.CLAIM
+
+    override fun winningTile(seat: Seat): Tile? = winOf(seat)?.tile
+
+    override val latestMeld: Pair<Seat, Int>?
+        get() {
+            val last = log.lastOrNull { it.kind != ScEventKind.DRAW } ?: return null
+            if (last.kind != ScEventKind.PUNG && last.kind != ScEventKind.KONG) return null
+            return last.seat to melds[last.seat].size - 1
+        }
 
     val isMyTurn: Boolean get() = seat != null && toAct == seat
 
@@ -80,12 +92,6 @@ data class ScView(
     /** The tiles this seat's hand waits on when it is one short of complete. */
     val waits: List<Tile>
         get() = if (seat == null || won(seat) || hand.size % 3 != 1) emptyList() else ScScoring.waits(hand, myMelds, myVoid)
-
-    /** How many of [tile] this seat can see: in its hand, in every discard and every meld. */
-    fun seen(tile: Tile): Int =
-        hand.count { it == tile } + discards.sumOf { d -> d.count { it == tile } } +
-            melds.sumOf { m -> m.sumOf { meld -> meld.tiles.count { it == tile } } } +
-            shown.withIndex().filter { it.index != seat }.sumOf { (_, h) -> h.count { it == tile } }
 
     companion object {
         fun of(state: ScState, seat: Seat?, open: Boolean): ScView {

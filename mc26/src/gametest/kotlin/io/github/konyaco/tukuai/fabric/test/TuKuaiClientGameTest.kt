@@ -26,6 +26,13 @@ import io.github.konyaco.tukuai.engine.cave.CaveView
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.guandan.GdPhase
 import io.github.konyaco.tukuai.engine.guandan.GdView
+import io.github.konyaco.tukuai.engine.mahjong.guobiao.GbAction
+import io.github.konyaco.tukuai.engine.mahjong.guobiao.GbCodecs
+import io.github.konyaco.tukuai.engine.mahjong.guobiao.GbPhase
+import io.github.konyaco.tukuai.engine.mahjong.guobiao.GbScoring
+import io.github.konyaco.tukuai.engine.mahjong.guobiao.GbView
+import io.github.konyaco.tukuai.engine.mahjong.guobiao.bot.GbBot
+import io.github.konyaco.tukuai.engine.mahjong.Tiles
 import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScAction
 import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScCodecs
 import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScPhase
@@ -87,6 +94,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         if (only == "tutu") return onlyGame(context) { server, table -> playTutu(context, server, table) }
         if (only == "bluff") return onlyGame(context) { server, table -> playBluff(context, server, table) }
         if (only == "mahjong") return onlyGame(context) { server, table -> playMahjong(context, server, table) }
+        if (only == "guobiao") return onlyGame(context) { server, table -> playGuobiao(context, server, table) }
         if (only == "cave") return onlyGame(context) { server, table -> playCave(context, server, table) }
         if (only == "chair") return chairs(context)
         if (only != null && only != "game") return
@@ -312,6 +320,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         playCave(context, server, table)
         playPaoDeKuai(context, server, table)
         playMahjong(context, server, table)
+        playGuobiao(context, server, table)
     }
 
     /** A table with only us and computers, straight into [play], such as a hand of Tutu cards; `TUKUAI_LANG` picks the language. */
@@ -801,6 +810,135 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         shot(context, "mj-13-replay")
         context.setScreen { null }
         act(server, table, TableOp.AUTO, 0)
+    }
+
+    /**
+     * Switches the table to Guobiao mahjong and plays with three computers: the lobby, the rule
+     * book, the deal, our turn with the hint, a turn where a discard leaves us ready (with the
+     * marks over the tiles and the waits shown), waiting while ready, the immersive view, the
+     * end of a hand with its fan, and the next hand starting. The game is ended after that.
+     */
+    private fun playGuobiao(context: ClientGameTestContext, server: TestServerContext, table: BlockPos) {
+        context.setScreen { null }
+        act(server, table, TableOp.AUTO, 0)
+        if (status(server, table) == TableStatus.PLAYING) {
+            act(server, table, TableOp.END)
+            context.waitFor({ ClientTables[table]?.snapshot?.status != TableStatus.PLAYING }, 100)
+        }
+        act(server, table, TableOp.GAME, text = "guobiao")
+        repeat(3) { act(server, table, TableOp.ADD_BOT, -1, BotLevel.entries[it].ordinal) }
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "guobiao" && it.seats.size == 4 && it.seats.all { s -> s.occupant != null } } == true }, 100)
+        context.setScreen { TableScreen(table) }
+        context.waitTicks(10)
+        shot(context, "gb-1-lobby")
+        readRules(context, "guobiao", "fan")
+        for (section in listOf("tiles", "sets", "list", "help")) {
+            context.runOnClient<RuntimeException> { (it.screen as TableScreen).openRules() }
+            context.waitFor({ it.screen is RulesScreen }, 20)
+            context.runOnClient<RuntimeException> { (it.screen as RulesScreen).showSection(section) }
+            context.waitTicks(5)
+            shot(context, "rules-guobiao-$section")
+            context.input.pressKey(GLFW.GLFW_KEY_ESCAPE)
+            context.waitFor({ it.screen is TableScreen }, 20)
+        }
+
+        context.setScreen { null }
+        act(server, table, TableOp.START)
+        context.waitFor({ ClientTables[table]?.snapshot?.let { it.gameId == "guobiao" && it.status == TableStatus.PLAYING } == true }, 200)
+        context.input.lookAt(table)
+        context.waitTicks(4)
+        shot(context, "gb-2-world-dealing")
+        context.waitTicks(40)
+        shot(context, "gb-3-world-dealt")
+        sideShot(context, server, table, "gb-3b-world-side-dealt")
+
+        val view = { ClientTables[table]?.view as? GbView }
+        val send = { action: GbAction -> act(server, table, TableOp.ACT, data = GbCodecs.ACTION.encode(action)) }
+        val bot = GbBot(BotLevel.NORMAL, 0)
+        context.setScreen { TableScreen(table) }
+        /** Plays for us until [stop] holds on our turn to discard, or the guard runs out; true if it held. */
+        fun playUntil(stop: (GbView) -> Boolean): Boolean {
+            var guard = 0
+            while (guard++ < 120) {
+                context.waitFor({ v -> view()?.let { it.isMyTurn || it.finished } == true }, 2400)
+                val now = view()!!
+                if (now.finished) return false
+                if (now.phase == GbPhase.PLAY && stop(now)) return true
+                val action = when (now.phase) {
+                    GbPhase.PLAY -> if (now.selfDraw != null) GbAction.Discard(bot.discard(now)) else bot.act(now)
+                    GbPhase.CLAIM, GbPhase.ROB -> GbAction.Pass
+                    else -> bot.act(now)
+                }
+                send(action)
+                context.waitFor({ v -> view()?.let { it.log.size != now.log.size || it.toAct != now.toAct || it.handIndex != now.handIndex || it.finished } == true }, 200)
+            }
+            return false
+        }
+        check(playUntil { it.drawn != null }) { "Never had a turn to discard" }
+        context.waitTicks(10)
+        context.input.pressKey(GLFW.GLFW_KEY_H)
+        context.waitTicks(5)
+        shot(context, "gb-4-screen-turn")
+        // A turn where some discard leaves us ready: the marks over the tiles, and the hint's tile picked shows what we would wait on.
+        val ready = playUntil { v -> v.hand.distinct().any { GbScoring.waits(Tiles.minus(v.hand, listOf(it)), v.myMelds).isNotEmpty() } }
+        if (ready) {
+            context.waitTicks(10)
+            shot(context, "gb-5-screen-ready-marks")
+            val tile = view()!!.hand.distinct().first { GbScoring.waits(Tiles.minus(view()!!.hand, listOf(it)), view()!!.myMelds).isNotEmpty() }
+            context.runOnClient<RuntimeException> { (it.screen as? TableScreen)?.refresh() }
+            send(GbAction.Discard(tile))
+            context.waitFor({ v -> view()?.let { it.hand.size % 3 == 1 } == true }, 100)
+            context.waitTicks(10)
+            shot(context, "gb-6-screen-waiting")
+        }
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = true
+            (it.screen as? TableScreen)?.refresh()
+        }
+        context.waitTicks(10)
+        shot(context, "gb-7-screen-immersive")
+        context.runOnClient<RuntimeException> {
+            ClientConfig.immersive = false
+            (it.screen as? TableScreen)?.refresh()
+        }
+        context.setScreen { null }
+        context.input.lookAt(table)
+        context.waitTicks(5)
+        shot(context, "gb-8-world-turn")
+
+        // The stand-in plays the rest of the hand; the result shows its fan.
+        context.setScreen { TableScreen(table) }
+        act(server, table, TableOp.AUTO, 1)
+        context.waitFor({ view()?.let { it.handOver || it.wallLeft < 40 } == true }, 6000)
+        context.waitTicks(5)
+        shot(context, "gb-9-screen-midgame")
+        context.setScreen { null }
+        context.waitTicks(5)
+        shot(context, "gb-10-world-midgame")
+        context.setScreen { TableScreen(table) }
+        context.waitFor({ view()?.handOver == true }, 12000)
+        act(server, table, TableOp.AUTO, 0)
+        val over = view()!!
+        val result = checkNotNull(over.result) { "The hand ended without a result" }
+        check(over.scores.sum() == 0) { "Points do not add up: ${over.scores}" }
+        if (result.winner != null) check(result.fans.filter { it.name != "FLOWER_TILES" }.sumOf { it.fan } >= 8) { "A win under 8 fan: ${result.fans}" }
+        context.waitTicks(10)
+        shot(context, "gb-11-screen-result")
+        context.setScreen { null }
+        context.waitTicks(10)
+        shot(context, "gb-12-world-result")
+        // Once we press on, the next hand starts with the deal passed on.
+        context.setScreen { TableScreen(table) }
+        if (over.phase == GbPhase.HAND_OVER) {
+            send(GbAction.Next)
+            context.waitFor({ view()?.let { it.handIndex == over.handIndex + 1 } == true }, 600)
+            check(view()!!.dealer == (over.dealer + 1) % 4) { "The deal did not pass on" }
+            context.waitTicks(10)
+            shot(context, "gb-13-screen-next-hand")
+        }
+        context.setScreen { null }
+        act(server, table, TableOp.END)
+        context.waitFor({ ClientTables[table]?.snapshot?.status != TableStatus.PLAYING }, 100)
     }
 
     /**

@@ -7,6 +7,7 @@ import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.cave.CaveCard
 import io.github.konyaco.tukuai.engine.cave.CaveDeck
 import io.github.konyaco.tukuai.engine.mahjong.Tile
+import io.github.konyaco.tukuai.engine.mahjong.TileSuit
 import io.github.konyaco.tukuai.engine.tutu.TutuCard
 import io.github.konyaco.tukuai.engine.tutu.TutuColor
 import io.github.konyaco.tukuai.engine.tutu.TutuDeck
@@ -23,7 +24,7 @@ import io.github.konyaco.tukuai.engine.uno.UnoKind
  * in rows of 14. Faces 0..53 follow [Decks.STANDARD_54], then come the card backs,
  * and two 16×16 hats sit below them. The UNO cards start on row 6, see [uno], the
  * other face styles on row 11, see [face], the Tutu cards on row 19, see [tutu], the creeper head of creeper
- * bluff on row 24, see [CREEPER_SIDE], mahjong tile faces from row 25, see [tile], and the cave expedition from row 27,
+ * bluff on row 24, see [CREEPER_SIDE], mahjong tile faces from row 25 and row 29, see [tile], and the cave expedition from row 27,
  * see [cave]. Right of the cards are a patch of plain paper
  * for the edges of cards on the table and a 16×16 tile of pale cloth for the table top.
  */
@@ -117,8 +118,19 @@ object CardArt {
     /** Mahjong tile faces in [Tile.id] order, the three numbered suits; then a blank face. */
     private const val MAHJONG_FIRST = 25 * COLUMNS
 
-    /** The face of a mahjong tile; only the numbered suits have one. */
-    fun tile(tile: Tile): Int = MAHJONG_FIRST + tile.id
+    /**
+     * More mahjong faces: the winds east, south, west and north, the red, green and white
+     * dragons, the red fives of characters, dots and bamboo, then the eight flowers.
+     */
+    private const val MAHJONG_EXTRA = 29 * COLUMNS
+
+    /** The face of a mahjong tile. */
+    fun tile(tile: Tile): Int = when {
+        tile.red -> MAHJONG_EXTRA + 7 + TileSuit.NUMBERED.indexOf(tile.suit)
+        tile.suit.numbered -> MAHJONG_FIRST + tile.id
+        tile.suit == TileSuit.FLOWERS -> MAHJONG_EXTRA + 10 + tile.rank - 1
+        else -> MAHJONG_EXTRA + tile.id - TileSuit.WINDS.first
+    }
 
     /** A mahjong tile face with nothing on it, for tiles whose face nobody can see. */
     const val TILE_BLANK = MAHJONG_FIRST + 27
