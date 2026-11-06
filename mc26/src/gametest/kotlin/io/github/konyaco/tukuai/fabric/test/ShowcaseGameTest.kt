@@ -6,7 +6,7 @@ import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.ReplayScreen
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
-import io.github.konyaco.tukuai.content.StoolBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.bluff.BluffView
 import io.github.konyaco.tukuai.engine.cave.CaveView
@@ -63,7 +63,7 @@ import org.lwjgl.glfw.GLFW
  * The pictures land in `fabric/build/run/clientGameTest/screenshots`, and
  * `tools/showcase_images.sh` turns the new ones into the README's.
  *
- * Two tables in a small card room: Dou Dizhu on the left with stools, UNO on the right,
+ * Two tables in a small card room: Dou Dizhu on the left with chairs, UNO on the right,
  * where the villagers have taken the seats. Guandan and Run Fast are played for a while at
  * the Dou Dizhu table, between its replay and the walk over to UNO, and Tutu Cards at the
  * UNO table after UNO. After Creeper Bluff and Mahjong, every game is shot once more at the
@@ -552,7 +552,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         val recipes = listOf(
             "card-table" to listOf(wool, wool, wool, planks, planks, planks, log, Items.AIR, log),
             "big-card-table" to listOf(wool, wool, wool, planks, TuKuaiContent.CARD_TABLE_ITEM, planks, log, Items.AIR, log),
-            "stool" to listOf(Items.AIR, Items.RED_WOOL, Items.AIR, Items.AIR, Items.OAK_SLAB, Items.AIR, Items.AIR, Items.STICK, Items.AIR),
+            "chair" to listOf(Items.AIR, Items.RED_WOOL, Items.AIR, Items.AIR, Items.OAK_SLAB, Items.AIR, Items.AIR, Items.STICK, Items.AIR),
         )
         teleport(server, 0.5, 0.0, 0.5, null, 0.5, 1.0, -2.5)
         val bench = server.computeOnServer<BlockPos, RuntimeException> { s ->
@@ -638,7 +638,7 @@ class ShowcaseGameTest : FabricClientGameTest {
 
     /**
      * A card room around where the player stands: a plank floor, a wall of books to the
-     * north, two tables, stools at the Dou Dizhu one and villagers at the UNO one.
+     * north, two tables, chairs at the Dou Dizhu one and villagers at the UNO one.
      */
     private fun buildRoom(server: MinecraftServer): Pair<BlockPos, BlockPos> {
         val player = server.playerList.players.first()
@@ -678,7 +678,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         for (table in listOf(ddz, uno)) placeTable(level, table)
         (level.getBlockEntity(uno) as CardTableBlockEntity).dye(DyeColor.BLUE)
         for ((side, color) in listOf(Direction.SOUTH to DyeColor.RED, Direction.EAST to DyeColor.YELLOW, Direction.NORTH to DyeColor.LIGHT_BLUE)) {
-            level.setBlockAndUpdate(ddz.relative(side, StoolBlock.TABLE_DISTANCE), stool(color))
+            level.setBlockAndUpdate(ddz.relative(side, ChairBlock.TABLE_DISTANCE), chair(color))
         }
         villager(level, uno, Direction.EAST, VillagerProfession.LIBRARIAN, VillagerType.PLAINS)
         villager(level, uno, Direction.NORTH, VillagerProfession.FARMER, VillagerType.TAIGA)
@@ -702,7 +702,7 @@ class ShowcaseGameTest : FabricClientGameTest {
         }
     }
 
-    private fun stool(color: DyeColor): BlockState = TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.COLOR, color)
+    private fun chair(color: DyeColor): BlockState = TuKuaiContent.CHAIR.defaultBlockState().setValue(ChairBlock.COLOR, color)
 
     /** A villager standing at the [side] edge of the table, facing the middle. */
     private fun villager(

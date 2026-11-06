@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge と Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT ライセンス"></a>
 </p>
-<h3 align="center">あなたの Minecraft の世界に、カードテーブルをひとつ。<br>スツールを引いて、友だちと闘地主や麻雀、UNO を。友だちがいなければ CPU が相手をします。</h3>
+<h3 align="center">あなたの Minecraft の世界に、カードテーブルをひとつ。<br>椅子を引いて、友だちと闘地主や麻雀、UNO を。友だちがいなければ CPU が相手をします。</h3>
 
 <p align="center"><img src="docs/images/en/clip.webp" alt="書斎のカードテーブルで、2 人の村人を相手に闘地主を 1 局打つ様子" width="100%"></p>
 
@@ -63,7 +63,7 @@
 - **カードは本当にテーブルの上に。** 手札は持ち主に向けて立ち、出したカードは中央に並び、通りがかりの人も観戦できます。没入視点にすれば、テーブル上のカードを直接選んで出せます。
 - **メンバーに困らない。** 空席には「やさしい」「ふつう」「むずかしい」の CPU がいつでも座り、席を外したり切断したりした人の代わりも打ちます。全員が席を離れると、対局は戻ってくるまで待ちます。
 - **一晩じっくり。** 試合は数局分の得点を通算し、全対局はどの席の視点からでも見直せ、テーブルは全員の戦績を記録します。
-- **部屋を自分好みに。** テーブルとスツールはあらゆる木材で作れ、テーブルクロスとクッションは好きな色に染められ、カードの裏面と表面も数種類あります。大きなテーブルなら 8 人まで座れます。
+- **部屋を自分好みに。** テーブルと椅子はあらゆる木材で作れ、テーブルクロスとクッションは好きな色に染められ、カードの裏面と表面も数種類あります。大きなテーブルなら 8 人まで座れます。
 
 ![書斎に置かれた 2 つのカードテーブル。左では闘地主、右では村人が UNO の卓を囲んでいる](docs/images/hero.webp)
 
@@ -79,7 +79,7 @@
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 以降 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 以降 |
 
-1.21.1 にはペールオークがないため、ペールオークのテーブルとスツールはありません。
+1.21.1 にはペールオークがないため、ペールオークのテーブルと椅子はありません。
 
 ### レシピ
 
@@ -87,7 +87,7 @@
   <tr>
     <td width="33%" align="center"><img src="docs/images/craft-card-table.webp" alt="カードテーブルのレシピ"><br><b>カードテーブル</b><br>羊毛の色は自由です。板材の種類でテーブルの木材が決まります。</td>
     <td width="33%" align="center"><img src="docs/images/craft-big-card-table.webp" alt="大きなカードテーブルのレシピ"><br><b>大きなカードテーブル</b><br>カードテーブルから作ります。最大 8 人が座れます。</td>
-    <td width="33%" align="center"><img src="docs/images/craft-stool.webp" alt="スツールのレシピ"><br><b>スツール</b><br>羊毛でクッションの色が、ハーフブロックで木材が決まります。</td>
+    <td width="33%" align="center"><img src="docs/images/craft-chair.webp" alt="椅子のレシピ"><br><b>椅子</b><br>羊毛でクッションの色が、ハーフブロックで木材が決まります。</td>
   </tr>
 </table>
 
@@ -99,7 +99,7 @@
 2. **テーブルを右クリック**し、「座る」で着席します。空席は「CPU を入れる」で埋められます。
 3. **ゲームとルールを選び**、「開始」を押します。
 
-スツールを席のある辺の外側中央に置くと、右クリックでその席に座れます。大きなカードテーブルは 5×5 ブロックで、各辺に 2 席、最大 8 人が座れます。
+椅子を席のある辺の外側中央に置くと、右クリックでその席に座れます。大きなカードテーブルは 5×5 ブロックで、各辺に 2 席、最大 8 人が座れます。
 
 表示言語は英語・簡体字中国語・繁体字中国語・日本語・韓国語に対応し、ゲームの言語設定に従います。
 

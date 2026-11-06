@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Writes the base block models of the card table and the stool, which every wood's models
+Writes the base block models of the card table and the chair, which every wood's models
 inherit; gen_wood.py writes those per-wood models. Run it from the repository root.
 
-The table top is 14 pixels high, two lower than a full block, and the stool's cushion 12,
+The table top is 14 pixels high, two lower than a full block, and the chair's cushion 12,
 so a seated player looks down onto the cloth over the hand in front of them. Keep these
-in step with CardTableBlock.TOP and StoolBlock.SEAT_HEIGHT.
+in step with CardTableBlock.TOP and ChairBlock.SEAT_HEIGHT.
 
 A table is 3x3 blocks: the middle part is plain top, the four edge parts add a raised rim
 and an apron under the top on their outer side (north, before turning), and the corner
@@ -167,51 +167,121 @@ def table_item():
     return {"parent": "minecraft:block/block", "textures": textures, "elements": elements}
 
 
-SEAT = 12  # Top of the stool's cushion.
-CUSHION = 2.5
-SEAT_BOARD = 1.5
+SEAT = 12  # Top of the chair's cushion.
+SEAT_BOARD = (8, 10)  # Bottom and top of the seat board.
+BACK = 22  # Top of the back posts; the crest of the top rail rises one more.
+
+# The chair faces north (whoever sits on it looks north) and the block state turns it.
+# Every part is cut to whole or half pixels, touches its neighbours face to face and leaves
+# out the faces that touch, so there are no gaps or flickering faces anywhere.
+CHAIR_DISPLAY = {
+    # The chair is taller than a block: draw it smaller and lower in the inventory.
+    "gui": {"rotation": [30, 225, 0], "translation": [0, -1.75, 0], "scale": [0.56, 0.56, 0.56]},
+    "fixed": {"rotation": [0, 0, 0], "translation": [0, -1.5, 0], "scale": [0.4, 0.4, 0.4]},
+    "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [0.25, 0.25, 0.25]},
+}
+
+SIDES = ("north", "south", "east", "west")
+AXES = {"north": ("x", "y"), "south": ("x", "y"), "east": ("z", "y"), "west": ("z", "y"), "up": ("x", "z"), "down": ("x", "z")}
+NORMAL = {"north": "z", "south": "z", "east": "x", "west": "x", "up": "y", "down": "y"}
 
 
-def stool_frame():
-    board_top = SEAT - CUSHION
-    board_bottom = board_top - SEAT_BOARD
+def span(a, b):
+    """A range of texture pixels for coordinates a..b, wrapped into the 16 of one texture."""
+    shift = 16 * (a // 16)
+    return a - shift, b - shift
+
+
+def grain_box(frm, to, tex, grain, skip=(), cull=None):
+    """
+    A piece of wood whose grain (the texture's up and down) runs along [grain], with every
+    texture pixel the size of a model pixel. Faces in [skip] touch another piece and are left out.
+    """
+    lo = dict(zip("xyz", frm))
+    hi = dict(zip("xyz", to))
+    faces = {}
+    for d in SIDES + ("up", "down"):
+        if d in skip:
+            continue
+        u_axis, v_axis = AXES[d]
+        if NORMAL[d] == grain or v_axis == grain:
+            # End grain, or grain already along the texture's up and down.
+            u0, u1 = span(lo[u_axis], hi[u_axis])
+            v0, v1 = span(lo[v_axis], hi[v_axis])
+            f = face(tex, [u0, 16 - v1, u1, 16 - v0] if v_axis == "y" else [u0, v0, u1, v1])
+        else:
+            # Grain across the face: turn the texture a quarter.
+            u0, u1 = span(lo[v_axis], hi[v_axis])
+            v0, v1 = span(lo[u_axis], hi[u_axis])
+            f = face(tex, [u0, v0, u1, v1])
+            f["rotation"] = 90
+        if cull and d in cull:
+            f["cullface"] = d
+        faces[d] = f
+    return box(frm, to, faces)
+
+
+def chair_frame():
+    b0, b1 = SEAT_BOARD
     legs = []
-    for x, z in ((2, 2), (12, 2), (2, 12), (12, 12)):
-        legs.append(box([x, 0, z], [x + 2, board_bottom, z + 2], {
-            **{d: face("#leg", [0, 16 - board_bottom, 2, 16]) for d in ("north", "south", "east", "west")},
-            "down": face("#leg", [0, 0, 2, 2], "down"),
-        }))
-    rails = [
-        box([4, 3, 2.5], [12, 4, 3.5], {d: face("#wood", [4, 12, 12, 13]) for d in ("north", "south", "up", "down")}),
-        box([4, 3, 12.5], [12, 4, 13.5], {d: face("#wood", [4, 12, 12, 13]) for d in ("north", "south", "up", "down")}),
-        box([2.5, 5, 4], [3.5, 6, 12], {d: face("#wood", [4, 10, 12, 11]) for d in ("east", "west", "up", "down")}),
-        box([12.5, 5, 4], [13.5, 6, 12], {d: face("#wood", [4, 10, 12, 11]) for d in ("east", "west", "up", "down")}),
+    for x in (2, 12):
+        # Front legs stop under the seat board.
+        legs.append(grain_box([x, 0, 2], [x + 2, b0, 4], "#leg", "y", skip=("up",), cull=("down",)))
+        # Back legs run on up through the board as the posts of the back, in two pieces
+        # because one texture is only 16 pixels tall.
+        legs.append(grain_box([x, 0, 12], [x + 2, 16, 14], "#leg", "y", skip=("up",), cull=("down",)))
+        legs.append(grain_box([x, 16, 12], [x + 2, BACK, 14], "#leg", "y", skip=("down",)))
+    # Aprons under the board, flush with the outside of the legs.
+    aprons = [
+        grain_box([4, 6, 2], [12, b0, 3], "#leg", "x", skip=("up", "east", "west")),
+        grain_box([4, 6, 13], [12, b0, 14], "#leg", "x", skip=("up", "east", "west")),
+        grain_box([2, 6, 4], [3, b0, 12], "#leg", "z", skip=("up", "north", "south")),
+        grain_box([13, 6, 4], [14, b0, 12], "#leg", "z", skip=("up", "north", "south")),
+        # Low side stretchers.
+        grain_box([2.5, 2, 4], [3.5, 3, 12], "#leg", "z", skip=("north", "south")),
+        grain_box([12.5, 2, 4], [13.5, 3, 12], "#leg", "z", skip=("north", "south")),
     ]
-    seat = box([1, board_bottom, 1], [15, board_top, 15], {
-        **{d: face("#wood", [1, 16 - board_top, 15, 16 - board_bottom]) for d in ("north", "south", "east", "west")},
-        "down": face("#wood"),
-        "up": face("#wood"),
+    edge = [4, 6]  # A light band of the planks, away from the dark joins.
+    seat = box([1, b0, 1], [15, b1, 15], {
+        "north": face("#wood", [1, edge[0], 15, edge[1]]),
+        "south": face("#wood", [1, edge[0], 15, edge[1]]),
+        "east": face("#wood", [1, edge[0], 15, edge[1]]),
+        "west": face("#wood", [1, edge[0], 15, edge[1]]),
+        "up": face("#wood", [1, 1, 15, 15]),
+        "down": face("#wood", [1, 1, 15, 15]),
     })
+    # The back: rails and a centre splat between the posts, flush with their front, so the
+    # cushion meets them without a gap.
+    back = [
+        grain_box([4, b1, 12], [12, 14, 13], "#leg", "x", skip=("down", "east", "west")),
+        grain_box([7, 14, 12], [9, 19, 13], "#leg", "y", skip=("up", "down")),
+        grain_box([4, 19, 12], [12, BACK, 13], "#leg", "x", skip=("east", "west")),
+        grain_box([5, BACK, 12], [11, BACK + 1, 13], "#leg", "x", skip=("down",)),
+    ]
     return {
         "parent": "minecraft:block/block",
         "textures": {"particle": "#wood", "wood": "minecraft:block/oak_planks", "leg": "minecraft:block/stripped_oak_log"},
-        "elements": legs + rails + [seat],
+        "display": CHAIR_DISPLAY,
+        "elements": legs + aprons + [seat] + back,
     }
 
 
-def stool_cushion():
-    y0 = SEAT - CUSHION
+def chair_cushion():
+    b1 = SEAT_BOARD[1]
     return {
         "parent": "minecraft:block/block",
         "textures": {"particle": "#cushion", "cushion": "minecraft:block/red_wool"},
+        "display": CHAIR_DISPLAY,
         "elements": [
-            box([1.5, y0, 1.5], [14.5, SEAT - 0.5, 14.5], {
-                **{d: face("#cushion", [1.5, 16 - SEAT + 0.5, 14.5, 16 - y0]) for d in ("north", "south", "east", "west")},
+            # From the front of the seat back to the rails of the back.
+            box([2, b1, 2], [14, SEAT - 0.5, 12], {
+                d: face("#cushion", [2, 16 - SEAT + 0.5, 14, 16 - b1] if d in ("north", "south") else [2, 16 - SEAT + 0.5, 12, 16 - b1])
+                for d in ("north", "east", "west")
             }),
             # A slightly smaller top layer rounds the cushion's edge.
-            box([2, SEAT - 0.5, 2], [14, SEAT, 14], {
-                **{d: face("#cushion", [2, 16 - SEAT, 14, 16 - SEAT + 0.5]) for d in ("north", "south", "east", "west")},
-                "up": face("#cushion", [2, 2, 14, 14]),
+            box([2.5, SEAT - 0.5, 2.5], [13.5, SEAT, 12], {
+                **{d: face("#cushion", [2.5, 16 - SEAT, 13.5, 16 - SEAT + 0.5]) for d in ("north", "east", "west")},
+                "up": face("#cushion", [2.5, 2.5, 13.5, 12]),
             }),
         ],
     }
@@ -228,8 +298,8 @@ def main():
     for kind in ("center", "edge", "corner"):
         write(f"card_table_{kind}", table_part(kind))
     write("card_table", table_item())
-    write("stool_frame", stool_frame())
-    write("stool_cushion", stool_cushion())
+    write("chair_frame", chair_frame())
+    write("chair_cushion", chair_cushion())
 
 
 if __name__ == "__main__":

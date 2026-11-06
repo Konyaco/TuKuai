@@ -11,90 +11,90 @@
             "when": "oak",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_oak"
+              "model": "tukuai:block/chair_frame_oak"
             }
           },
           {
             "when": "spruce",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_spruce"
+              "model": "tukuai:block/chair_frame_spruce"
             }
           },
           {
             "when": "birch",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_birch"
+              "model": "tukuai:block/chair_frame_birch"
             }
           },
           {
             "when": "jungle",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_jungle"
+              "model": "tukuai:block/chair_frame_jungle"
             }
           },
           {
             "when": "acacia",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_acacia"
+              "model": "tukuai:block/chair_frame_acacia"
             }
           },
           {
             "when": "dark_oak",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_dark_oak"
+              "model": "tukuai:block/chair_frame_dark_oak"
             }
           },
           {
             "when": "mangrove",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_mangrove"
+              "model": "tukuai:block/chair_frame_mangrove"
             }
           },
           {
             "when": "cherry",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_cherry"
+              "model": "tukuai:block/chair_frame_cherry"
             }
           },
           {
             "when": "pale_oak",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_pale_oak"
+              "model": "tukuai:block/chair_frame_pale_oak"
             }
           },
           {
             "when": "bamboo",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_bamboo"
+              "model": "tukuai:block/chair_frame_bamboo"
             }
           },
           {
             "when": "crimson",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_crimson"
+              "model": "tukuai:block/chair_frame_crimson"
             }
           },
           {
             "when": "warped",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_frame_warped"
+              "model": "tukuai:block/chair_frame_warped"
             }
           }
         ],
         "fallback": {
           "type": "minecraft:model",
-          "model": "tukuai:block/stool_frame_oak"
+          "model": "tukuai:block/chair_frame_oak"
         }
       },
       {
@@ -106,118 +106,118 @@
             "when": "white",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_white"
+              "model": "tukuai:block/chair_cushion_white"
             }
           },
           {
             "when": "orange",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_orange"
+              "model": "tukuai:block/chair_cushion_orange"
             }
           },
           {
             "when": "magenta",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_magenta"
+              "model": "tukuai:block/chair_cushion_magenta"
             }
           },
           {
             "when": "light_blue",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_light_blue"
+              "model": "tukuai:block/chair_cushion_light_blue"
             }
           },
           {
             "when": "yellow",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_yellow"
+              "model": "tukuai:block/chair_cushion_yellow"
             }
           },
           {
             "when": "lime",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_lime"
+              "model": "tukuai:block/chair_cushion_lime"
             }
           },
           {
             "when": "pink",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_pink"
+              "model": "tukuai:block/chair_cushion_pink"
             }
           },
           {
             "when": "gray",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_gray"
+              "model": "tukuai:block/chair_cushion_gray"
             }
           },
           {
             "when": "light_gray",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_light_gray"
+              "model": "tukuai:block/chair_cushion_light_gray"
             }
           },
           {
             "when": "cyan",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_cyan"
+              "model": "tukuai:block/chair_cushion_cyan"
             }
           },
           {
             "when": "purple",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_purple"
+              "model": "tukuai:block/chair_cushion_purple"
             }
           },
           {
             "when": "blue",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_blue"
+              "model": "tukuai:block/chair_cushion_blue"
             }
           },
           {
             "when": "brown",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_brown"
+              "model": "tukuai:block/chair_cushion_brown"
             }
           },
           {
             "when": "green",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_green"
+              "model": "tukuai:block/chair_cushion_green"
             }
           },
           {
             "when": "red",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_red"
+              "model": "tukuai:block/chair_cushion_red"
             }
           },
           {
             "when": "black",
             "model": {
               "type": "minecraft:model",
-              "model": "tukuai:block/stool_cushion_black"
+              "model": "tukuai:block/chair_cushion_black"
             }
           }
         ],
         "fallback": {
           "type": "minecraft:model",
-          "model": "tukuai:block/stool_cushion_red"
+          "model": "tukuai:block/chair_cushion_red"
         }
       }
     ]

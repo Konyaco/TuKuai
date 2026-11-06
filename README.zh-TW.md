@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge 和 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 授權"></a>
 </p>
-<h3 align="center">在你的 Minecraft 世界裡擺一張牌桌。<br>搬張凳子坐下，和朋友打鬥地主、麻將、UNO……朋友不在，就叫電腦來湊一桌。</h3>
+<h3 align="center">在你的 Minecraft 世界裡擺一張牌桌。<br>拉把椅子坐下，和朋友打鬥地主、麻將、UNO……朋友不在，就叫電腦來湊一桌。</h3>
 
 <p align="center"><img src="docs/images/zh-CN/clip.webp" alt="書房裡的牌桌上，玩家和兩個村民打完一整局鬥地主" width="100%"></p>
 
@@ -63,7 +63,7 @@
 - **牌真的擺在桌上。** 手牌立起來朝著自己，出過的牌落在桌子中間，路過的人都能圍觀。打開沉浸視角，直接點桌上的牌出牌。
 - **永遠不缺人。** 空位隨時加電腦，分簡單、普通、困難三檔；有人離開或斷線，電腦接著替他打。大家都走開了，牌局就停下來等人回來。
 - **一坐一整晚。** 一場比賽連打好幾局、累計比分，每局都存了回放，能換任意座位的視角重看，牌桌還記著每個人的戰績。
-- **把屋子布置成你的樣子。** 牌桌和凳子有各種木頭，桌布和坐墊隨意染色，牌背、牌面有好幾套。大方桌能坐 8 個人。
+- **把屋子布置成你的樣子。** 牌桌和椅子有各種木頭，桌布和坐墊隨意染色，牌背、牌面有好幾套。大方桌能坐 8 個人。
 
 ![書房裡的兩張牌桌：左邊在打鬥地主，右邊幾個村民圍著 UNO 牌桌](docs/images/hero.webp)
 
@@ -79,7 +79,7 @@
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 或更新 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 或更新 |
 
-1.21.1 還沒有蒼白橡木，因此沒有蒼白橡木的牌桌和凳子。
+1.21.1 還沒有蒼白橡木，因此沒有蒼白橡木的牌桌和椅子。
 
 ### 合成
 
@@ -87,7 +87,7 @@
   <tr>
     <td width="33%" align="center"><img src="docs/images/craft-card-table.webp" alt="牌桌的合成表"><br><b>牌桌</b><br>羊毛顏色不限，木材決定桌子的木頭種類。</td>
     <td width="33%" align="center"><img src="docs/images/craft-big-card-table.webp" alt="大方桌的合成表"><br><b>大方桌</b><br>由一張牌桌擴展而成，最多坐 8 人。</td>
-    <td width="33%" align="center"><img src="docs/images/craft-stool.webp" alt="凳子的合成表"><br><b>凳子</b><br>羊毛決定坐墊顏色，半磚決定木頭種類。</td>
+    <td width="33%" align="center"><img src="docs/images/craft-chair.webp" alt="椅子的合成表"><br><b>椅子</b><br>羊毛決定坐墊顏色，半磚決定木頭種類。</td>
   </tr>
 </table>
 
@@ -99,7 +99,7 @@
 2. **右鍵開啟牌桌**，點「坐下」入座，空位可點「新增電腦」補上。
 3. **選擇遊戲和規則**，點「開始」。
 
-凳子放在牌桌有座位一側的外邊正中，右鍵凳子即可坐到對應座位。大方桌佔 5×5 格，每邊兩個座位，最多坐 8 人。
+椅子放在牌桌有座位一側的外邊正中，右鍵椅子即可坐到對應座位。大方桌佔 5×5 格，每邊兩個座位，最多坐 8 人。
 
 介面支援簡體中文、繁體中文、英文、日文和韓文，隨遊戲語言切換。
 

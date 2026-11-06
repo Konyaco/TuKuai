@@ -2,226 +2,1094 @@
   "multipart": [
     {
       "when": {
-        "wood": "oak"
+        "wood": "oak",
+        "facing": "north"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_oak"
+        "model": "tukuai:block/chair_frame_oak"
       }
     },
     {
       "when": {
-        "wood": "spruce"
+        "wood": "oak",
+        "facing": "east"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_spruce"
+        "model": "tukuai:block/chair_frame_oak",
+        "y": 90
       }
     },
     {
       "when": {
-        "wood": "birch"
+        "wood": "oak",
+        "facing": "south"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_birch"
+        "model": "tukuai:block/chair_frame_oak",
+        "y": 180
       }
     },
     {
       "when": {
-        "wood": "jungle"
+        "wood": "oak",
+        "facing": "west"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_jungle"
+        "model": "tukuai:block/chair_frame_oak",
+        "y": 270
       }
     },
     {
       "when": {
-        "wood": "acacia"
+        "wood": "spruce",
+        "facing": "north"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_acacia"
+        "model": "tukuai:block/chair_frame_spruce"
       }
     },
     {
       "when": {
-        "wood": "dark_oak"
+        "wood": "spruce",
+        "facing": "east"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_dark_oak"
+        "model": "tukuai:block/chair_frame_spruce",
+        "y": 90
       }
     },
     {
       "when": {
-        "wood": "mangrove"
+        "wood": "spruce",
+        "facing": "south"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_mangrove"
+        "model": "tukuai:block/chair_frame_spruce",
+        "y": 180
       }
     },
     {
       "when": {
-        "wood": "cherry"
+        "wood": "spruce",
+        "facing": "west"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_cherry"
+        "model": "tukuai:block/chair_frame_spruce",
+        "y": 270
       }
     },
     {
       "when": {
-        "wood": "pale_oak"
+        "wood": "birch",
+        "facing": "north"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_pale_oak"
+        "model": "tukuai:block/chair_frame_birch"
       }
     },
     {
       "when": {
-        "wood": "bamboo"
+        "wood": "birch",
+        "facing": "east"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_bamboo"
+        "model": "tukuai:block/chair_frame_birch",
+        "y": 90
       }
     },
     {
       "when": {
-        "wood": "crimson"
+        "wood": "birch",
+        "facing": "south"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_crimson"
+        "model": "tukuai:block/chair_frame_birch",
+        "y": 180
       }
     },
     {
       "when": {
-        "wood": "warped"
+        "wood": "birch",
+        "facing": "west"
       },
       "apply": {
-        "model": "tukuai:block/stool_frame_warped"
+        "model": "tukuai:block/chair_frame_birch",
+        "y": 270
       }
     },
     {
       "when": {
-        "color": "white"
+        "wood": "jungle",
+        "facing": "north"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_white"
+        "model": "tukuai:block/chair_frame_jungle"
       }
     },
     {
       "when": {
-        "color": "orange"
+        "wood": "jungle",
+        "facing": "east"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_orange"
+        "model": "tukuai:block/chair_frame_jungle",
+        "y": 90
       }
     },
     {
       "when": {
-        "color": "magenta"
+        "wood": "jungle",
+        "facing": "south"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_magenta"
+        "model": "tukuai:block/chair_frame_jungle",
+        "y": 180
       }
     },
     {
       "when": {
-        "color": "light_blue"
+        "wood": "jungle",
+        "facing": "west"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_light_blue"
+        "model": "tukuai:block/chair_frame_jungle",
+        "y": 270
       }
     },
     {
       "when": {
-        "color": "yellow"
+        "wood": "acacia",
+        "facing": "north"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_yellow"
+        "model": "tukuai:block/chair_frame_acacia"
       }
     },
     {
       "when": {
-        "color": "lime"
+        "wood": "acacia",
+        "facing": "east"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_lime"
+        "model": "tukuai:block/chair_frame_acacia",
+        "y": 90
       }
     },
     {
       "when": {
-        "color": "pink"
+        "wood": "acacia",
+        "facing": "south"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_pink"
+        "model": "tukuai:block/chair_frame_acacia",
+        "y": 180
       }
     },
     {
       "when": {
-        "color": "gray"
+        "wood": "acacia",
+        "facing": "west"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_gray"
+        "model": "tukuai:block/chair_frame_acacia",
+        "y": 270
       }
     },
     {
       "when": {
-        "color": "light_gray"
+        "wood": "dark_oak",
+        "facing": "north"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_light_gray"
+        "model": "tukuai:block/chair_frame_dark_oak"
       }
     },
     {
       "when": {
-        "color": "cyan"
+        "wood": "dark_oak",
+        "facing": "east"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_cyan"
+        "model": "tukuai:block/chair_frame_dark_oak",
+        "y": 90
       }
     },
     {
       "when": {
-        "color": "purple"
+        "wood": "dark_oak",
+        "facing": "south"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_purple"
+        "model": "tukuai:block/chair_frame_dark_oak",
+        "y": 180
       }
     },
     {
       "when": {
-        "color": "blue"
+        "wood": "dark_oak",
+        "facing": "west"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_blue"
+        "model": "tukuai:block/chair_frame_dark_oak",
+        "y": 270
       }
     },
     {
       "when": {
-        "color": "brown"
+        "wood": "mangrove",
+        "facing": "north"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_brown"
+        "model": "tukuai:block/chair_frame_mangrove"
       }
     },
     {
       "when": {
-        "color": "green"
+        "wood": "mangrove",
+        "facing": "east"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_green"
+        "model": "tukuai:block/chair_frame_mangrove",
+        "y": 90
       }
     },
     {
       "when": {
-        "color": "red"
+        "wood": "mangrove",
+        "facing": "south"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_red"
+        "model": "tukuai:block/chair_frame_mangrove",
+        "y": 180
       }
     },
     {
       "when": {
-        "color": "black"
+        "wood": "mangrove",
+        "facing": "west"
       },
       "apply": {
-        "model": "tukuai:block/stool_cushion_black"
+        "model": "tukuai:block/chair_frame_mangrove",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "wood": "cherry",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_cherry"
+      }
+    },
+    {
+      "when": {
+        "wood": "cherry",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_cherry",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "wood": "cherry",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_cherry",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "wood": "cherry",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_cherry",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "wood": "pale_oak",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_pale_oak"
+      }
+    },
+    {
+      "when": {
+        "wood": "pale_oak",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_pale_oak",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "wood": "pale_oak",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_pale_oak",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "wood": "pale_oak",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_pale_oak",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "wood": "bamboo",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_bamboo"
+      }
+    },
+    {
+      "when": {
+        "wood": "bamboo",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_bamboo",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "wood": "bamboo",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_bamboo",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "wood": "bamboo",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_bamboo",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "wood": "crimson",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_crimson"
+      }
+    },
+    {
+      "when": {
+        "wood": "crimson",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_crimson",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "wood": "crimson",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_crimson",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "wood": "crimson",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_crimson",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "wood": "warped",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_warped"
+      }
+    },
+    {
+      "when": {
+        "wood": "warped",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_warped",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "wood": "warped",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_warped",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "wood": "warped",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_frame_warped",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "white",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_white"
+      }
+    },
+    {
+      "when": {
+        "color": "white",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_white",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "white",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_white",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "white",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_white",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "orange",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_orange"
+      }
+    },
+    {
+      "when": {
+        "color": "orange",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_orange",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "orange",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_orange",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "orange",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_orange",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "magenta",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_magenta"
+      }
+    },
+    {
+      "when": {
+        "color": "magenta",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_magenta",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "magenta",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_magenta",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "magenta",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_magenta",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "light_blue",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_blue"
+      }
+    },
+    {
+      "when": {
+        "color": "light_blue",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_blue",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "light_blue",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_blue",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "light_blue",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_blue",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "yellow",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_yellow"
+      }
+    },
+    {
+      "when": {
+        "color": "yellow",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_yellow",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "yellow",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_yellow",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "yellow",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_yellow",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "lime",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_lime"
+      }
+    },
+    {
+      "when": {
+        "color": "lime",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_lime",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "lime",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_lime",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "lime",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_lime",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "pink",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_pink"
+      }
+    },
+    {
+      "when": {
+        "color": "pink",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_pink",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "pink",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_pink",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "pink",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_pink",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "gray",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_gray"
+      }
+    },
+    {
+      "when": {
+        "color": "gray",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_gray",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "gray",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_gray",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "gray",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_gray",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "light_gray",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_gray"
+      }
+    },
+    {
+      "when": {
+        "color": "light_gray",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_gray",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "light_gray",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_gray",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "light_gray",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_light_gray",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "cyan",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_cyan"
+      }
+    },
+    {
+      "when": {
+        "color": "cyan",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_cyan",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "cyan",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_cyan",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "cyan",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_cyan",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "purple",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_purple"
+      }
+    },
+    {
+      "when": {
+        "color": "purple",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_purple",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "purple",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_purple",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "purple",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_purple",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "blue",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_blue"
+      }
+    },
+    {
+      "when": {
+        "color": "blue",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_blue",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "blue",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_blue",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "blue",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_blue",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "brown",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_brown"
+      }
+    },
+    {
+      "when": {
+        "color": "brown",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_brown",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "brown",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_brown",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "brown",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_brown",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "green",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_green"
+      }
+    },
+    {
+      "when": {
+        "color": "green",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_green",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "green",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_green",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "green",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_green",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "red",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_red"
+      }
+    },
+    {
+      "when": {
+        "color": "red",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_red",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "red",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_red",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "red",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_red",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "color": "black",
+        "facing": "north"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_black"
+      }
+    },
+    {
+      "when": {
+        "color": "black",
+        "facing": "east"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_black",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "color": "black",
+        "facing": "south"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_black",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "color": "black",
+        "facing": "west"
+      },
+      "apply": {
+        "model": "tukuai:block/chair_cushion_black",
+        "y": 270
       }
     }
   ]

@@ -42,13 +42,13 @@ class TuKuaiNeoForge(bus: IEventBus) {
         val blocks = DeferredRegister.create(Registries.BLOCK, TuKuai.MOD_ID)
         blocks.register("card_table", Supplier { TuKuaiContent.CARD_TABLE })
         blocks.register("big_card_table", Supplier { TuKuaiContent.BIG_CARD_TABLE })
-        blocks.register("stool", Supplier { TuKuaiContent.STOOL })
+        blocks.register("stool", Supplier { TuKuaiContent.CHAIR })
         blocks.register(bus)
 
         val items = DeferredRegister.create(Registries.ITEM, TuKuai.MOD_ID)
         items.register("card_table", Supplier { TuKuaiContent.CARD_TABLE_ITEM })
         items.register("big_card_table", Supplier { TuKuaiContent.BIG_CARD_TABLE_ITEM })
-        items.register("stool", Supplier { TuKuaiContent.STOOL_ITEM })
+        items.register("stool", Supplier { TuKuaiContent.CHAIR_ITEM })
         items.register(bus)
 
         val blockEntities = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, TuKuai.MOD_ID)

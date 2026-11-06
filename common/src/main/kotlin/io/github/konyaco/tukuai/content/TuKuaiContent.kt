@@ -38,9 +38,10 @@ object TuKuaiContent {
 
     val BIG_CARD_TABLE_ITEM: Item = BlockItem(BIG_CARD_TABLE, itemProperties("big_card_table").useBlockDescriptionPrefix())
 
-    val STOOL: StoolBlock = StoolBlock(blockProperties("stool").mapColor(Wood::mapColorOf).noOcclusion().strength(1.5f))
+    /** A chair; its id is still "stool", from before stools became chairs, so old worlds keep theirs. */
+    val CHAIR: ChairBlock = ChairBlock(blockProperties("stool").mapColor(Wood::mapColorOf).noOcclusion().strength(1.5f))
 
-    val STOOL_ITEM: Item = BlockItem(STOOL, itemProperties("stool").useBlockDescriptionPrefix())
+    val CHAIR_ITEM: Item = BlockItem(CHAIR, itemProperties("stool").useBlockDescriptionPrefix())
 
     val CARD_TABLE_ENTITY: BlockEntityType<CardTableBlockEntity> by lazy {
         Services.platform.blockEntityType(::CardTableBlockEntity, CARD_TABLE, BIG_CARD_TABLE)
@@ -55,14 +56,14 @@ object TuKuaiContent {
 
     /**
      * The creative tab entries: a table in every wood, a big table in every wood, then an oak
-     * stool in every colour and a red one in every other wood.
+     * chair in every colour and a red one in every other wood.
      */
     fun creativeStacks(): List<ItemStack> =
         Wood.available.map { wood -> withState(ItemStack(CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
             Wood.available.map { wood -> withState(ItemStack(BIG_CARD_TABLE_ITEM), BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) } +
-            DyeColor.entries.map { color -> withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, color)) } +
+            DyeColor.entries.map { color -> withState(ItemStack(CHAIR_ITEM), BlockItemStateProperties.EMPTY.with(ChairBlock.COLOR, color)) } +
             Wood.available.drop(1).map { wood ->
-                withState(ItemStack(STOOL_ITEM), BlockItemStateProperties.EMPTY.with(StoolBlock.COLOR, DyeColor.RED).with(StoolBlock.WOOD, wood))
+                withState(ItemStack(CHAIR_ITEM), BlockItemStateProperties.EMPTY.with(ChairBlock.COLOR, DyeColor.RED).with(ChairBlock.WOOD, wood))
             }
 
     private fun withState(stack: ItemStack, state: BlockItemStateProperties): ItemStack = stack.apply { set(DataComponents.BLOCK_STATE, state) }

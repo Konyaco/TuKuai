@@ -224,7 +224,7 @@ open class CardTableBlock(properties: BlockBehaviour.Properties) : CompatBaseEnt
 
         /**
          * Height of the table top, where the cloth and the cards lie, in blocks. A little
-         * under a full block, so someone on a stool looks down onto it; see tools/gen_models.py.
+         * under a full block, so someone on a chair looks down onto it; see tools/gen_models.py.
          */
         const val TOP_HEIGHT = 14f / 16f
 

@@ -1,0 +1,6 @@
+{
+  "parent": "tukuai:block/chair_cushion",
+  "textures": {
+    "cushion": "minecraft:block/blue_wool"
+  }
+}

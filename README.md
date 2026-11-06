@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge and Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT license"></a>
 </p>
-<h3 align="center">A card table for your Minecraft world.<br>Pull up a stool and play Dou Dizhu, mahjong, UNO and more with friends, or with computers when they are not around.</h3>
+<h3 align="center">A card table for your Minecraft world.<br>Pull up a chair and play Dou Dizhu, mahjong, UNO and more with friends, or with computers when they are not around.</h3>
 
 <p align="center"><img src="docs/images/en/clip.webp" alt="A whole deal of Dou Dizhu at a card table in a library, against two villagers" width="100%"></p>
 
@@ -63,7 +63,7 @@
 - **The cards are really on the table.** Hands stand up facing their players, played cards land in the middle, and anyone walking by can watch. Switch to the immersive view to pick and play your cards straight off the table.
 - **Never short of players.** Computers take any empty seat at easy, normal or hard, and play on for anyone who leaves or disconnects. If everyone walks away, the game waits for them.
 - **Settle in for the evening.** A match keeps the scores over several games, every game is saved to replay from any seat, and each table keeps everyone's record.
-- **Make the room your own.** Tables and stools come in every kind of wood, the cloth and cushions take any dye, and there are several card backs and faces. The big table seats eight.
+- **Make the room your own.** Tables and chairs come in every kind of wood, the cloth and cushions take any dye, and there are several card backs and faces. The big table seats eight.
 
 ![Two card tables in a small library: Dou Dizhu on the left, villagers around the UNO table on the right](docs/images/hero.webp)
 
@@ -79,7 +79,7 @@ Get the jar for your Minecraft version and loader from [Releases](https://github
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 or newer |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api) and [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 or newer |
 
-Pale oak tables and stools are not on 1.21.1, which has no pale oak.
+Pale oak tables and chairs are not on 1.21.1, which has no pale oak.
 
 ### Crafting
 
@@ -87,7 +87,7 @@ Pale oak tables and stools are not on 1.21.1, which has no pale oak.
   <tr>
     <td width="33%" align="center"><img src="docs/images/craft-card-table.webp" alt="Card table recipe"><br><b>Card table</b><br>Wool of any color. The planks set the wood of the table.</td>
     <td width="33%" align="center"><img src="docs/images/craft-big-card-table.webp" alt="Big card table recipe"><br><b>Big card table</b><br>Made from a card table. Seats up to eight.</td>
-    <td width="33%" align="center"><img src="docs/images/craft-stool.webp" alt="Stool recipe"><br><b>Stool</b><br>The wool sets the cushion color, the slab sets the wood.</td>
+    <td width="33%" align="center"><img src="docs/images/craft-chair.webp" alt="Chair recipe"><br><b>Chair</b><br>The wool sets the cushion color, the slab sets the wood.</td>
   </tr>
 </table>
 
@@ -99,7 +99,7 @@ In creative mode, all three are in the Functional Blocks tab.
 2. **Right-click it**, click "Sit", and click "Add computer" on any empty seat.
 3. **Choose a game and its rules**, then click "Start".
 
-Place a stool just outside the middle of a side with a seat, and right-click it to sit there. The big card table takes 5×5 blocks and seats two to a side, up to eight.
+Place a chair just outside the middle of a side with a seat, and right-click it to sit there. The big card table takes 5×5 blocks and seats two to a side, up to eight.
 
 The mod is available in English, Simplified Chinese, Traditional Chinese, Japanese and Korean, and follows your game language.
 

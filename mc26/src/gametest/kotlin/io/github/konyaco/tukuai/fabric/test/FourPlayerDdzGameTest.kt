@@ -5,7 +5,7 @@ import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
-import io.github.konyaco.tukuai.content.StoolBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.doudizhu.DdzAction
@@ -149,7 +149,7 @@ class FourPlayerDdzGameTest : FabricClientGameTest {
         context.waitTicks(10)
     }
 
-    /** A 3x3 table north of the player with a stool on every side, in daylight. */
+    /** A 3x3 table north of the player with a chair on every side, in daylight. */
     private fun buildScene(server: MinecraftServer): BlockPos {
         val player = server.playerList.players.first()
         val level = server.overworld()
@@ -168,7 +168,7 @@ class FourPlayerDdzGameTest : FabricClientGameTest {
             )
         }
         for (side in listOf(Direction.SOUTH, Direction.EAST, Direction.NORTH, Direction.WEST)) {
-            level.setBlockAndUpdate(table.relative(side, StoolBlock.TABLE_DISTANCE), TuKuaiContent.STOOL.defaultBlockState())
+            level.setBlockAndUpdate(table.relative(side, ChairBlock.TABLE_DISTANCE), TuKuaiContent.CHAIR.defaultBlockState())
         }
         return table
     }

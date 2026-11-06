@@ -1,0 +1,153 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "#cushion",
+    "cushion": "minecraft:block/red_wool"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        -1.75,
+        0
+      ],
+      "scale": [
+        0.56,
+        0.56,
+        0.56
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        -1.5,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        2,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    }
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        10,
+        2
+      ],
+      "to": [
+        14,
+        11.5,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cushion",
+          "uv": [
+            2,
+            4.5,
+            14,
+            6
+          ]
+        },
+        "east": {
+          "texture": "#cushion",
+          "uv": [
+            2,
+            4.5,
+            12,
+            6
+          ]
+        },
+        "west": {
+          "texture": "#cushion",
+          "uv": [
+            2,
+            4.5,
+            12,
+            6
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        2.5,
+        11.5,
+        2.5
+      ],
+      "to": [
+        13.5,
+        12,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#cushion",
+          "uv": [
+            2.5,
+            4,
+            13.5,
+            4.5
+          ]
+        },
+        "east": {
+          "texture": "#cushion",
+          "uv": [
+            2.5,
+            4,
+            13.5,
+            4.5
+          ]
+        },
+        "west": {
+          "texture": "#cushion",
+          "uv": [
+            2.5,
+            4,
+            13.5,
+            4.5
+          ]
+        },
+        "up": {
+          "texture": "#cushion",
+          "uv": [
+            2.5,
+            2.5,
+            13.5,
+            12
+          ]
+        }
+      }
+    }
+  ]
+}
