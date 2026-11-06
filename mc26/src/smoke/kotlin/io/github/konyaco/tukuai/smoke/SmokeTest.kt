@@ -92,7 +92,13 @@ object SmokeTest {
         waitFor("the title screen", 200) { mc.currentScreen is TitleScreen }
         onClient {
             val name = "tukuai-smoke"
+            // 26.1 grouped the difficulty settings and moved the game rules out of the level settings.
+            //? if >=26.1 {
             val settings = LevelSettings(name, GameType.CREATIVE, LevelSettings.DifficultySettings(Difficulty.PEACEFUL, false, false), true, WorldDataConfiguration.DEFAULT)
+            //?} else {
+            /*val data = WorldDataConfiguration.DEFAULT
+            val settings = LevelSettings(name, GameType.CREATIVE, false, Difficulty.PEACEFUL, true, net.minecraft.world.level.gamerules.GameRules(data.enabledFeatures()), data)
+            *///?}
             mc.createWorldOpenFlows().createFreshLevel(name, settings, WorldOptions(1L, false, false), { registries ->
                 registries.lookupOrThrow(Registries.WORLD_PRESET).getOrThrow(WorldPresets.FLAT).value().createWorldDimensions()
             }, mc.currentScreen!!)

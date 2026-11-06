@@ -27,6 +27,11 @@ import net.minecraft.world.phys.BlockHitResult
 /** Whether this build has pale oak, which came in 1.21.4. */
 const val HAS_PALE_OAK = true
 
+//? if <26.1 {
+/*/** Shows [message] above the hotbar; 26.1 gave this its own name. */
+fun Player.sendOverlayMessage(message: Component) = displayClientMessage(message, true)
+*///?}
+
 fun Style.withRunCommand(command: String): Style = withClickEvent(ClickEvent.RunCommand(command))
 
 fun Style.withShowText(text: Component): Style = withHoverEvent(HoverEvent.ShowText(text))

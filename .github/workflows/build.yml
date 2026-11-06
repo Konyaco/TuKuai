@@ -22,7 +22,7 @@ jobs:
       - name: Check language files
         run: .github/scripts/check-lang.py
 
-      # Gradle runs on the newest Java; the 1.21.1 projects build with Java 21 from a toolchain.
+      # Gradle runs on the newest Java; the 1.21.11 and 1.21.1 projects build with Java 21 from a toolchain.
       - name: Setup Java
         uses: actions/setup-java@v6
         with:
@@ -63,6 +63,12 @@ jobs:
 
       - name: Start NeoForge 26.1.2 server
         run: .github/scripts/server-smoke.sh neoforge 26.1.2
+
+      - name: Start Fabric 1.21.11 server
+        run: .github/scripts/server-smoke.sh fabric 1.21.11
+
+      - name: Start NeoForge 1.21.11 server
+        run: .github/scripts/server-smoke.sh neoforge 1.21.11
 
       - name: Start Fabric 1.21.1 server
         run: .github/scripts/server-smoke.sh fabric 1.21.1
@@ -128,6 +134,16 @@ jobs:
             run: ./gradlew :mc26:neoforge-26.1.2:runSmokeTest --no-daemon --stacktrace
             shots: mc26/versions/neoforge-26.1.2/build/run/smoke
             prefix: 26.1.2-neoforge-
+          - name: Fabric 1.21.11
+            id: fabric-1.21.11
+            run: ./gradlew :mc26:fabric-1.21.11:runSmokeTest --no-daemon --stacktrace
+            shots: mc26/versions/fabric-1.21.11/build/run/smoke
+            prefix: 1.21.11-fabric-
+          - name: NeoForge 1.21.11
+            id: neoforge-1.21.11
+            run: ./gradlew :mc26:neoforge-1.21.11:runSmokeTest --no-daemon --stacktrace
+            shots: mc26/versions/neoforge-1.21.11/build/run/smoke
+            prefix: 1.21.11-neoforge-
           - name: Fabric 1.21.1
             id: fabric-1.21.1
             run: ./gradlew :fabric-1.21.1:runSmokeTest --no-daemon --stacktrace

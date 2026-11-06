@@ -10,7 +10,10 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer
 import net.minecraft.client.renderer.rendertype.RenderTypes
+//? if >=26.1 {
 import net.minecraft.client.renderer.state.level.CameraRenderState
+//?} else
+//import net.minecraft.client.renderer.state.CameraRenderState
 import net.minecraft.world.phys.Vec3
 
 /** Draws a card table's cloth, cards and display with [TableArt]. */

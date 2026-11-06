@@ -20,13 +20,13 @@ include 'engine'
 // Minecraft 26.x is one Stonecutter tree in mc26/: its versions share mc26/src, where
 // //? comments mark what differs between them. Each version and loader is a node in
 // mc26/versions/<loader>-<minecraft>, a project named like :mc26:fabric-26.3. The newest
-// version comes first.
+// version comes first. 1.21.11, the version just before 26.1, is close enough to join it.
 include 'mc26'
 stonecutter {
     kotlinController = false
     centralScript = 'build.gradle'
     create(':mc26') {
-        for (minecraft in ['26.3', '26.2', '26.1.2']) {
+        for (minecraft in ['26.3', '26.2', '26.1.2', '1.21.11']) {
             for (loader in ['fabric', 'neoforge']) version("${loader}-${minecraft}", minecraft)
         }
         // The version mc26/src is written for in git; see mc26/stonecutter.gradle.

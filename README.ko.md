@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="최신 릴리스"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.3 / 26.2 / 26.1.2 / 1.21.1">
+  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.11%20%7C%201.21.1-62B47A" alt="Minecraft 26.3 / 26.2 / 26.1.2 / 1.21.11 / 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge와 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 라이선스"></a>
 </p>
@@ -71,15 +71,15 @@
 
 ### 다운로드
 
-[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 Minecraft 버전과 로더에 맞는 jar(예: `tukuai-fabric-1.21.1-<버전>.jar`)를 받으세요. 서버와 모든 플레이어의 게임에 설치해야 합니다. Minecraft 26.3, 26.2, 26.1.2, 1.21.1을 지원하며, 다음 모드가 필요합니다.
+[Releases](https://github.com/Konyaco/TuKuai/releases/latest)에서 사용하는 Minecraft 버전과 로더에 맞는 jar(예: `tukuai-fabric-1.21.1-<버전>.jar`)를 받으세요. 서버와 모든 플레이어의 게임에 설치해야 합니다. Minecraft 26.3, 26.2, 26.1.2, 1.21.11, 1.21.1을 지원하며, 다음 모드가 필요합니다.
 
 | 로더 | 필수 모드 |
 | --- | --- |
-| NeoForge 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 이상 |
+| NeoForge 1.21.11, 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 이상 |
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 이상 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api), [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 이상 |
 
-1.21.1에는 창백한 참나무가 없어서, 창백한 참나무 카드 테이블과 의자는 26.1.2 이상에서만 쓸 수 있습니다.
+1.21.1에는 창백한 참나무가 없어서, 창백한 참나무 카드 테이블과 의자도 없습니다.
 
 ### 조합법
 
@@ -121,7 +121,7 @@
 <details>
 <summary><b>개발</b></summary>
 
-JDK 25가 필요합니다. Minecraft 1.21.1에 쓰는 JDK 21은 Gradle이 알아서 받습니다.
+JDK 25가 필요합니다. Minecraft 1.21.11과 1.21.1에 쓰는 JDK 21은 Gradle이 알아서 받습니다.
 
 ```sh
 ./gradlew build                        # 컴파일, 테스트, 모든 로더와 Minecraft 버전의 jar 생성
@@ -133,7 +133,7 @@ JDK 25가 필요합니다. Minecraft 1.21.1에 쓰는 JDK 21은 Gradle이 알아
 | --- | --- |
 | `engine` | 규칙, 컴퓨터, 다시 보기. Minecraft에 의존하지 않는 Kotlin 코드 |
 | `common` | 모든 로더와 Minecraft 버전이 함께 쓰는 Minecraft 코드와 리소스. 최신 Minecraft에 맞춰 작성 |
-| `mc26` | Minecraft 26.1.2, 26.2, 26.3을 묶은 하나의 [Stonecutter](https://stonecutter.kikugie.dev/) 프로젝트. `src`에 `compat` 패키지, 렌더러, 각 로더 진입점, 아이템 모델, 조합법이 있고 버전마다 다른 곳은 `//?` 주석으로 표시합니다. `versions/<로더>-<minecraft>/gradle.properties`에 각각의 버전 |
+| `mc26` | Minecraft 26.1.2, 26.2, 26.3과 1.21.11(26.1 바로 전 버전)을 묶은 하나의 [Stonecutter](https://stonecutter.kikugie.dev/) 프로젝트. `src`에 `compat` 패키지, 렌더러, 각 로더 진입점, 아이템 모델, 조합법이 있고 버전마다 다른 곳은 `//?` 주석으로 표시합니다. `versions/<로더>-<minecraft>/gradle.properties`에 각각의 버전 |
 | `versions/1.21.1` | Minecraft 1.21.1: `gradle.properties`의 각 버전, 최신 Minecraft의 이름을 쓰게 해 주는 `compat` 패키지, 렌더러, 아이템 모델, 조합법 |
 | `versions/1.21.1/fabric`, `versions/1.21.1/neoforge` | 1.21.1의 각 로더 진입점과 등록 |
 

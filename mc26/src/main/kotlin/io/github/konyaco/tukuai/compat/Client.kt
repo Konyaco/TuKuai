@@ -5,15 +5,37 @@ import com.mojang.blaze3d.vertex.PoseStack
 import net.minecraft.client.Camera
 import net.minecraft.client.Minecraft
 import net.minecraft.client.Options
+import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.network.chat.Component
+import net.minecraft.util.FormattedCharSequence
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 
 // Client-only shims; nothing on a dedicated server touches this file.
 
+//? if >=26.1 {
 typealias GuiGraphicsExtractor = net.minecraft.client.gui.GuiGraphicsExtractor
+//?} else {
+/*/** 26.1 renamed GuiGraphics, and its text methods, as it moved to extracting what to draw. */
+typealias GuiGraphicsExtractor = net.minecraft.client.gui.GuiGraphics
+
+fun GuiGraphicsExtractor.text(font: Font, text: Component, x: Int, y: Int, color: Int, shadow: Boolean = true) =
+    drawString(font, text, x, y, color, shadow)
+
+fun GuiGraphicsExtractor.text(font: Font, text: FormattedCharSequence, x: Int, y: Int, color: Int, shadow: Boolean = true) =
+    drawString(font, text, x, y, color, shadow)
+
+fun GuiGraphicsExtractor.text(font: Font, text: String, x: Int, y: Int, color: Int, shadow: Boolean = true) =
+    drawString(font, text, x, y, color, shadow)
+
+fun GuiGraphicsExtractor.centeredText(font: Font, text: Component, x: Int, y: Int, color: Int) = drawCenteredString(font, text, x, y, color)
+
+fun GuiGraphicsExtractor.centeredText(font: Font, text: FormattedCharSequence, x: Int, y: Int, color: Int) = drawCenteredString(font, text, x, y, color)
+
+fun GuiGraphicsExtractor.centeredText(font: Font, text: String, x: Int, y: Int, color: Int) = drawCenteredString(font, text, x, y, color)
+*///?}
 
 typealias KeyEvent = net.minecraft.client.input.KeyEvent
 
@@ -38,9 +60,29 @@ fun GuiGraphicsExtractor.blitTexture(
 ) = blit(RenderPipelines.GUI_TEXTURED, texture, x, y, u, v, width, height, regionWidth, regionHeight, textureWidth, textureHeight)
 
 /** A screen; older Minecraft versions give theirs 26.1's drawing and input methods. */
+//? if >=26.1 {
 abstract class CompatScreen(title: Component) : Screen(title) {
     protected val mc: Minecraft get() = minecraft
 }
+//?} else {
+/*abstract class CompatScreen(title: Component) : Screen(title) {
+    protected val mc: Minecraft get() = minecraft
+
+    /** 26.1's renderBackground: draws what lies behind the screen. */
+    open fun extractBackground(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) =
+        super.renderBackground(g, mouseX, mouseY, partialTick)
+
+    /** 26.1's render: draws the screen's widgets; screens draw their own things first and then call this. */
+    open fun extractRenderState(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) =
+        super.render(g, mouseX, mouseY, partialTick)
+
+    final override fun renderBackground(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) =
+        extractBackground(g, mouseX, mouseY, partialTick)
+
+    final override fun render(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int, partialTick: Float) =
+        extractRenderState(g, mouseX, mouseY, partialTick)
+}
+*///?}
 
 /** Hides and holds the cursor when [grab], or shows it again at ([x], [y]). */
 fun grabMouse(minecraft: Minecraft, grab: Boolean, x: Double, y: Double) {
@@ -61,7 +103,19 @@ fun GuiGraphicsExtractor.drawOnTop(draw: () -> Unit) {
 }
 
 /** The camera's rotation and projection, with the camera at the origin. */
+//? if >=26.1 {
 fun Camera.viewRotationProjection(dest: Matrix4f): Matrix4f = getViewRotationProjectionMatrix(dest)
+//?} else {
+/*fun Camera.viewRotationProjection(dest: Matrix4f): Matrix4f {
+    // Before 26.1 the camera keeps no projection, so work it out as the game does: the field
+    // of view setting scaled by the player's own modifier, such as for sprinting.
+    val minecraft = Minecraft.getInstance()
+    val options = minecraft.options
+    val modifier = minecraft.player?.getFieldOfViewModifier(options.cameraType.isFirstPerson, options.fovEffectScale().get().toFloat()) ?: 1f
+    val fov = options.fov().get() * modifier
+    return dest.set(minecraft.gameRenderer.getProjectionMatrix(fov)).rotate(Quaternionf(rotation()).conjugate())
+}
+*///?}
 
 // 26.2 moved the open screen and the loading overlay from Minecraft to its Gui.
 //? if >=26.2 {
