@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.3, 26.2, 26.1.2 and 1.21.1">
+  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.11%20%7C%201.21.1-62B47A" alt="Minecraft 26.3, 26.2, 26.1.2, 1.21.11 and 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge and Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT license"></a>
 </p>
@@ -71,15 +71,15 @@
 
 ### Download
 
-Get the jar for your Minecraft version and loader from [Releases](https://github.com/Konyaco/TuKuai/releases/latest), such as `tukuai-fabric-1.21.1-<version>.jar`. Install it on the server and on every player's game. It runs on Minecraft 26.3, 26.2, 26.1.2 and 1.21.1, and needs:
+Get the jar for your Minecraft version and loader from [Releases](https://github.com/Konyaco/TuKuai/releases/latest), such as `tukuai-fabric-1.21.1-<version>.jar`. Install it on the server and on every player's game. It runs on Minecraft 26.3, 26.2, 26.1.2, 1.21.11 and 1.21.1, and needs:
 
 | Loader | Also install |
 | --- | --- |
-| NeoForge 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 or newer |
+| NeoForge 1.21.11, 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 or newer |
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 or newer |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api) and [Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 or newer |
 
-Pale oak tables and stools need 26.1.2 or newer, since 1.21.1 has no pale oak.
+Pale oak tables and stools are not on 1.21.1, which has no pale oak.
 
 ### Crafting
 
@@ -121,7 +121,7 @@ The first time a server starts (or a single-player world opens), the mod writes 
 <details>
 <summary><b>Development</b></summary>
 
-Requires JDK 25; Gradle fetches JDK 21 for Minecraft 1.21.1 itself.
+Requires JDK 25; Gradle fetches JDK 21 for Minecraft 1.21.11 and 1.21.1 itself.
 
 ```sh
 ./gradlew build                        # compile, test, and build the jars for every loader and Minecraft version
@@ -133,7 +133,7 @@ Requires JDK 25; Gradle fetches JDK 21 for Minecraft 1.21.1 itself.
 | --- | --- |
 | `engine` | Rules, computer players and replays, in plain Kotlin without Minecraft |
 | `common` | Minecraft code and resources shared by every loader and Minecraft version, written for the newest Minecraft |
-| `mc26` | Minecraft 26.1.2, 26.2 and 26.3 as one [Stonecutter](https://stonecutter.kikugie.dev/) project: `src` has the `compat` package, renderers, each loader's entry point, item models and recipes, with `//?` comments where the versions differ; `versions/<loader>-<minecraft>/gradle.properties` has each one's versions |
+| `mc26` | Minecraft 26.1.2, 26.2, 26.3 and 1.21.11 (the version just before 26.1) as one [Stonecutter](https://stonecutter.kikugie.dev/) project: `src` has the `compat` package, renderers, each loader's entry point, item models and recipes, with `//?` comments where the versions differ; `versions/<loader>-<minecraft>/gradle.properties` has each one's versions |
 | `versions/1.21.1` | Minecraft 1.21.1: its versions in `gradle.properties`, the `compat` package that gives it the newest Minecraft's names, renderers, item models and recipes |
 | `versions/1.21.1/fabric`, `versions/1.21.1/neoforge` | Each loader's entry point and registration for 1.21.1 |
 

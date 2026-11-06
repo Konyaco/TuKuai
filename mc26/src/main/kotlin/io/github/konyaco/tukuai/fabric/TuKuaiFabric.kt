@@ -13,7 +13,10 @@ import io.github.konyaco.tukuai.platform.Services
 import java.nio.file.Path
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
+//? if >=26.1 {
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents
+//?} else
+//import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 import net.fabricmc.loader.api.FabricLoader
@@ -42,6 +45,8 @@ class TuKuaiFabric : ModInitializer {
         Registry.register(BuiltInRegistries.ITEM, TuKuai.id("stool"), TuKuaiContent.STOOL_ITEM)
         Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE_ENTITY)
         Registry.register(BuiltInRegistries.ENTITY_TYPE, TuKuai.id("seat"), TuKuaiContent.SEAT)
+        // 26.1 renamed Fabric's item group and payload registry methods after the game's own names.
+        //? if >=26.1 {
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register { entries ->
             TuKuaiContent.creativeStacks().forEach(entries::accept)
         }
@@ -49,6 +54,15 @@ class TuKuaiFabric : ModInitializer {
         PayloadTypeRegistry.clientboundPlay().register(TableSyncPayload.TYPE, TableSyncPayload.CODEC)
         PayloadTypeRegistry.clientboundPlay().register(ReplayPayload.TYPE, ReplayPayload.CODEC)
         PayloadTypeRegistry.serverboundPlay().register(TableActionPayload.TYPE, TableActionPayload.CODEC)
+        //?} else {
+        /*ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register { entries ->
+            TuKuaiContent.creativeStacks().forEach(entries::accept)
+        }
+
+        PayloadTypeRegistry.playS2C().register(TableSyncPayload.TYPE, TableSyncPayload.CODEC)
+        PayloadTypeRegistry.playS2C().register(ReplayPayload.TYPE, ReplayPayload.CODEC)
+        PayloadTypeRegistry.playC2S().register(TableActionPayload.TYPE, TableActionPayload.CODEC)
+        *///?}
         ServerPlayNetworking.registerGlobalReceiver(TableActionPayload.TYPE) { payload, context ->
             TableNetwork.onAction(context.player(), payload)
         }

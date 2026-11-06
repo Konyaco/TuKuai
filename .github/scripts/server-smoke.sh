@@ -6,7 +6,7 @@ set -euo pipefail
 loader="$1"
 minecraft="$2"
 name="${loader}-${minecraft}"
-# Minecraft 26.x versions are Stonecutter nodes in mc26/, older ones have their own folder.
+# Minecraft 26.x and 1.21.11 are Stonecutter nodes in mc26/, older versions have their own folder.
 if [[ -d "versions/${minecraft}" ]]; then
     project=":${name}"
     dir="versions/${minecraft}/${loader}"

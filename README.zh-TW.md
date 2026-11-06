@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml"><img src="https://github.com/Konyaco/TuKuai/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <a href="https://github.com/Konyaco/TuKuai/releases/latest"><img src="https://img.shields.io/github/v/release/Konyaco/TuKuai?label=release" alt="最新版本"></a>
-  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.1-62B47A" alt="Minecraft 26.3 / 26.2 / 26.1.2 / 1.21.1">
+  <img src="https://img.shields.io/badge/Minecraft-26.3%20%7C%2026.2%20%7C%2026.1.2%20%7C%201.21.11%20%7C%201.21.1-62B47A" alt="Minecraft 26.3 / 26.2 / 26.1.2 / 1.21.11 / 1.21.1">
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge 和 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 授權"></a>
 </p>
@@ -71,15 +71,15 @@
 
 ### 下載
 
-從 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下載對應 Minecraft 版本和載入器的 jar，例如 `tukuai-fabric-1.21.1-<版本>.jar`。伺服器和每位玩家都要安裝。支援 Minecraft 26.3、26.2、26.1.2 和 1.21.1，還需要：
+從 [Releases](https://github.com/Konyaco/TuKuai/releases/latest) 下載對應 Minecraft 版本和載入器的 jar，例如 `tukuai-fabric-1.21.1-<版本>.jar`。伺服器和每位玩家都要安裝。支援 Minecraft 26.3、26.2、26.1.2、1.21.11 和 1.21.1，還需要：
 
 | 載入器 | 前置模組 |
 | --- | --- |
-| NeoForge 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 或更新 |
+| NeoForge 1.21.11, 26.1.2, 26.2, 26.3 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 6.4.0 或更新 |
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 或更新 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 或更新 |
 
-蒼白橡木的牌桌和凳子需要 26.1.2 或更新版本，1.21.1 還沒有蒼白橡木。
+1.21.1 還沒有蒼白橡木，因此沒有蒼白橡木的牌桌和凳子。
 
 ### 合成
 
@@ -121,7 +121,7 @@
 <details>
 <summary><b>開發</b></summary>
 
-需要 JDK 25；Minecraft 1.21.1 要用的 JDK 21 由 Gradle 自動下載。
+需要 JDK 25；Minecraft 1.21.11 和 1.21.1 要用的 JDK 21 由 Gradle 自動下載。
 
 ```sh
 ./gradlew build                        # 編譯、測試，並打包每個載入器、每個 Minecraft 版本的 jar
@@ -133,7 +133,7 @@
 | --- | --- |
 | `engine` | 規則、電腦和回放，純 Kotlin，不依賴 Minecraft |
 | `common` | 所有載入器和 Minecraft 版本共用的 Minecraft 程式碼和資源，按最新版 Minecraft 撰寫 |
-| `mc26` | Minecraft 26.1.2、26.2、26.3 合成的一個 [Stonecutter](https://stonecutter.kikugie.dev/) 專案：`src` 裡是 `compat` 套件、渲染器、各載入器的進入點、物品模型和配方，版本之間不同的地方用 `//?` 註解標出；`versions/<載入器>-<minecraft>/gradle.properties` 是各自的版本號 |
+| `mc26` | Minecraft 26.1.2、26.2、26.3 和 1.21.11（26.1 的前一個版本）合成的一個 [Stonecutter](https://stonecutter.kikugie.dev/) 專案：`src` 裡是 `compat` 套件、渲染器、各載入器的進入點、物品模型和配方，版本之間不同的地方用 `//?` 註解標出；`versions/<載入器>-<minecraft>/gradle.properties` 是各自的版本號 |
 | `versions/1.21.1` | Minecraft 1.21.1：`gradle.properties` 裡的各項版本，讓它用上最新版 Minecraft 名稱的 `compat` 套件，渲染器、物品模型和配方 |
 | `versions/1.21.1/fabric`、`versions/1.21.1/neoforge` | 1.21.1 下各載入器的進入點和註冊 |
 
