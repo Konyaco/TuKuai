@@ -6,8 +6,8 @@ import io.github.konyaco.tukuai.client.ReplayScreen
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.BigCardTableBlock
 import io.github.konyaco.tukuai.content.CardTableBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.SeatEntity
-import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TableSeats
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.content.Wood
@@ -35,7 +35,7 @@ import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.Vec3
 
 /**
- * The 5x5 table for eight: placing one from its item, its eight stools and who sits on
+ * The 5x5 table for eight: placing one from its item, its eight chairs and who sits on
  * which, a 3x3 table refusing eight-player rules, and a hand of Tutu Cards for eight with
  * us and seven computers. `TUKUAI_ONLY=bigtable` runs just this; `TUKUAI_LANG` picks the
  * language of the pictures.
@@ -60,14 +60,14 @@ class BigTableGameTest : FabricClientGameTest {
             context.waitTicks(40)
             world.clientLevel.waitForChunksRender()
 
-            // The table and its stools from a corner, standing.
+            // The table and its chairs from a corner, standing.
             moveTo(server, table.offset(5, 0, 6))
             context.waitTicks(5)
             context.runOnClient<RuntimeException> { it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(table).add(0.0, -0.6, 0.0)) }
             context.waitTicks(10)
             shot(context, "bigtable-0-world")
 
-            // The stool left of the middle on the south side is seat 0, the one right of it seat 1.
+            // The chair left of the middle on the south side is seat 0, the one right of it seat 1.
             server.runOnServer<RuntimeException> { s ->
                 val player = s.playerList.players.first()
                 val level = s.overworld()
@@ -75,13 +75,13 @@ class BigTableGameTest : FabricClientGameTest {
                 be.handle(player, TableActionPayload(table, TableOp.GAME, 0, 0, "tutu", ByteArray(0)))
                 be.handle(player, TableActionPayload(table, TableOp.PRESET, 0, 0, "eight", ByteArray(0)))
                 check(be.presetId == "eight") { "The big table did not take the rules for eight" }
-                val stool = table.offset(1, 0, 3)
-                val (found, spot) = StoolBlock.tableNextTo(level, stool) ?: error("The stool right of the middle found no table")
-                check(found === be && spot.side == Direction.SOUTH && spot.along == 1) { "The stool right of the middle is at $spot" }
-                check(be.sitAt(player, spot.side, spot.along)) { "Sitting on a big table's stool did nothing" }
-                check(be.seatOf(player.uuid) == 1) { "The stool right of the middle gave seat ${be.seatOf(player.uuid)}" }
+                val chair = table.offset(1, 0, 3)
+                val (found, spot) = ChairBlock.tableNextTo(level, chair) ?: error("The chair right of the middle found no table")
+                check(found === be && spot.side == Direction.SOUTH && spot.along == 1) { "The chair right of the middle is at $spot" }
+                check(be.sitAt(player, spot.side, spot.along)) { "Sitting on a big table's chair did nothing" }
+                check(be.seatOf(player.uuid) == 1) { "The chair right of the middle gave seat ${be.seatOf(player.uuid)}" }
                 val seat = player.vehicle
-                check(seat is SeatEntity && seat.blockPosition() == stool) { "Sitting put the player at ${seat?.blockPosition()}, not on $stool" }
+                check(seat is SeatEntity && seat.blockPosition() == chair) { "Sitting put the player at ${seat?.blockPosition()}, not on $chair" }
 
                 // A 3x3 table has no room for eight.
                 val other = level.getBlockEntity(small) as CardTableBlockEntity
@@ -150,7 +150,7 @@ class BigTableGameTest : FabricClientGameTest {
     }
 
     /**
-     * Places a big table from its item, checks its parts, and puts a stool at each of its
+     * Places a big table from its item, checks its parts, and puts a chair at each of its
      * eight seats; a 3x3 table stands off to the east. Returns both tables' middles.
      */
     private fun buildScene(server: MinecraftServer): Pair<BlockPos, BlockPos> {
@@ -185,10 +185,10 @@ class BigTableGameTest : FabricClientGameTest {
 
         val colors = listOf(DyeColor.RED, DyeColor.ORANGE, DyeColor.YELLOW, DyeColor.LIME, DyeColor.CYAN, DyeColor.BLUE, DyeColor.PURPLE, DyeColor.PINK)
         TableSeats.spots(Direction.SOUTH, block.radius, 8).forEachIndexed { i, spot ->
-            val stool = table.relative(spot.side, block.radius + 1).relative(spot.right, spot.along)
+            val chair = table.relative(spot.side, block.radius + 1).relative(spot.right, spot.along)
             level.setBlockAndUpdate(
-                stool,
-                TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.COLOR, colors[i]).setValue(StoolBlock.WOOD, Wood.CHERRY),
+                chair,
+                TuKuaiContent.CHAIR.defaultBlockState().setValue(ChairBlock.COLOR, colors[i]).setValue(ChairBlock.WOOD, Wood.CHERRY),
             )
         }
 

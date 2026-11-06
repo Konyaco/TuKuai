@@ -11,8 +11,8 @@ import io.github.konyaco.tukuai.compat.isLoading
 import io.github.konyaco.tukuai.compat.openScreen
 import io.github.konyaco.tukuai.content.BigCardTableBlock
 import io.github.konyaco.tukuai.content.CardTableBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.SeatEntity
-import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.content.Wood
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -192,7 +192,7 @@ object SmokeTest {
     }
 
     /**
-     * A floor of planks, a cherry table placed from its item with stools on three sides,
+     * A floor of planks, a cherry table placed from its item with chairs on three sides,
      * and a spruce big table behind it. The hotbar gets a few of the mod's items.
      */
     private fun buildScene(server: MinecraftServer): Pair<BlockPos, BlockPos> {
@@ -221,8 +221,8 @@ object SmokeTest {
         }
         for ((side, color) in listOf(Direction.SOUTH to DyeColor.RED, Direction.EAST to DyeColor.YELLOW, Direction.WEST to DyeColor.LIGHT_BLUE)) {
             level.setBlockAndUpdate(
-                table.relative(side, StoolBlock.TABLE_DISTANCE),
-                TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.COLOR, color).setValue(StoolBlock.WOOD, Wood.CHERRY),
+                table.relative(side, ChairBlock.TABLE_DISTANCE),
+                TuKuaiContent.CHAIR.defaultBlockState().setValue(ChairBlock.COLOR, color).setValue(ChairBlock.WOOD, Wood.CHERRY),
             )
         }
 
@@ -230,7 +230,7 @@ object SmokeTest {
         val big = table.north(6)
         level.setBlockAndUpdate(big, TuKuaiContent.BIG_CARD_TABLE.defaultBlockState().setValue(CardTableBlock.FACING, Direction.SOUTH).setValue(CardTableBlock.WOOD, Wood.SPRUCE))
         for (along in listOf(-1, 1)) {
-            level.setBlockAndUpdate(big.south(3).east(along), TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.WOOD, Wood.SPRUCE).setValue(StoolBlock.COLOR, DyeColor.GREEN))
+            level.setBlockAndUpdate(big.south(3).east(along), TuKuaiContent.CHAIR.defaultBlockState().setValue(ChairBlock.WOOD, Wood.SPRUCE).setValue(ChairBlock.COLOR, DyeColor.GREEN))
         }
         check((level.getBlockState(big).block as? BigCardTableBlock)?.radius == 2) { "The big table is not a big table" }
 
@@ -238,10 +238,10 @@ object SmokeTest {
             tableItem(TuKuaiContent.CARD_TABLE_ITEM, Wood.OAK),
             tableItem(TuKuaiContent.CARD_TABLE_ITEM, Wood.WARPED),
             tableItem(TuKuaiContent.BIG_CARD_TABLE_ITEM, Wood.BIRCH),
-            stool(Wood.OAK, DyeColor.RED),
-            stool(Wood.BIRCH, DyeColor.BLUE),
-            stool(Wood.DARK_OAK, DyeColor.YELLOW),
-            stool(Wood.CRIMSON, DyeColor.WHITE),
+            chair(Wood.OAK, DyeColor.RED),
+            chair(Wood.BIRCH, DyeColor.BLUE),
+            chair(Wood.DARK_OAK, DyeColor.YELLOW),
+            chair(Wood.CRIMSON, DyeColor.WHITE),
         )
         hotbar.forEachIndexed { i, item -> player.inventory.setItem(i, item) }
         return table to big
@@ -250,8 +250,8 @@ object SmokeTest {
     private fun tableItem(item: Item, wood: Wood): ItemStack =
         ItemStack(item).apply { set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(CardTableBlock.WOOD, wood)) }
 
-    private fun stool(wood: Wood, color: DyeColor): ItemStack = ItemStack(TuKuaiContent.STOOL_ITEM).apply {
-        set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(StoolBlock.WOOD, wood).with(StoolBlock.COLOR, color))
+    private fun chair(wood: Wood, color: DyeColor): ItemStack = ItemStack(TuKuaiContent.CHAIR_ITEM).apply {
+        set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(ChairBlock.WOOD, wood).with(ChairBlock.COLOR, color))
     }
 
     /** Stands the player ([dx], [dz]) from [target] and turns them to look at it. */

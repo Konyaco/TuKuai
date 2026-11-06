@@ -10,8 +10,8 @@ import io.github.konyaco.tukuai.client.TableCard
 import io.github.konyaco.tukuai.client.TablePointer
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.SeatEntity
-import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.content.Wood
 import io.github.konyaco.tukuai.engine.bluff.BluffAction
@@ -88,6 +88,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         if (only == "bluff") return onlyGame(context) { server, table -> playBluff(context, server, table) }
         if (only == "mahjong") return onlyGame(context) { server, table -> playMahjong(context, server, table) }
         if (only == "cave") return onlyGame(context) { server, table -> playCave(context, server, table) }
+        if (only == "chair") return chairs(context)
         if (only != null && only != "game") return
         context.worldBuilder().create().use { world ->
             world.clientLevel.waitForChunksRender()
@@ -97,29 +98,30 @@ class TuKuaiClientGameTest : FabricClientGameTest {
                 listOf("card_table/oak", "card_table/cherry", "stool/birch_red").all {
                     s.recipeManager.byKey(ResourceKey.create(Registries.RECIPE, TuKuai.id(it))).isPresent
                 }
-            }) { "The card table and stool recipes did not load" }
+            }) { "The card table and chair recipes did not load" }
             context.waitTicks(40)
             world.clientLevel.waitForChunksRender()
             server.runOnServer<RuntimeException> { s -> checkOldTables(s) }
+            server.runOnServer<RuntimeException> { s -> checkChairsFaceTable(s, table) }
 
-            // The table and a stool from the side, to show how they are built.
+            // The table and a chair from the side, to show how they are built.
             moveTo(server, table.offset(-4, 0, 3))
             context.waitTicks(5)
             context.input.lookAt(table)
             context.waitTicks(5)
             shot(context, "0-world-table-side")
-            val stool = table.east(StoolBlock.TABLE_DISTANCE)
-            moveTo(server, stool.offset(2, 0, 2))
+            val chair = table.east(ChairBlock.TABLE_DISTANCE)
+            moveTo(server, chair.offset(2, 0, 2))
             context.waitTicks(5)
-            context.input.lookAt(stool)
+            context.input.lookAt(chair)
             context.waitTicks(5)
-            shot(context, "0-world-stool")
+            shot(context, "0-world-chair")
             moveTo(server, oldBase)
             context.waitTicks(5)
 
             woodenTables(context, server)
 
-            // The whole table with its stools, before anyone sits down.
+            // The whole table with its chairs, before anyone sits down.
             context.input.lookAt(table)
             context.waitTicks(5)
             shot(context, "0-world-overview")
@@ -127,8 +129,8 @@ class TuKuaiClientGameTest : FabricClientGameTest {
             act(server, table, TableOp.SIT, 0)
             check(server.computeOnServer<Boolean, RuntimeException> { s ->
                 val seat = s.playerList.players.first().vehicle
-                seat is SeatEntity && seat.y > table.y + 0.3 && seat.blockPosition() == table.south(StoolBlock.TABLE_DISTANCE)
-            }) { "Sitting down did not put the player on the stool" }
+                seat is SeatEntity && seat.y > table.y + 0.3 && seat.blockPosition() == table.south(ChairBlock.TABLE_DISTANCE)
+            }) { "Sitting down did not put the player on the chair" }
             act(server, table, TableOp.ADD_BOT, -1, BotLevel.NORMAL.ordinal)
             context.waitTicks(20)
             context.input.lookAt(table)
@@ -313,6 +315,85 @@ class TuKuaiClientGameTest : FabricClientGameTest {
     }
 
     /** A table with only us and computers, straight into [play], such as a hand of Tutu cards; `TUKUAI_LANG` picks the language. */
+    /**
+     * The chairs alone, to try their look quickly (`TUKUAI_ONLY=chair`): the table and its
+     * chairs from around, a row of woods, a chair placed on its own, the view from a seat and
+     * chairs in the hotbar.
+     */
+    private fun chairs(context: ClientGameTestContext) {
+        context.worldBuilder().create().use { world ->
+            world.clientLevel.waitForChunksRender()
+            val server = world.server
+            val table = server.computeOnServer<BlockPos, RuntimeException> { s -> buildScene(s) }
+            context.waitTicks(40)
+            world.clientLevel.waitForChunksRender()
+            server.runOnServer<RuntimeException> { s -> checkChairsFaceTable(s, table) }
+            val chair = table.east(ChairBlock.TABLE_DISTANCE)
+            for ((name, offset) in listOf("front" to BlockPos(3, 1, 2), "back" to BlockPos(3, 1, -2), "above" to BlockPos(1, 2, 1))) {
+                moveTo(server, chair.offset(offset))
+                context.waitTicks(5)
+                context.input.lookAt(chair)
+                context.waitTicks(5)
+                shot(context, "chair-$name")
+            }
+            moveTo(server, table.offset(-4, 0, 3))
+            context.waitTicks(5)
+            context.input.lookAt(table)
+            context.waitTicks(5)
+            shot(context, "chair-table")
+            // A chair placed by a player looking north faces them, south.
+            val lone = server.computeOnServer<BlockPos, RuntimeException> { s ->
+                val player = s.playerList.players.first()
+                val pos = table.offset(-4, 0, 5)
+                player.teleportTo(pos.x + 0.5, pos.y.toDouble(), pos.z + 2.5)
+                player.setYRot(180f)
+                val stack = ItemStack(TuKuaiContent.CHAIR_ITEM)
+                stack.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(ChairBlock.WOOD, Wood.CHERRY).with(ChairBlock.COLOR, DyeColor.LIGHT_BLUE))
+                player.setItemInHand(InteractionHand.MAIN_HAND, stack)
+                stack.useOn(UseOnContext(player, InteractionHand.MAIN_HAND, BlockHitResult(Vec3.atCenterOf(pos.below()).add(0.0, 0.5, 0.0), Direction.UP, pos.below(), false)))
+                val state = s.overworld().getBlockState(pos)
+                check(state.block is ChairBlock && state.getValue(ChairBlock.FACING) == Direction.SOUTH) { "A chair placed looking north is $state" }
+                check(state.getValue(ChairBlock.WOOD) == Wood.CHERRY && state.getValue(ChairBlock.COLOR) == DyeColor.LIGHT_BLUE) { "The placed chair lost its wood or colour: $state" }
+                pos
+            }
+            moveTo(server, lone.offset(2, 0, 3))
+            context.waitTicks(5)
+            context.input.lookAt(lone)
+            context.waitTicks(5)
+            shot(context, "chair-placed")
+            moveTo(server, oldBase)
+            context.waitTicks(5)
+            woodenTables(context, server)
+            act(server, table, TableOp.SIT, 0)
+            context.waitTicks(10)
+            context.input.lookAt(table)
+            context.waitTicks(5)
+            shot(context, "chair-seated")
+            server.runOnServer<RuntimeException> { s ->
+                val player = s.playerList.players.first()
+                Wood.available.take(9).forEachIndexed { i, wood ->
+                    val stack = ItemStack(TuKuaiContent.CHAIR_ITEM)
+                    stack.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(ChairBlock.WOOD, wood).with(ChairBlock.COLOR, DyeColor.entries[i]))
+                    player.inventory.setItem(i, stack)
+                }
+            }
+            context.waitTicks(10)
+            shot(context, "chair-hotbar")
+        }
+    }
+
+    /**
+     * Chairs set down facing north, the way stools from before chairs load, have all turned
+     * to face the table.
+     */
+    private fun checkChairsFaceTable(server: MinecraftServer, table: BlockPos) {
+        val level = server.overworld()
+        for (side in listOf(Direction.SOUTH, Direction.EAST, Direction.NORTH)) {
+            val state = level.getBlockState(table.relative(side, ChairBlock.TABLE_DISTANCE))
+            check(state.block is ChairBlock && state.getValue(ChairBlock.FACING) == side.opposite) { "The chair on the $side of the table is $state" }
+        }
+    }
+
     private fun onlyGame(context: ClientGameTestContext, play: (TestServerContext, BlockPos) -> Unit) {
         val lang = System.getenv("TUKUAI_LANG") ?: "en_us"
         if (lang != "en_us") {
@@ -1091,9 +1172,9 @@ class TuKuaiClientGameTest : FabricClientGameTest {
                 TuKuaiContent.CARD_TABLE.defaultBlockState().setValue(CardTableBlock.FACING, Direction.SOUTH).setValue(CardTableBlock.PART, part),
             )
         }
-        // Stools on the three seat sides; sitting down at the table puts you on yours.
+        // Chairs on the three seat sides; sitting down at the table puts you on yours.
         for ((side, color) in listOf(Direction.SOUTH to DyeColor.RED, Direction.EAST to DyeColor.YELLOW, Direction.NORTH to DyeColor.GREEN)) {
-            level.setBlockAndUpdate(table.relative(side, StoolBlock.TABLE_DISTANCE), TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.COLOR, color))
+            level.setBlockAndUpdate(table.relative(side, ChairBlock.TABLE_DISTANCE), TuKuaiContent.CHAIR.defaultBlockState().setValue(ChairBlock.COLOR, color))
         }
         // A lone middle block is how a table from before 3x3 tables loads. One has room to grow, one does not.
         level.setBlockAndUpdate(OLD_ROOMY.offsetFrom(base), TuKuaiContent.CARD_TABLE.defaultBlockState())
@@ -1107,7 +1188,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
     private var oldBase: BlockPos = BlockPos.ZERO
 
     /**
-     * A row of tables in different woods, each with a stool of the same wood, seen from
+     * A row of tables in different woods, each with a chair of the same wood, seen from
      * the side in daylight. Away from the rest of the test, south of the player.
      */
     private fun woodenTables(context: ClientGameTestContext, server: TestServerContext) {
@@ -1133,8 +1214,8 @@ class TuKuaiClientGameTest : FabricClientGameTest {
                 }
                 (level.getBlockEntity(center) as CardTableBlockEntity).dye(colors[i])
                 level.setBlockAndUpdate(
-                    center.south(StoolBlock.TABLE_DISTANCE),
-                    TuKuaiContent.STOOL.defaultBlockState().setValue(StoolBlock.WOOD, wood).setValue(StoolBlock.COLOR, colors[i]),
+                    center.south(ChairBlock.TABLE_DISTANCE),
+                    TuKuaiContent.CHAIR.defaultBlockState().setValue(ChairBlock.WOOD, wood).setValue(ChairBlock.COLOR, colors[i]),
                 )
             }
             start

@@ -3,10 +3,10 @@ package io.github.konyaco.tukuai.table
 import io.github.konyaco.tukuai.TuKuai
 import io.github.konyaco.tukuai.compat.*
 import io.github.konyaco.tukuai.content.CardTableBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.SeatEntity
 import io.github.konyaco.tukuai.content.SeatSpot
 import io.github.konyaco.tukuai.content.TableSeats
-import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.core.BotLevel
 import io.github.konyaco.tukuai.engine.core.GameDefinition
@@ -270,9 +270,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         among.minByOrNull { seatPosition(it).distanceToSqr(player.position()) }
 
     /**
-     * Sitting on the stool on [side] of the table, [along] blocks to the right of its middle:
+     * Sitting on the chair on [side] of the table, [along] blocks to the right of its middle:
      * takes the nearest seat on that side if it is free, or goes back to it. False if that
-     * side has no seat, so the stool is just a stool.
+     * side has no seat, so the chair is just a chair.
      */
     fun sitAt(player: ServerPlayer, side: Direction, along: Int = 0): Boolean {
         val level = level as? ServerLevel ?: return false
@@ -330,15 +330,15 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     /**
-     * On the stool just outside the table's edge in front of the seat, or on the floor there
-     * when there is no stool.
+     * On the chair just outside the table's edge in front of the seat, or on the floor there
+     * when there is no chair.
      */
     private fun seatPosition(seat: Seat): Vec3 {
         val spot = spotOf(seat)
         val side = spot.side
-        val stool = worldPosition.relative(side, table.radius + 1).relative(spot.right, spot.along)
-        if (level?.getBlockState(stool)?.block is StoolBlock) {
-            return Vec3(stool.x + 0.5, stool.y + StoolBlock.SEAT_HEIGHT - SeatEntity.HEIGHT, stool.z + 0.5)
+        val chair = chairPos(spot)
+        if (level?.getBlockState(chair)?.block is ChairBlock) {
+            return Vec3(chair.x + 0.5, chair.y + ChairBlock.SEAT_HEIGHT - SeatEntity.HEIGHT, chair.z + 0.5)
         }
         val distance = table.halfWidth + SEAT_GAP
         return Vec3(
@@ -346,6 +346,27 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             worldPosition.y.toDouble(),
             worldPosition.z + 0.5 + side.stepZ * distance + spot.right.stepZ * spot.along,
         )
+    }
+
+    /** Where a chair for [spot] stands: just outside the table's edge. */
+    private fun chairPos(spot: SeatSpot): BlockPos = worldPosition.relative(spot.side, table.radius + 1).relative(spot.right, spot.along)
+
+    /**
+     * Turns every chair that could be a seat of this table to face it, so a chair is never
+     * put the wrong way round at a table. Stools from older versions came back as chairs
+     * facing north; this turns those too.
+     */
+    private fun faceChairs(level: ServerLevel) {
+        for (side in Direction.Plane.HORIZONTAL) {
+            for (along in -(table.radius - 1)..(table.radius - 1)) {
+                val pos = chairPos(SeatSpot(side, along))
+                if (!level.isLoaded(pos)) continue
+                val state = level.getBlockState(pos)
+                if (state.block is ChairBlock && state.getValue(ChairBlock.FACING) != side.opposite) {
+                    level.setBlock(pos, state.setValue(ChairBlock.FACING, side.opposite), Block.UPDATE_ALL)
+                }
+            }
+        }
     }
 
     private fun mount(level: ServerLevel, player: ServerPlayer, seat: Seat) {
@@ -533,7 +554,10 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         ticks++
         if (!partsChecked) checkParts(level)
         if (isRemoved) return
-        if (ticks % 20 == 0L) checkPresence(level)
+        if (ticks % 20 == 0L) {
+            checkPresence(level)
+            faceChairs(level)
+        }
         val m = match
         if (m != null && m.result == null) {
             if (paused) pause() else driveTurn(level, m)

@@ -87,7 +87,7 @@
   <tr>
     <td width="33%" align="center"><img src="docs/images/craft-card-table.webp" alt="카드 테이블 조합법"><br><b>카드 테이블</b><br>양털 색은 자유입니다. 판자의 종류가 테이블의 나무를 정합니다.</td>
     <td width="33%" align="center"><img src="docs/images/craft-big-card-table.webp" alt="큰 카드 테이블 조합법"><br><b>큰 카드 테이블</b><br>카드 테이블로 만듭니다. 최대 8명이 앉을 수 있습니다.</td>
-    <td width="33%" align="center"><img src="docs/images/craft-stool.webp" alt="의자 조합법"><br><b>의자</b><br>양털이 방석 색을, 반 블록이 나무를 정합니다.</td>
+    <td width="33%" align="center"><img src="docs/images/craft-chair.webp" alt="의자 조합법"><br><b>의자</b><br>양털이 방석 색을, 반 블록이 나무를 정합니다.</td>
   </tr>
 </table>
 

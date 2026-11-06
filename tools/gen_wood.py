@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Writes the JSON for card tables and stools in every kind of wood: block states, block and
+Writes the JSON for card tables and chairs in every kind of wood: block states, block and
 item models, and recipes. Run it from the repository root after changing WOODS; the side
 textures of the tables come from gen_textures.py.
 
-A table takes its wood from the planks in its recipe, and a stool from its slab. Oak is
-the default, so tables and stools saved before they had a wood keep the oak look.
+A table takes its wood from the planks in its recipe, and a chair from its slab. Oak is
+the default, so tables and chairs saved before they had a wood keep the oak look.
 
 Block states and block models are the same for every Minecraft version and go in common/.
 Item models and recipes differ, so 26.x (in mc26/) and 1.21.1 (in versions/1.21.1/) each get
@@ -184,50 +184,65 @@ def tables():
             ))
 
 
-def stools():
+# How far each facing of a chair turns its north-facing model.
+FACINGS = [("north", 0), ("east", 90), ("south", 180), ("west", 270)]
+
+
+def chairs():
+    # The block and item keep the id "stool" they had when they were stools, so stools
+    # already placed, held or in recipes come back as chairs.
     parts = []
     for wood, log in WOODS:
-        write_block_model(f"stool_frame_{wood}", wood, {
-            "parent": "tukuai:block/stool_frame",
+        write_block_model(f"chair_frame_{wood}", wood, {
+            "parent": "tukuai:block/chair_frame",
             "textures": {"wood": f"minecraft:block/{wood}_planks", "leg": f"minecraft:block/{log}"},
         })
-        parts.append({"when": {"wood": wood}, "apply": {"model": f"tukuai:block/stool_frame_{wood}"}})
+        for facing, turn in FACINGS:
+            model = {"model": f"tukuai:block/chair_frame_{wood}"}
+            if turn:
+                model["y"] = turn
+            parts.append({"when": {"wood": wood, "facing": facing}, "apply": model})
     for color in COLORS:
-        write(f"{ASSETS}/models/block/stool_cushion_{color}.json", {
-            "parent": "tukuai:block/stool_cushion",
+        write(f"{ASSETS}/models/block/chair_cushion_{color}.json", {
+            "parent": "tukuai:block/chair_cushion",
             "textures": {"cushion": f"minecraft:block/{color}_wool"},
         })
-        parts.append({"when": {"color": color}, "apply": {"model": f"tukuai:block/stool_cushion_{color}"}})
+        for facing, turn in FACINGS:
+            model = {"model": f"tukuai:block/chair_cushion_{color}"}
+            if turn:
+                model["y"] = turn
+            parts.append({"when": {"color": color, "facing": facing}, "apply": model})
     write(f"{ASSETS}/blockstates/stool.json", {"multipart": parts})
     write(f"{V26}/assets/tukuai/items/stool.json", {"model": {
         "type": "minecraft:composite",
         "models": [
-            select("wood", [(w, f"tukuai:block/stool_frame_{w}") for w, _ in WOODS], "tukuai:block/stool_frame_oak"),
-            select("color", [(c, f"tukuai:block/stool_cushion_{c}") for c in COLORS], "tukuai:block/stool_cushion_red"),
+            select("wood", [(w, f"tukuai:block/chair_frame_{w}") for w, _ in WOODS], "tukuai:block/chair_frame_oak"),
+            select("color", [(c, f"tukuai:block/chair_cushion_{c}") for c in COLORS], "tukuai:block/chair_cushion_red"),
         ],
     }})
 
     # 1.21.1 has no composite item models, so it gets the frame and the cushion in one model
     # for every wood and colour, chosen by number.
-    with open(f"{ASSETS}/models/block/stool_frame.json", encoding="utf-8") as f:
+    with open(f"{ASSETS}/models/block/chair_frame.json", encoding="utf-8") as f:
         frame = json.load(f)
-    with open(f"{ASSETS}/models/block/stool_cushion.json", encoding="utf-8") as f:
+    with open(f"{ASSETS}/models/block/chair_cushion.json", encoding="utf-8") as f:
         cushion = json.load(f)
     item = f"{V1211}/assets/tukuai/models/item"
-    write(f"{item}/stool_whole.json", {
+    write(f"{item}/chair_whole.json", {
         "parent": frame["parent"],
         "textures": {"particle": "#wood"},
+        "display": frame["display"],
         "elements": frame["elements"] + cushion["elements"],
     })
     overrides = []
     for i, wood, log in woods_for(V1211):
         for c, color in enumerate(COLORS):
-            write(f"{item}/stool_{wood}_{color}.json", {
-                "parent": "tukuai:item/stool_whole",
+            write(f"{item}/chair_{wood}_{color}.json", {
+                "parent": "tukuai:item/chair_whole",
                 "textures": {"wood": f"minecraft:block/{wood}_planks", "leg": f"minecraft:block/{log}", "cushion": f"minecraft:block/{color}_wool"},
             })
-            overrides.append(({"tukuai:wood": i / 16, "tukuai:color": c / 16}, f"tukuai:item/stool_{wood}_{color}"))
-    write(f"{item}/stool.json", by_number("tukuai:item/stool_oak_red", overrides))
+            overrides.append(({"tukuai:wood": i / 16, "tukuai:color": c / 16}, f"tukuai:item/chair_{wood}_{color}"))
+    write(f"{item}/stool.json", by_number("tukuai:item/chair_oak_red", overrides))
 
     for version in (V26, V1211):
         for _, wood, _ in woods_for(version):
@@ -251,7 +266,7 @@ def select(prop, cases, fallback):
 
 def main():
     tables()
-    stools()
+    chairs()
 
 
 if __name__ == "__main__":

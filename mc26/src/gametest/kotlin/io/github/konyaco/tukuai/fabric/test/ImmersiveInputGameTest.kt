@@ -11,7 +11,7 @@ import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.client.gd.GdUi
 import io.github.konyaco.tukuai.client.render.CardFrame
 import io.github.konyaco.tukuai.content.CardTableBlock
-import io.github.konyaco.tukuai.content.StoolBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -328,7 +328,7 @@ class ImmersiveInputGameTest : FabricClientGameTest {
 
     private fun myCards(table: BlockPos): List<TableCard> = ClientTables[table]!!.let { it.scene(it.seatPlaces()) }.filter { it.mine }
 
-    /** A 3x3 table north of the player with a stool on each seat side, in daylight. */
+    /** A 3x3 table north of the player with a chair on each seat side, in daylight. */
     private fun buildScene(server: MinecraftServer, seats: Int = 3): BlockPos {
         val player = server.playerList.players.first()
         val level = server.overworld()
@@ -347,7 +347,7 @@ class ImmersiveInputGameTest : FabricClientGameTest {
             )
         }
         for (side in listOf(Direction.SOUTH, Direction.EAST, Direction.NORTH, Direction.WEST).take(seats)) {
-            level.setBlockAndUpdate(table.relative(side, StoolBlock.TABLE_DISTANCE), TuKuaiContent.STOOL.defaultBlockState())
+            level.setBlockAndUpdate(table.relative(side, ChairBlock.TABLE_DISTANCE), TuKuaiContent.CHAIR.defaultBlockState())
         }
         return table
     }

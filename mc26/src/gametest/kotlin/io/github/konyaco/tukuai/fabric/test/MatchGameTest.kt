@@ -5,8 +5,8 @@ import io.github.konyaco.tukuai.client.ClientConfig
 import io.github.konyaco.tukuai.client.ClientTables
 import io.github.konyaco.tukuai.client.TableScreen
 import io.github.konyaco.tukuai.content.CardTableBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.SeatEntity
-import io.github.konyaco.tukuai.content.StoolBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.core.BotLevel
@@ -38,7 +38,7 @@ import org.lwjgl.glfw.GLFW
  * A short match of Dou Dizhu from start to final standings: the scoreboard during play,
  * the menu with the card looks, the leaderboard, picking a run of cards by dragging
  * across the hand, the result of the last game of a match, the standings, a game that
- * waits while we are out of our seat, and a match stopped halfway. Also the table and stool from the side and from the stool, at their
+ * waits while we are out of our seat, and a match stopped halfway. Also the table and chair from the side and from the chair, at their
  * new heights. `TUKUAI_LANG=zh_cn` takes the pictures in another language.
  */
 class MatchGameTest : FabricClientGameTest {
@@ -62,7 +62,7 @@ class MatchGameTest : FabricClientGameTest {
             world.clientLevel.waitForChunksRender()
             botDelay(server, 0.0)
 
-            // The table and a stool from the side, standing.
+            // The table and a chair from the side, standing.
             moveTo(server, table.offset(-3, 0, 3))
             context.waitTicks(5)
             context.runOnClient<RuntimeException> { it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3.atCenterOf(table).add(0.0, -0.4, 0.0)) }
@@ -76,9 +76,9 @@ class MatchGameTest : FabricClientGameTest {
             check(server.computeOnServer<Boolean, RuntimeException> { s ->
                 val seat = s.playerList.players.first().vehicle
                 seat is SeatEntity && seat.y > table.y + 0.4
-            }) { "Sitting down did not put the player on the stool" }
+            }) { "Sitting down did not put the player on the chair" }
 
-            // Seated on the stool, looking at the middle of the table.
+            // Seated on the chair, looking at the middle of the table.
             context.runOnClient<RuntimeException> { it.player!!.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3(table.x + 0.5, table.y + CardTableBlock.TOP_HEIGHT.toDouble(), table.z + 0.5)) }
             context.waitTicks(10)
             val eye = context.computeOnClient<Double, RuntimeException> { it.player!!.eyeY - table.y }
@@ -290,7 +290,7 @@ class MatchGameTest : FabricClientGameTest {
         context.waitTicks(10)
     }
 
-    /** A 3x3 table north of the player with a stool on each seat side, on a wooden floor in daylight. */
+    /** A 3x3 table north of the player with a chair on each seat side, on a wooden floor in daylight. */
     private fun buildScene(server: MinecraftServer): BlockPos {
         val player = server.playerList.players.first()
         val level = server.overworld()
@@ -309,7 +309,7 @@ class MatchGameTest : FabricClientGameTest {
             )
         }
         for (side in listOf(Direction.SOUTH, Direction.EAST, Direction.NORTH)) {
-            level.setBlockAndUpdate(table.relative(side, StoolBlock.TABLE_DISTANCE), TuKuaiContent.STOOL.defaultBlockState())
+            level.setBlockAndUpdate(table.relative(side, ChairBlock.TABLE_DISTANCE), TuKuaiContent.CHAIR.defaultBlockState())
         }
         return table
     }

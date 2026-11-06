@@ -1,8 +1,0 @@
-{
-  "parent": "tukuai:item/stool_whole",
-  "textures": {
-    "wood": "minecraft:block/cherry_planks",
-    "leg": "minecraft:block/stripped_cherry_log",
-    "cushion": "minecraft:block/light_gray_wool"
-  }
-}

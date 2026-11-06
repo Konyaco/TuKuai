@@ -41,8 +41,8 @@ class TuKuaiFabric : ModInitializer {
         Registry.register(BuiltInRegistries.ITEM, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE_ITEM)
         Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("big_card_table"), TuKuaiContent.BIG_CARD_TABLE)
         Registry.register(BuiltInRegistries.ITEM, TuKuai.id("big_card_table"), TuKuaiContent.BIG_CARD_TABLE_ITEM)
-        Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("stool"), TuKuaiContent.STOOL)
-        Registry.register(BuiltInRegistries.ITEM, TuKuai.id("stool"), TuKuaiContent.STOOL_ITEM)
+        Registry.register(BuiltInRegistries.BLOCK, TuKuai.id("stool"), TuKuaiContent.CHAIR)
+        Registry.register(BuiltInRegistries.ITEM, TuKuai.id("stool"), TuKuaiContent.CHAIR_ITEM)
         Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, TuKuai.id("card_table"), TuKuaiContent.CARD_TABLE_ENTITY)
         Registry.register(BuiltInRegistries.ENTITY_TYPE, TuKuai.id("seat"), TuKuaiContent.SEAT)
         // 26.1 renamed Fabric's item group and payload registry methods after the game's own names.

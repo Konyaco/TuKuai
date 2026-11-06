@@ -1,7 +1,7 @@
 package io.github.konyaco.tukuai.client
 
 import io.github.konyaco.tukuai.TuKuai
-import io.github.konyaco.tukuai.content.StoolBlock
+import io.github.konyaco.tukuai.content.ChairBlock
 import io.github.konyaco.tukuai.content.TuKuaiContent
 import io.github.konyaco.tukuai.content.Wood
 import net.minecraft.client.renderer.item.ClampedItemPropertyFunction
@@ -24,11 +24,11 @@ object ItemModels {
             (stack.get(DataComponents.BLOCK_STATE)?.get(Wood.PROPERTY) ?: Wood.OAK).ordinal / 16f
         }
         val color = ClampedItemPropertyFunction { stack, _, _, _ ->
-            (stack.get(DataComponents.BLOCK_STATE)?.get(StoolBlock.COLOR) ?: DyeColor.RED).ordinal / 16f
+            (stack.get(DataComponents.BLOCK_STATE)?.get(ChairBlock.COLOR) ?: DyeColor.RED).ordinal / 16f
         }
         register(TuKuaiContent.CARD_TABLE_ITEM, WOOD, wood)
         register(TuKuaiContent.BIG_CARD_TABLE_ITEM, WOOD, wood)
-        register(TuKuaiContent.STOOL_ITEM, WOOD, wood)
-        register(TuKuaiContent.STOOL_ITEM, COLOR, color)
+        register(TuKuaiContent.CHAIR_ITEM, WOOD, wood)
+        register(TuKuaiContent.CHAIR_ITEM, COLOR, color)
     }
 }

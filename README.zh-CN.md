@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/loader-NeoForge%20%7C%20Fabric-5865F2" alt="NeoForge 和 Fabric">
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Konyaco/TuKuai" alt="MIT 许可证"></a>
 </p>
-<h3 align="center">在你的 Minecraft 世界里摆一张牌桌。<br>搬个凳子坐下，和朋友打斗地主、麻将、UNO……朋友不在，就叫电脑来凑一桌。</h3>
+<h3 align="center">在你的 Minecraft 世界里摆一张牌桌。<br>拉把椅子坐下，和朋友打斗地主、麻将、UNO……朋友不在，就叫电脑来凑一桌。</h3>
 
 <p align="center"><img src="docs/images/zh-CN/clip.webp" alt="书房里的牌桌上，玩家和两个村民打完一整局斗地主" width="100%"></p>
 
@@ -63,7 +63,7 @@
 - **牌真的摆在桌上。** 手牌立起来朝着自己，出过的牌落在桌子中间，路过的人都能围观。打开沉浸视角，直接点桌上的牌出牌。
 - **永远不缺人。** 空位随时加电脑，分简单、普通、困难三档；有人离开或掉线，电脑接着替他打。大家都走开了，牌局就停下来等人回来。
 - **一坐一晚上。** 一场比赛连打好几局、累计比分，每局都存了回放，能换任意座位的视角重看，牌桌还记着每个人的战绩。
-- **把屋子布置成你的样子。** 牌桌和凳子有各种木头，桌布和坐垫随便染色，牌背、牌面有好几套。大方桌能坐 8 个人。
+- **把屋子布置成你的样子。** 牌桌和椅子有各种木头，桌布和坐垫随便染色，牌背、牌面有好几套。大方桌能坐 8 个人。
 
 ![书房里的两张牌桌：左边在打斗地主，右边几个村民围着 UNO 牌桌](docs/images/hero.webp)
 
@@ -79,7 +79,7 @@
 | NeoForge 1.21.1 | [Kotlin for Forge](https://modrinth.com/mod/kotlin-for-forge) 5.12.0 或更新 |
 | Fabric | [Fabric API](https://modrinth.com/mod/fabric-api)、[Fabric Language Kotlin](https://modrinth.com/mod/fabric-language-kotlin) 1.13.13 或更新 |
 
-1.21.1 还没有苍白橡木，因此没有苍白橡木的牌桌和凳子。
+1.21.1 还没有苍白橡木，因此没有苍白橡木的牌桌和椅子。
 
 ### 合成
 
@@ -87,7 +87,7 @@
   <tr>
     <td width="33%" align="center"><img src="docs/images/craft-card-table.webp" alt="牌桌的合成表"><br><b>牌桌</b><br>羊毛颜色不限，木板决定桌子的木材。</td>
     <td width="33%" align="center"><img src="docs/images/craft-big-card-table.webp" alt="大方桌的合成表"><br><b>大方桌</b><br>由一张牌桌扩展而成，最多坐 8 人。</td>
-    <td width="33%" align="center"><img src="docs/images/craft-stool.webp" alt="凳子的合成表"><br><b>凳子</b><br>羊毛决定坐垫颜色，台阶决定木材。</td>
+    <td width="33%" align="center"><img src="docs/images/craft-chair.webp" alt="椅子的合成表"><br><b>椅子</b><br>羊毛决定坐垫颜色，台阶决定木材。</td>
   </tr>
 </table>
 
@@ -99,7 +99,7 @@
 2. **右键打开牌桌**，点「坐下」入座，空位可点「添加电脑」补上。
 3. **选择游戏和规则**，点「开始」。
 
-凳子放在牌桌有座位一侧的外边正中，右键凳子即可坐到对应座位。大方桌占 5×5 格，每边两个座位，最多坐 8 人。
+椅子放在牌桌有座位一侧的外边正中，右键椅子即可坐到对应座位。大方桌占 5×5 格，每边两个座位，最多坐 8 人。
 
 界面支持简体中文、繁体中文、英文、日文和韩文，随游戏语言切换。
 
