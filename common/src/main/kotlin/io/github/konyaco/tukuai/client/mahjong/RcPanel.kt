@@ -148,14 +148,16 @@ class RcPanel(host: PanelHost) : MjPanelBase<RcView>(host) {
         val text = MjText.wind(view.seatWind(seat)).copy()
         if (seat == view.dealer) text.append(Component.translatable("tukuai.mahjong.dealer_badge"))
         if (view.riichi.getOrElse(seat) { false }) text.append(" ").append(Component.translatable("tukuai.riichi.riichi"))
+        if (seat == view.seat && view.furiten && view.hand.size % 3 == 1) text.append(" ").append(Component.translatable("tukuai.riichi.furiten"))
         return text
     }
 
     override fun score(view: RcView, seat: Seat): String = "${view.points[seat]}"
 
-    override fun info(table: ClientTable, view: RcView): List<Component> = listOf(
+    override fun info(table: ClientTable, view: RcView): List<Component> = listOfNotNull(
+        Component.translatable("tukuai.riichi.hand_title", MjText.wind(view.round), view.kyoku + 1, view.honba),
         Component.translatable("tukuai.riichi.live_wall", view.liveLeft.coerceAtLeast(0)),
-        Component.translatable("tukuai.riichi.round", MjText.wind(view.round), view.kyoku + 1, view.honba, view.sticks),
+        if (view.sticks > 0) Component.translatable("tukuai.riichi.sticks", view.sticks) else null,
     )
 
     override fun waitHints(view: RcView, concealed: List<Tile>): List<WaitHint> {
@@ -175,21 +177,9 @@ class RcPanel(host: PanelHost) : MjPanelBase<RcView>(host) {
         }
     }
 
-    /** The dora indicators, and furiten when the player is, under the buttons in the top right. */
-    override fun renderExtra(g: GuiGraphicsExtractor, table: ClientTable, view: RcView) {
-        val label = Component.translatable("tukuai.riichi.dora_indicators")
-        val w = MjArt.width(SMALL_SCALE)
-        val y = if (screen.inWorld) TOP_BOX_Y + BOX_H + 26 else 48
-        var x = width - 8 - view.doraIndicators.size * w
-        PanelText.text(g, label, x - 4, y + 3, TableScreen.GRAY, PanelText.Align.RIGHT)
-        for (t in view.doraIndicators) {
-            MjArt.draw(g, t, x, y, SMALL_SCALE)
-            x += w
-        }
-        if (view.furiten && view.seat != null && view.hand.size % 3 == 1) {
-            PanelText.text(g, Component.translatable("tukuai.riichi.furiten"), width - 8, y + MjArt.height(SMALL_SCALE) + 2, TableScreen.RED, PanelText.Align.RIGHT)
-        }
-    }
+    override fun centreTiles(view: RcView): List<Tile> = view.doraIndicators
+
+    override fun centreTilesLabel(view: RcView): Component = Component.translatable("tukuai.riichi.dora_indicators")
 
     // ---- The result ----------------------------------------------------------------------------
 

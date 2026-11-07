@@ -148,6 +148,7 @@ k("tukuai.mahjong.dealer_badge", "·庄", "·莊", " · Dealer", "・親", " · 
 k("tukuai.mahjong.not_ready_after", "打出后不能听牌", "打出後不能聽牌", "Not ready after this discard", "捨てても聴牌しない", "버려도 텐파이가 아님")
 k("tukuai.mahjong.left_total", "共剩 %s 张", "共剩 %s 張", "%s left", "残り %s 枚", "남은 패 %s장")
 k("tukuai.mahjong.cannot_win", "所听的牌均不能和牌", "所聽的牌均不能和牌", "none of them would win", "どれも和了できない", "어느 패로도 화료할 수 없음")
+k("tukuai.mahjong.dealer_short", "庄", "莊", "Dealer", "親", "선")
 k("tukuai.mahjong.next_hand", "下一局", "下一局", "Next hand", "次の局へ", "다음 국")
 
 # ---- Guobiao: the game at the table --------------------------------------------------------------
@@ -164,6 +165,7 @@ k("tukuai.guobiao.note.can_win", "可以自摸和牌（%s），也可以打出�
   "You can win on this tile (%s), or discard to play on", "ツモ和了できます（%s）。牌を捨てて続けることもできます", "쯔모로 화료할 수 있습니다 (%s). 패를 버리고 계속할 수도 있습니다")
 k("tukuai.guobiao.note.can_win_claim", "可以和这张牌（%s）", "可以和這張牌（%s）", "You can win on this tile (%s)", "この牌で和了できます（%s）", "이 패로 화료할 수 있습니다 (%s)")
 k("tukuai.guobiao.round", "%s风圈第 %s 局（%s/%s）", "%s風圈第 %s 局（%s/%s）", "%s round, hand %s (%s of %s)", "%s風圏 第 %s 局（%s/%s）", "%s풍권 제%s국 (%s/%s)")
+k("tukuai.guobiao.progress", "共 %s/%s 局", "共 %s/%s 局", "Hand %s of %s", "%s/%s 局", "%s/%s국")
 k("tukuai.guobiao.hand_title", "%s风圈第 %s 局", "%s風圈第 %s 局", "%s round, hand %s", "%s風圏 第 %s 局", "%s풍권 제%s국")
 k("tukuai.guobiao.won", "%s 和牌", "%s 和牌", "%s won", "%s の和了", "%s 님 화료")
 k("tukuai.guobiao.robbed_from", "抢 %s 的杠和牌", "搶 %s 的槓和牌", "Robbed %s's kong", "%s の加槓を搶槓", "%s 님의 가깡을 창깡")

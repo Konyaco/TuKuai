@@ -147,6 +147,7 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
             Minecraft.getInstance().soundManager.play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.4f))
         }
         wasMyTurn = myTurn
+        buttonsLeft = width
         if (showingResult(view)) {
             resultButtons(table, view)
             return
@@ -155,12 +156,14 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
         row(buttonY(), buttons(table, view))
     }
 
-    /** Buttons side by side, centred. */
-    protected fun row(y: Int, buttons: List<Btn>, w: Int = 56) {
+    /** Buttons side by side: on the right over the hand, or centred in the immersive view. */
+    protected fun row(y: Int, buttons: List<Btn>, w: Int = 52) {
         if (buttons.isEmpty()) return
-        val gap = 6
+        val gap = 4
         val widths = buttons.map { maxOf(w, font.width(it.text) + 12) }
-        var x = (width - (widths.sum() + gap * (buttons.size - 1))) / 2
+        val total = widths.sum() + gap * (buttons.size - 1)
+        var x = if (screen.inWorld) (width - total) / 2 else width - MARGIN - total
+        buttonsLeft = x
         buttons.forEachIndexed { i, b ->
             screen.button(b.text, x, y, widths[i], b.active) { b.press() }
             x += widths[i] + gap
@@ -179,12 +182,17 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
 
     protected fun handY() = height - MjArt.height(HAND_SCALE) - 6
 
-    /** The row with your name, badges and waits on the left and the wall on the right. */
-    protected fun labelY() = if (screen.inWorld) buttonY() - 34 else handY() - RAISE - 11
+    /** The row with your name, badges and waits, left of the buttons. */
+    protected fun labelY() = if (screen.inWorld) buttonY() - 34 else handY() - RAISE - 12
 
-    protected fun buttonY() = if (screen.inWorld) height - BOTTOM_BUTTONS else handY() - 36
+    /** The buttons stand right over the hand, on the right; in the immersive view above the hotbar. */
+    protected fun buttonY() = if (screen.inWorld) height - BOTTOM_BUTTONS else handY() - RAISE - 22
 
-    override fun controlsY(): Int = buttonY()
+    /** Where the row of buttons starts on the left, as last laid out. */
+    private var buttonsLeft = Int.MAX_VALUE
+
+    /** The replay viewer puts its controls over your row, where the buttons would be. */
+    override fun controlsY(): Int = if (screen.interactive) buttonY() else labelY() - 26
 
     private fun handLeft(view: V, count: Int, apart: Boolean, me: Seat): Int {
         val w = MjArt.width(HAND_SCALE)
@@ -279,8 +287,13 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
 
     // ---- Drawing -------------------------------------------------------------------------------
 
-    private enum class Place { LEFT, TOP, RIGHT }
-
+    /**
+     * The table, laid out as one sits at it: a box in the middle with the round and the wall,
+     * the four ponds round it, each in front of its player, the other three players' names,
+     * points and melds along the edges, and your hand along the bottom with your row over it.
+     * In the immersive view the ponds lie on the table itself, so only the names and the box
+     * are drawn, at the top.
+     */
     override fun render(g: GuiGraphicsExtractor, table: ClientTable, mouseX: Int, mouseY: Int) {
         val view = view(table) ?: return
         val me = table.snapshot.you ?: view.seat ?: 0
@@ -290,75 +303,101 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
             return
         }
         hints(view)
-        renderInfo(g, table, view)
-        renderBox(g, table, view, (me + 3) % 4, Place.LEFT)
-        renderBox(g, table, view, (me + 2) % 4, Place.TOP)
-        renderBox(g, table, view, (me + 1) % 4, Place.RIGHT)
-        renderMyDiscards(g, view, me)
+        val box = renderCentre(g, table, view)
+        if (!screen.inWorld) {
+            renderPond(g, view, me, box, Side.BOTTOM)
+            renderPond(g, view, (me + 1) % 4, box, Side.RIGHT)
+            renderPond(g, view, (me + 2) % 4, box, Side.TOP)
+            renderPond(g, view, (me + 3) % 4, box, Side.LEFT)
+        }
+        renderTag(g, table, view, (me + 3) % 4, Side.LEFT, box)
+        renderTag(g, table, view, (me + 2) % 4, Side.TOP, box)
+        renderTag(g, table, view, (me + 1) % 4, Side.RIGHT, box)
         renderPrompt(g, table, view)
         renderSelf(g, table, view, me, mouseX, mouseY)
         renderExtra(g, table, view)
     }
 
-    /** Anything else the rule set shows during a hand, such as the dora indicators. */
+    /** A colour to mark a tile in your hand with along its bottom, such as the void suit in Sichuan mahjong; 0 for none. */
+    protected open fun markColor(view: V, tile: Tile): Int = 0
+
+    /** Anything else the rule set shows during a hand. */
     protected open fun renderExtra(g: GuiGraphicsExtractor, table: ClientTable, view: V) {}
 
-    /** The wall left, the round and the dealer: at the right of your row, or in the immersive view in the bottom right corner. */
-    private fun renderInfo(g: GuiGraphicsExtractor, table: ClientTable, view: V) {
+    /** Tiles the box in the middle shows under its lines, such as the dora indicators. */
+    protected open fun centreTiles(view: V): List<Tile> = emptyList()
+
+    /** A line under the box's tiles, such as their name. */
+    protected open fun centreTilesLabel(view: V): Component? = null
+
+    private enum class Side { BOTTOM, RIGHT, TOP, LEFT }
+
+    /** The box in the middle: left, top, right, bottom. */
+    private data class Box(val left: Int, val top: Int, val right: Int, val bottom: Int) {
+        val cx: Int get() = (left + right) / 2
+        val cy: Int get() = (top + bottom) / 2
+    }
+
+    private val pondW get() = MjArt.width(POND_SCALE)
+    private val pondH get() = MjArt.height(POND_SCALE) + 1
+
+    /** How far down the table area reaches: just over the prompt. */
+    private fun tableBottom() = buttonY() - 24
+
+    private fun renderCentre(g: GuiGraphicsExtractor, table: ClientTable, view: V): Box {
         val lines = info(table, view)
-        if (screen.inWorld) {
-            lines.forEachIndexed { i, line -> PanelText.text(g, line, width - 8, height - CORNER_TOP + i * 11, TableScreen.GRAY, PanelText.Align.RIGHT) }
-            return
+        val tiles = centreTiles(view)
+        val label = if (tiles.isNotEmpty()) centreTilesLabel(view) else null
+        val w = maxOf(lines.maxOfOrNull { font.width(it) } ?: 0, tiles.size * MjArt.width(SMALL_SCALE), label?.let { font.width(it) } ?: 0, 6 * pondW) + 10
+        val h = lines.size * 10 + (if (tiles.isNotEmpty()) MjArt.height(SMALL_SCALE) + 3 else 0) + (if (label != null) 10 else 0) + 6
+        // In the immersive view the box sits a little left of the middle, leaving the player across room beside it.
+        val cx = if (screen.inWorld) width / 2 - 24 else width / 2
+        val cy = if (screen.inWorld) TOP_BOX_Y + h / 2 else (TOP_LIMIT + tableBottom()) / 2
+        val box = Box(cx - w / 2, cy - h / 2, cx + (w + 1) / 2, cy + (h + 1) / 2)
+        g.fill(box.left, box.top, box.right, box.bottom, 0xC0101418.toInt())
+        frame(g, box.left, box.top, box.right - box.left, box.bottom - box.top, 0x60FFD24A)
+        var y = box.top + 4
+        for ((i, line) in lines.withIndex()) {
+            g.centeredText(font, line, cx, y, if (i == 0) TableScreen.YELLOW else TableScreen.WHITE)
+            y += 10
         }
-        val line = Component.empty()
-        lines.forEachIndexed { i, l -> if (i > 0) line.append(" · "); line.append(l) }
-        g.text(font, line, width - 8 - font.width(line), labelY(), TableScreen.GRAY, true)
+        if (label != null) {
+            g.centeredText(font, label, cx, y, TableScreen.GRAY)
+            y += 10
+        }
+        if (tiles.isNotEmpty()) MjArt.row(g, tiles, cx - tiles.size * MjArt.width(SMALL_SCALE) / 2, y + 1, SMALL_SCALE)
+        return box
     }
 
-    private fun renderBox(g: GuiGraphicsExtractor, table: ClientTable, view: V, seat: Seat, place: Place) {
-        val compact = ClientConfig.immersive && screen.interactive
-        val boxW = if (compact) 116 else 126
-        val margin = if (compact) 4 else 8
-        val x = when (place) {
-            Place.LEFT -> margin
-            Place.TOP -> width / 2 - boxW / 2
-            Place.RIGHT -> width - margin - boxW
-        }
-        val y = if (place == Place.TOP) TOP_BOX_Y else if (compact) SIDE_BOX_Y + 6 else SIDE_BOX_Y
-        val acting = live(table) && view.toAct == seat && !view.handOver
-        g.fill(x - 2, y - 2, x + boxW + 2, y + BOX_H, if (acting) 0xA0806020.toInt() else 0x80202830.toInt())
-        val score = score(view, seat)
-        val scoreW = score?.let { font.width(it) + 4 } ?: 0
-        val name = PanelText.seatLabel(table, seat).string
-        g.text(font, font.plainSubstrByWidth(name, boxW - scoreW), x, y + 2, TableScreen.WHITE, true)
-        if (score != null) g.text(font, Component.literal(score), x + boxW - font.width(score), y + 2, TableScreen.GRAY, true)
-        MjArt.drawBack(g, x, y + 12, 0.25f)
-        g.text(font, Component.literal(if (compact) "${view.handCounts[seat]}" else "× ${view.handCounts[seat]}"), x + 10, y + 13, TableScreen.WHITE, true)
-        badge(view, seat)?.let { g.text(font, it, x + boxW - font.width(it), y + 13, TableScreen.YELLOW, true) }
-        if (acting) PanelText.timer(g, table, x + boxW, y + 24, alignRight = true)
-        val end = renderMelds(g, view.melds[seat], x, y + 24, SMALL_SCALE)
-        renderFlowers(g, view.flowers.getOrElse(seat) { emptyList() }, end + 2, y + 24)
-        if (screen.inWorld) return
-        val w = MjArt.width(SMALL_SCALE)
-        when (place) {
-            Place.LEFT -> renderDiscards(g, view, seat, x + boxW + 6, y, ROW)
-            Place.RIGHT -> renderDiscards(g, view, seat, x - 6 - ROW * w, y, ROW)
-            Place.TOP -> renderDiscards(g, view, seat, x + boxW / 2 - ROW * w / 2, y + BOX_H + 3, ROW)
-        }
-    }
-
-    /** A seat's discards, [perRow] to a row from ([x], [y]), the one being claimed framed and the sideways one marked. */
-    private fun renderDiscards(g: GuiGraphicsExtractor, view: V, seat: Seat, x: Int, y: Int, perRow: Int) {
+    /**
+     * A seat's pond, six to a row, on its side of the box: yours below it, the player across
+     * above it with the rows growing upwards, the others beside it. Rows squeeze together when
+     * there are more than the room allows.
+     */
+    private fun renderPond(g: GuiGraphicsExtractor, view: V, seat: Seat, box: Box, side: Side) {
         val tiles = view.discards[seat]
-        val w = MjArt.width(SMALL_SCALE)
-        val h = MjArt.height(SMALL_SCALE)
+        if (tiles.isEmpty()) return
+        val rows = (tiles.size + POND_ROW - 1) / POND_ROW
+        val room = when (side) {
+            Side.BOTTOM -> tableBottom() - box.bottom - 3
+            Side.TOP -> box.top - 3 - TOP_LIMIT
+            else -> tableBottom() - box.top
+        }
+        val pitch = if (rows <= 1) pondH else minOf(pondH, (room - pondH) / (rows - 1)).coerceAtLeast(4)
+        val rowW = POND_ROW * pondW
         val turned = view.sideways(seat)
         tiles.forEachIndexed { i, tile ->
-            val tx = x + (i % perRow) * w
-            val ty = y + (i / perRow) * (h + 1)
-            MjArt.draw(g, tile, tx, ty, SMALL_SCALE)
-            if (i == turned) frame(g, tx, ty, w, h, RIICHI_MARK)
-            if (view.claimFrom == seat && i == tiles.size - 1 && view.claimingDiscard) frame(g, tx, ty, w, h, MjScene.CLAIM_COLOR)
+            val row = i / POND_ROW
+            val col = i % POND_ROW
+            val (x, y) = when (side) {
+                Side.BOTTOM -> box.cx - rowW / 2 + col * pondW to box.bottom + 3 + row * pitch
+                Side.TOP -> box.cx - rowW / 2 + col * pondW to box.top - 3 - pondH - row * pitch
+                Side.RIGHT -> box.right + 4 + col * pondW to box.top + row * pitch
+                Side.LEFT -> box.left - 4 - rowW + col * pondW to box.top + row * pitch
+            }
+            MjArt.draw(g, tile, x, y, POND_SCALE)
+            if (i == turned) frame(g, x, y, pondW, pondH - 1, RIICHI_MARK)
+            if (view.claimFrom == seat && i == tiles.size - 1 && view.claimingDiscard) frame(g, x, y, pondW, pondH - 1, MjScene.CLAIM_COLOR)
         }
     }
 
@@ -369,8 +408,58 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
         g.fill(x + w, y, x + w + 1, y + h, color)
     }
 
+    /**
+     * Another player: name and points, their wind and how many tiles they hold, then their melds
+     * and flowers, in a panel at the edge on their side; lit while it is their move.
+     */
+    private fun renderTag(g: GuiGraphicsExtractor, table: ClientTable, view: V, seat: Seat, side: Side, box: Box) {
+        val w = TAG_W
+        // Melds, then flowers, wrapped to the panel's width: (x offset, row) for each.
+        val tw = MjArt.width(MELD_SCALE)
+        val pieces = view.melds[seat].map { it.tiles.size * tw + 2 } + view.flowers.getOrElse(seat) { emptyList() }.map { MjArt.width(FLOWER_SCALE) }
+        val places = ArrayList<Pair<Int, Int>>()
+        var px = 0
+        var row = 0
+        for (piece in pieces) {
+            if (px > 0 && px + piece > w) {
+                px = 0
+                row++
+            }
+            places += px to row
+            px += piece
+        }
+        val rowH = MjArt.height(MELD_SCALE) + 1
+        val h = if (pieces.isNotEmpty()) 22 + (row + 1) * rowH + 1 else 22
+        val (x, y) = when (side) {
+            Side.LEFT -> MARGIN to SIDE_TAG_Y
+            Side.RIGHT -> width - MARGIN - w to SIDE_TAG_Y
+            // Across the table: beside the pond above the box, clear of the corners.
+            else -> if (screen.inWorld) box.right + 6 to TOP_BOX_Y else box.cx + POND_ROW * pondW / 2 + 5 to TOP_BOX_Y
+        }
+        val acting = live(table) && view.toAct == seat && !view.handOver
+        g.fill(x - 2, y - 2, x + w + 2, y + h, if (acting) 0xB0806020.toInt() else 0x90202830.toInt())
+        if (acting) g.fill(x - 2, y - 2, x - 1, y + h, 0xFFFFD24A.toInt())
+        // The name on top; under it the tiles held, the points and the wind.
+        g.text(font, font.plainSubstrByWidth(PanelText.seatLabel(table, seat).string, w), x, y + 1, TableScreen.WHITE, true)
+        MjArt.drawBack(g, x, y + 11, 0.22f)
+        val count = "${view.handCounts[seat]}"
+        g.text(font, Component.literal(count), x + 9, y + 12, TableScreen.WHITE, true)
+        val badge = badge(view, seat)?.let { font.plainSubstrByWidth(it.string, w / 2) }
+        if (badge != null) g.text(font, badge, x + w - font.width(badge), y + 12, TableScreen.YELLOW, true)
+        if (acting) {
+            PanelText.timer(g, table, x + 13 + font.width(count), y + 12, alignRight = false)
+        } else {
+            score(view, seat)?.let { g.text(font, Component.literal(it), x + 13 + font.width(count), y + 12, TableScreen.GRAY, true) }
+        }
+        view.melds[seat].forEachIndexed { i, meld -> renderMelds(g, listOf(meld), x + places[i].first, y + 22 + places[i].second * rowH, MELD_SCALE, gap = 2) }
+        view.flowers.getOrElse(seat) { emptyList() }.forEachIndexed { i, f ->
+            val (fx, fr) = places[view.melds[seat].size + i]
+            MjArt.draw(g, f, x + fx, y + 22 + fr * rowH, FLOWER_SCALE)
+        }
+    }
+
     /** Melds side by side from [x]; returns the x past the last. A concealed kong shows its ends face down. */
-    protected fun renderMelds(g: GuiGraphicsExtractor, melds: List<Meld>, x: Int, y: Int, scale: Float): Int {
+    protected fun renderMelds(g: GuiGraphicsExtractor, melds: List<Meld>, x: Int, y: Int, scale: Float, gap: Int = 3): Int {
         var at = x
         val w = MjArt.width(scale)
         for (meld in melds) {
@@ -378,7 +467,7 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
                 if (meld.kind == MeldKind.CONCEALED_KONG && (i == 0 || i == 3)) MjArt.drawBack(g, at, y, scale) else MjArt.draw(g, tile, at, y, scale)
                 at += w
             }
-            at += 3
+            at += gap
         }
         return at
     }
@@ -387,33 +476,32 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
     protected fun renderFlowers(g: GuiGraphicsExtractor, flowers: List<Tile>, x: Int, y: Int): Int {
         var at = x
         for (f in flowers) {
-            MjArt.draw(g, f, at, y + 2, FLOWER_SCALE)
+            MjArt.draw(g, f, at, y, FLOWER_SCALE)
             at += MjArt.width(FLOWER_SCALE)
         }
         return at
     }
 
-    /** Your discards, twelve to a row, over the buttons; in the immersive view they are on the table. */
-    private fun renderMyDiscards(g: GuiGraphicsExtractor, view: V, me: Seat) {
-        val tiles = view.discards[me]
-        if (tiles.isEmpty() || screen.inWorld) return
-        val w = MjArt.width(SMALL_SCALE)
-        val h = MjArt.height(SMALL_SCALE) + 1
-        val rows = (tiles.size + MY_ROW - 1) / MY_ROW
-        renderDiscards(g, view, me, width / 2 - MY_ROW * w / 2, buttonY() - 24 - rows * h, MY_ROW)
-    }
-
-    /** What this turn asks of you, or whom everyone waits for: over the buttons, or in the immersive view under the top box. */
+    /**
+     * What this turn asks of you, in yellow, and what was just played, in white: right above
+     * the buttons, aligned with them on the right; in the immersive view under the box at the top.
+     */
     private fun renderPrompt(g: GuiGraphicsExtractor, table: ClientTable, view: V) {
-        val y = if (screen.inWorld) TOP_BOX_Y + BOX_H + 12 else buttonY() - 11
         val (line, ask) = prompt(table, view, asked(table, view))
-        if (line != null) g.centeredText(font, line, width / 2, y - 10, TableScreen.WHITE)
-        if (ask != null) g.centeredText(font, ask, width / 2, y, TableScreen.YELLOW)
+        if (screen.inWorld) {
+            val y = TOP_BOX_Y + 50
+            if (line != null) g.centeredText(font, line, width / 2, y, TableScreen.WHITE)
+            if (ask != null) g.centeredText(font, ask, width / 2, y + 10, TableScreen.YELLOW)
+            return
+        }
+        val y = buttonY() - 11
+        if (ask != null) PanelText.text(g, ask, width - MARGIN, y, TableScreen.YELLOW, PanelText.Align.RIGHT)
+        if (line != null) PanelText.text(g, line, width - MARGIN, if (ask != null) y - 10 else y, TableScreen.WHITE, PanelText.Align.RIGHT)
     }
 
     /**
-     * Your hand and melds along the bottom, and your row over it: name, badges, the clock and
-     * what you wait on. In the immersive view the hand is on the table and the rest goes in
+     * Your hand and melds along the bottom, and your row over it: name, points, wind, the clock
+     * and what you wait on. In the immersive view the hand is on the table and the rest goes in
      * the bottom left corner, beside the hotbar.
      */
     private fun renderSelf(g: GuiGraphicsExtractor, table: ClientTable, view: V, me: Seat, mouseX: Int, mouseY: Int) {
@@ -421,30 +509,26 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
         val label = if (!seen) Component.translatable("tukuai.table.watching") else PanelText.seatLabel(table, me)
         val corner = screen.inWorld
         val labelY = if (corner) height - CORNER_TOP else labelY()
-        g.text(font, label, 8, labelY, TableScreen.WHITE, true)
+        val acting = live(table) && view.toAct == me && !view.handOver
+        g.text(font, label, MARGIN, labelY, if (acting) TableScreen.YELLOW else TableScreen.WHITE, true)
         if (!seen) return
-        var x = 8 + font.width(label) + 6
+        var x = MARGIN + font.width(label) + 6
         score(view, me)?.let {
             g.text(font, Component.literal(it), x, labelY, TableScreen.GRAY, true)
+            x += font.width(it) + 6
+        }
+        badge(view, me)?.let {
+            g.text(font, it, x, labelY, TableScreen.YELLOW, true)
             x += font.width(it) + 6
         }
         if (asked(table, view) && table.timerTicks() >= 0) {
             PanelText.timer(g, table, x, labelY, alignRight = false)
             x += font.width(Component.translatable("tukuai.table.seconds", (table.timerTicks() + 19) / 20)) + 6
         }
-        val rowY = if (corner) labelY + 11 else labelY
-        if (corner) x = 8
-        badge(view, me)?.let {
-            g.text(font, it, x, rowY, TableScreen.YELLOW, true)
-            x += font.width(it) + 6
-        }
         if (corner) {
-            renderWaits(g, table, view, 8, rowY + 13, mouseX, mouseY, me, summary = false)
+            renderWaits(g, table, view, MARGIN, labelY + 13, mouseX, mouseY, me, summary = false)
         } else {
-            // The row ends where the wall and round start on the right.
-            val info = Component.empty()
-            info(table, view).forEachIndexed { i, l -> if (i > 0) info.append(" · "); info.append(l) }
-            renderWaits(g, table, view, x, labelY, mouseX, mouseY, me, limit = width - 14 - font.width(info))
+            renderWaits(g, table, view, x, labelY, mouseX, mouseY, me, limit = buttonsLeft - 6)
         }
         if (screen.inWorld || view.handOver) return
         val held = shownHand(view, me)
@@ -461,6 +545,7 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
             MjArt.draw(g, tile, tx, ty, HAND_SCALE, dim = playing && !canDiscard(view, tile), tint = if (hover && !picked) 0x30FFFFFF else 0)
             // A tile whose discard leaves the hand ready gets a mark over it: green when it could win, yellow when not.
             ready[tile]?.let { ok -> g.fill(tx + 3, ty - 5, tx + w - 3, ty - 2, if (ok) READY_MARK else NOT_READY_MARK) }
+            markColor(view, tile).takeIf { it != 0 }?.let { g.fill(tx + 1, ty + MjArt.height(HAND_SCALE) - 3, tx + w - 1, ty + MjArt.height(HAND_SCALE) - 1, it) }
             if (picked) frame(g, tx, ty, w, MjArt.height(HAND_SCALE), 0xFFFFD84A.toInt())
             end = tx + w
         }
@@ -524,14 +609,19 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
         const val SMALL_SCALE = 0.28f
         private const val FLOWER_SCALE = 0.22f
 
-        /** How many of another player's discards go in a row, and of your own. */
-        private const val ROW = 5
-        private const val MY_ROW = 12
+        private const val POND_SCALE = 0.25f
+        private const val MELD_SCALE = 0.22f
+        private const val POND_ROW = 6
+        private const val MARGIN = 8
+        private const val TAG_W = 80
+
+        /** The table area starts below the scoreboard row at the top. */
+        private const val TOP_LIMIT = 14
+        private const val SIDE_TAG_Y = 62
         private const val RAISE = 6
         private const val APART = 6
         private const val MELD_GAP = 6
         const val TOP_BOX_Y = 4
-        private const val SIDE_BOX_Y = 66
         const val BOX_H = 38
         const val RESULT_TOP = 30
         private const val BOTTOM_BUTTONS = 64

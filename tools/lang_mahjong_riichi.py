@@ -118,6 +118,7 @@ k("tukuai.riichi.no_yaku", "无役", "無役", "no yaku", "役なし", "역 없�
 k("tukuai.riichi.no_yaku_waits", "所听的牌均无役或振听", "所聽的牌均無役或振聽", "none has a yaku you can win with", "どの待ちも役がないかフリテン", "어느 대기패도 역이 없거나 후리텐")
 k("tukuai.riichi.live_wall", "余牌 %s", "餘牌 %s", "Tiles left: %s", "残り %s 枚", "남은 패 %s")
 k("tukuai.riichi.round", "%s %s 局 %s 本场 · 供托 %s", "%s %s 局 %s 本場 · 供託 %s", "%s %s, %s honba, %s sticks", "%s%s局 %s本場・供託 %s", "%s %s국 %s본장 · 공탁 %s")
+k("tukuai.riichi.sticks", "供托 %s", "供託 %s", "%s riichi sticks", "供託 %s", "공탁 %s")
 k("tukuai.riichi.hand_title", "%s %s 局 %s 本场", "%s %s 局 %s 本場", "%s %s, %s honba", "%s%s局 %s本場", "%s %s국 %s본장")
 k("tukuai.riichi.won_tsumo", "%s 自摸和牌", "%s 自摸和牌", "%s won by tsumo", "%s のツモ和了", "%s 님 쯔모 화료")
 k("tukuai.riichi.won_ron", "%s 荣和 %s 打出的牌", "%s 榮和 %s 打出的牌", "%s won on %s's discard", "%s が %s からロン", "%s 님이 %s 님에게서 론")

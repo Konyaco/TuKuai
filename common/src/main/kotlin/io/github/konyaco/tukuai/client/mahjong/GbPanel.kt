@@ -122,8 +122,9 @@ class GbPanel(host: PanelHost) : MjPanelBase<GbView>(host) {
     override fun score(view: GbView, seat: Seat): String = view.scores[seat].let { if (it > 0) "+$it" else "$it" }
 
     override fun info(table: ClientTable, view: GbView): List<Component> = listOf(
+        Component.translatable("tukuai.guobiao.hand_title", MjText.wind(view.prevalentWind), view.handIndex % 4 + 1),
+        Component.translatable("tukuai.guobiao.progress", view.handIndex + 1, view.rules.hands),
         Component.translatable("tukuai.mahjong.wall", view.wallLeft),
-        Component.translatable("tukuai.guobiao.round", MjText.wind(view.prevalentWind), view.handIndex % 4 + 1, view.handIndex + 1, view.rules.hands),
     )
 
     override fun waitHints(view: GbView, concealed: List<Tile>): List<WaitHint> {

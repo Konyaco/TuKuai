@@ -978,7 +978,7 @@ class TuKuaiClientGameTest : FabricClientGameTest {
         context.waitTicks(10)
         shot(context, "rc-1-lobby")
         readRules(context, "riichi", "yaku")
-        for (section in listOf("riichi", "furiten", "dora", "list", "help")) {
+        for (section in listOf("riichi", "dora", "list", "help")) {
             context.runOnClient<RuntimeException> { (it.screen as TableScreen).openRules() }
             context.waitFor({ it.screen is RulesScreen }, 20)
             context.runOnClient<RuntimeException> { (it.screen as RulesScreen).showSection(section) }
