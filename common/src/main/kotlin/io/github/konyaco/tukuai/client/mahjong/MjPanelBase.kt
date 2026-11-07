@@ -297,7 +297,11 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
         renderMyDiscards(g, view, me)
         renderPrompt(g, table, view)
         renderSelf(g, table, view, me, mouseX, mouseY)
+        renderExtra(g, table, view)
     }
+
+    /** Anything else the rule set shows during a hand, such as the dora indicators. */
+    protected open fun renderExtra(g: GuiGraphicsExtractor, table: ClientTable, view: V) {}
 
     /** The wall left, the round and the dealer: at the right of your row, or in the immersive view in the bottom right corner. */
     private fun renderInfo(g: GuiGraphicsExtractor, table: ClientTable, view: V) {
@@ -434,7 +438,14 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
             g.text(font, it, x, rowY, TableScreen.YELLOW, true)
             x += font.width(it) + 6
         }
-        if (corner) renderWaits(g, table, view, 8, rowY + 13, mouseX, mouseY, me, summary = false) else renderWaits(g, table, view, x, labelY, mouseX, mouseY, me)
+        if (corner) {
+            renderWaits(g, table, view, 8, rowY + 13, mouseX, mouseY, me, summary = false)
+        } else {
+            // The row ends where the wall and round start on the right.
+            val info = Component.empty()
+            info(table, view).forEachIndexed { i, l -> if (i > 0) info.append(" · "); info.append(l) }
+            renderWaits(g, table, view, x, labelY, mouseX, mouseY, me, limit = width - 14 - font.width(info))
+        }
         if (screen.inWorld || view.handOver) return
         val held = shownHand(view, me)
         val y = handY()
@@ -474,7 +485,7 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
      * a tile picked or under the mouse, those you would wait on after discarding it. A wait
      * that would not count at this table is greyed.
      */
-    private fun renderWaits(g: GuiGraphicsExtractor, table: ClientTable, view: V, x: Int, y: Int, mouseX: Int, mouseY: Int, me: Seat, summary: Boolean = true) {
+    private fun renderWaits(g: GuiGraphicsExtractor, table: ClientTable, view: V, x: Int, y: Int, mouseX: Int, mouseY: Int, me: Seat, summary: Boolean = true, limit: Int = Int.MAX_VALUE) {
         if (view.seat == null || view.handOver) return
         val focus = if (asked(table, view) && discarding(view)) focused(view, mouseX, mouseY, me) else null
         val (key, waits) = when {
@@ -491,6 +502,7 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
         var at = x + font.width(label) + 4
         val w = MjArt.width(SMALL_SCALE)
         for (hint in waits) {
+            if (at + w + font.width("${hint.left}") > limit) return
             MjArt.draw(g, hint.tile, at, y - 4, SMALL_SCALE, dim = !hint.ok || hint.left == 0)
             val left = "${hint.left}"
             g.text(font, Component.literal(left), at + w + 1, y, if (hint.left == 0) TableScreen.RED else if (hint.ok) TableScreen.WHITE else TableScreen.GRAY, true)
@@ -501,7 +513,7 @@ abstract class MjPanelBase<V : MjTableView>(protected val screen: PanelHost) : G
         val total = (winning.ifEmpty { waits }).sumOf { it.left }
         val line = Component.translatable("tukuai.mahjong.left_total", total)
         if (winning.isEmpty()) line.append(" · ").append(cannotWin()) else winning.mapNotNull { it.value }.firstOrNull()?.let { line.append(" · ").append(it) }
-        g.text(font, line, at + 2, y, TableScreen.GRAY, true)
+        if (at + 2 + font.width(line) <= limit) g.text(font, line, at + 2, y, TableScreen.GRAY, true)
     }
 
     /** Said when every tile the hand waits on would not count as a win at this table. */

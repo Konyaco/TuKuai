@@ -16,6 +16,7 @@ import io.github.konyaco.tukuai.engine.doudizhu.BiddingMode
 import io.github.konyaco.tukuai.engine.doudizhu.DealMode
 import io.github.konyaco.tukuai.engine.guandan.Guandan
 import io.github.konyaco.tukuai.engine.mahjong.guobiao.Guobiao
+import io.github.konyaco.tukuai.engine.mahjong.riichi.Riichi
 import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScGuide
 import io.github.konyaco.tukuai.engine.mahjong.sichuan.ScRules
 import io.github.konyaco.tukuai.engine.mahjong.sichuan.SichuanMahjong
@@ -42,7 +43,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class GuideTest {
-    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff, SichuanMahjong, Guobiao, Cave)
+    private val games = listOf(DouDizhu, Uno, PaoDeKuai, Guandan, Tutu, Bluff, SichuanMahjong, Guobiao, Riichi, Cave)
 
     /** The English language file, read with a regex since the engine has no JSON library. */
     private val english: Map<String, String> by lazy {
