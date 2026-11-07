@@ -22,13 +22,19 @@ enum class MeldKind {
 /**
  * A set laid down in front of a player: a run starting at [tile], or three or four of
  * [tile]. [from] is the seat whose discard was claimed for it, null for a concealed kong.
+ * [reds] of its fives are red ones, and [claimed] is the tile taken from the discard.
  */
-data class Meld(val kind: MeldKind, val tile: Tile, val from: Seat? = null) {
+data class Meld(val kind: MeldKind, val tile: Tile, val from: Seat? = null, val reds: Int = 0, val claimed: Tile? = null) {
     val tiles: List<Tile>
-        get() = when (kind) {
-            MeldKind.CHOW -> listOf(tile, tile.next!!, tile.next!!.next!!)
-            MeldKind.PUNG -> List(3) { tile }
-            else -> List(4) { tile }
+        get() {
+            val plain = when (kind) {
+                MeldKind.CHOW -> listOf(tile, tile.next!!, tile.next!!.next!!)
+                MeldKind.PUNG -> List(3) { tile }
+                else -> List(4) { tile }
+            }
+            if (reds == 0) return plain
+            var left = reds
+            return plain.map { if (left > 0 && it.suit.numbered && it.rank == 5) { left--; Tile.red(it.suit) } else it }
         }
 
     /** Whether it is three or four of a kind, as every set but a run is. */

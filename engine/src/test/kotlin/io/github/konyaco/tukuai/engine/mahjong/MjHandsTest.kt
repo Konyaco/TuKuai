@@ -11,7 +11,7 @@ class MjHandsTest {
     @Test
     fun `tiles read and write the short way`() {
         assertEquals("[1m, 2m, 9p, 5s]", Tiles.parse("12m 9p 5s").toString())
-        assertEquals(34, Tile.KINDS)
+        assertEquals(42, Tile.KINDS)
         assertEquals(108, Tiles.set(TileSuit.NUMBERED).size)
         assertEquals(Tile.of(TileSuit.DOTS, 1), Tile.of(9))
         assertEquals(null, Tile.of(TileSuit.BAMBOO, 9).next)

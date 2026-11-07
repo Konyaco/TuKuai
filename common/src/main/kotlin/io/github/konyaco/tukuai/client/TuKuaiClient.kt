@@ -5,7 +5,9 @@ import io.github.konyaco.tukuai.client.bluff.BluffUi
 import io.github.konyaco.tukuai.client.cave.CaveUi
 import io.github.konyaco.tukuai.client.ddz.DdzUi
 import io.github.konyaco.tukuai.client.gd.GdUi
+import io.github.konyaco.tukuai.client.mahjong.GbUi
 import io.github.konyaco.tukuai.client.mahjong.MjUi
+import io.github.konyaco.tukuai.client.mahjong.RcUi
 import io.github.konyaco.tukuai.client.pdk.PdkUi
 import io.github.konyaco.tukuai.client.tutu.TutuUi
 import io.github.konyaco.tukuai.client.uno.UnoUi
@@ -29,6 +31,8 @@ object TuKuaiClient {
         GameUis.register(BluffUi)
         GameUis.register(CaveUi)
         GameUis.register(MjUi)
+        GameUis.register(GbUi)
+        GameUis.register(RcUi)
     }
 
     private var ready = false

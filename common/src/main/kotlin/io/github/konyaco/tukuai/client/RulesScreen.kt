@@ -54,6 +54,7 @@ class RulesScreen(
     fun showSection(id: String) {
         section = sections.indexOfFirst { it.id == id }.coerceAtLeast(0)
         scroll = 0
+        listScroll = ((section * ROW - (listBottom() - top) / 2) / ROW * ROW).coerceAtLeast(0)
         if (minecraft != null) rebuildWidgets()
     }
 
@@ -88,7 +89,67 @@ class RulesScreen(
 
     private fun maxScroll() = (pageHeight - (viewBottom() - viewTop())).coerceAtLeast(0)
 
-    private fun sectionStep() = minOf(20, (height - top - MARGIN) / sections.size.coerceAtLeast(1))
+    // ---- The list of sections -------------------------------------------------------------------
+
+    /** How far the list of sections is scrolled, when it is longer than the room for it. */
+    private var listScroll = 0
+
+    /** The list ends on a whole row, so scrolling never leaves half a section showing. */
+    private fun listBottom() = top + (height - MARGIN - (if (myTurn()) 24 else 0) - top) / ROW * ROW
+
+    private fun maxListScroll() = (sections.size * ROW - (listBottom() - top)).coerceAtLeast(0)
+
+    /** The section under ([x], [y]) in the list, or -1. */
+    private fun sectionAt(x: Double, y: Double): Int {
+        if (x < MARGIN || x >= MARGIN + sideWidth() || y < top || y >= listBottom()) return -1
+        val i = ((y - top + listScroll) / ROW).toInt()
+        return if (i in sections.indices) i else -1
+    }
+
+    /** The sections down the left, one row each, the open one lit; it scrolls when they do not all fit. */
+    private fun renderSections(g: GuiGraphicsExtractor, mouseX: Int, mouseY: Int) {
+        val w = sideWidth()
+        val bottom = listBottom()
+        g.fill(MARGIN, top, MARGIN + w, bottom, 0xA0101010.toInt())
+        g.enableScissor(MARGIN, top, MARGIN + w, bottom)
+        val hover = sectionAt(mouseX.toDouble(), mouseY.toDouble())
+        sections.forEachIndexed { i, s ->
+            val y = top + i * ROW - listScroll
+            if (y + ROW <= top || y >= bottom) return@forEachIndexed
+            when {
+                i == section -> {
+                    g.fill(MARGIN, y, MARGIN + w, y + ROW, 0x50FFD24A)
+                    g.fill(MARGIN, y, MARGIN + 2, y + ROW, 0xFFFFD24A.toInt())
+                }
+                i == hover -> g.fill(MARGIN, y, MARGIN + w, y + ROW, 0x30FFFFFF)
+            }
+            val title = sectionTitle(s).string
+            val fitted = if (font.width(title) <= w - 10) title else font.plainSubstrByWidth(title, w - 10 - font.width("…")) + "…"
+            g.text(font, fitted, MARGIN + 6, y + (ROW - 8) / 2, if (i == section) TableScreen.YELLOW else TableScreen.WHITE, false)
+        }
+        g.disableScissor()
+        val max = maxListScroll()
+        if (max > 0) {
+            val track = bottom - top
+            val thumb = maxOf(12, track * track / (track + max))
+            val thumbY = top + (track - thumb) * listScroll / max
+            g.fill(MARGIN + w - 2, thumbY, MARGIN + w, thumbY + thumb, 0xA0FFFFFF.toInt())
+        }
+    }
+
+    override fun mouseClicked(event: MouseButtonEvent, doubleClick: Boolean): Boolean {
+        val i = sectionAt(event.x(), event.y())
+        if (i >= 0 && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+            if (i != section) {
+                section = i
+                scroll = 0
+                mc.soundManager.play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1f))
+                rebuildWidgets()
+            }
+            return true
+        }
+        return super.mouseClicked(event, doubleClick)
+    }
 
     override fun init() {
         // The tabs share the row left of the done button. When they do not all fit, they take two
@@ -114,15 +175,7 @@ class RulesScreen(
         }
         button(CommonComponents.GUI_DONE, width - MARGIN - 60, 6, 60) { onClose() }
 
-        val step = sectionStep()
-        sections.forEachIndexed { i, s ->
-            val b = button(sectionTitle(s), MARGIN, top + i * step, sideWidth(), step - 2) {
-                section = i
-                scroll = 0
-                rebuildWidgets()
-            }
-            b.active = i != section
-        }
+        listScroll = listScroll.coerceIn(0, maxListScroll())
         layOut()
     }
 
@@ -323,11 +376,12 @@ class RulesScreen(
             g.fill(right - 5, thumbY, right - 3, thumbY + thumb, 0xC0FFFFFF.toInt())
         }
         if (myTurn()) {
-            // Below the list of sections, where there is always room.
-            val lines = font.split(Component.translatable("tukuai.guide.your_turn"), sideWidth())
-            val y0 = this.top + sections.size * sectionStep() + 6
+            // Under the list of sections, which leaves room for it.
+            val lines = font.split(Component.translatable("tukuai.guide.your_turn"), sideWidth()).take(2)
+            val y0 = listBottom() + 4
             lines.forEachIndexed { i, line -> g.text(font, line, MARGIN, y0 + i * LINE, TableScreen.YELLOW, true) }
         }
+        renderSections(g, mouseX, mouseY)
         super.extractRenderState(g, mouseX, mouseY, partialTick)
     }
 
@@ -346,7 +400,12 @@ class RulesScreen(
     // ---- Input ---------------------------------------------------------------------------------
 
     override fun mouseScrolled(x: Double, y: Double, scrollX: Double, scrollY: Double): Boolean {
-        scrollBy((-scrollY * 24).toInt())
+        if (x < MARGIN + sideWidth()) {
+            listScroll = (listScroll - (scrollY * ROW).toInt()).coerceIn(0, maxListScroll())
+            if (listScroll != maxListScroll()) listScroll = listScroll / ROW * ROW
+        } else {
+            scrollBy((-scrollY * 24).toInt())
+        }
         return true
     }
 
@@ -368,6 +427,7 @@ class RulesScreen(
                 if (next in sections.indices) {
                     section = next
                     scroll = 0
+                    listScroll = listScroll.coerceIn((section + 1) * ROW - (listBottom() - top), section * ROW).coerceAtLeast(0)
                     rebuildWidgets()
                 }
             }
@@ -394,6 +454,9 @@ class RulesScreen(
         /** How far down a second row of game tabs goes. */
         private const val TAB_ROW = 24
         private const val LINE = 10
+
+        /** Height of one section in the list down the left. */
+        private const val ROW = 14
         private const val BULLET_INDENT = 10
         private const val YELLOW_RGB = 0xFFDD55
 
