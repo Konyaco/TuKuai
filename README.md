@@ -15,7 +15,7 @@
 
 <p align="center"><img src="docs/images/en/clip.webp" alt="A whole deal of Dou Dizhu at a card table in a library, against two villagers" width="100%"></p>
 
-<p align="center"><b>8 games</b> · <b>2 to 8 players</b> · <b>computers for any empty seat</b> · <b>replays of every game</b> · <b>Fabric and NeoForge</b></p>
+<p align="center"><b>10 games</b> · <b>2 to 8 players</b> · <b>computers for any empty seat</b> · <b>replays of every game</b> · <b>Fabric and NeoForge</b></p>
 
 ## The games
 
@@ -26,7 +26,7 @@
   </tr>
   <tr>
     <td valign="top"><b>Dou Dizhu</b> · 3 or 4 players<br>One landlord against the farmers. Bid or rob for the landlord, play an unshuffled deck, or play four with two decks and bombs of up to eight cards.</td>
-    <td valign="top"><b>Mahjong</b> · 4 players<br>Sichuan rules, played as a blood battle: pass three tiles on, drop a suit, and play on after a win until three players are out. The tiles stand on the table around the wall.</td>
+    <td valign="top"><b>Mahjong</b> · 4 players<br>Three ways to play. <b>Sichuan</b>, as a blood battle: pass three tiles on, drop a suit, and play on after a win until three players are out. <b>Guobiao</b>: flowers, chow, pung and kong, and a hand worth at least 8 of the 81 fan. <b>Riichi</b>: yaku and fu, riichi, dora and furiten. The tiles stand on the table around the wall, and the table shows what you wait on and what each wait is worth.</td>
   </tr>
   <tr>
     <td><img src="docs/images/en/bluff-world.webp" alt="Creeper Bluff"></td>

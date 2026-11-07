@@ -15,7 +15,7 @@
 
 <p align="center"><img src="docs/images/zh-CN/clip.webp" alt="書房裡的牌桌上，玩家和兩個村民打完一整局鬥地主" width="100%"></p>
 
-<p align="center"><b>8 種玩法</b> · <b>2 到 8 人</b> · <b>空位電腦補</b> · <b>每局都能回放</b> · <b>Fabric 和 NeoForge</b></p>
+<p align="center"><b>10 種玩法</b> · <b>2 到 8 人</b> · <b>空位電腦補</b> · <b>每局都能回放</b> · <b>Fabric 和 NeoForge</b></p>
 
 ## 玩法
 
@@ -26,7 +26,7 @@
   </tr>
   <tr>
     <td valign="top"><b>鬥地主</b> · 3 或 4 人<br>一個地主對幾個農民。可以叫分、搶地主、打不洗牌，也能四個人用兩副牌打，炸彈最多八張。</td>
-    <td valign="top"><b>麻將</b> · 4 人<br>四川麻將血戰到底：換三張、定缺，有人胡了其他人接著打，直到三家胡牌。麻將牌立在桌上，牌牆碼在中間。</td>
+    <td valign="top"><b>麻將</b> · 4 人<br>三種玩法。<b>四川麻將</b>血戰到底：換三張、定缺，有人胡了其他人接著打，直到三家胡牌。<b>國標麻將</b>：有花牌，可以吃、碰、槓，和牌至少 8 番，81 個番種都會計算。<b>立直麻將</b>：役和符、立直、寶牌、振聽。麻將牌立在桌上，牌牆碼在中間；介面會提示你聽哪些牌、每張值多少。</td>
   </tr>
   <tr>
     <td><img src="docs/images/zh-TW/bluff-world.webp" alt="吹牛苦力怕"></td>
