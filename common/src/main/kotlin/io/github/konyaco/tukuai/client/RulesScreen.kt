@@ -94,7 +94,8 @@ class RulesScreen(
     /** How far the list of sections is scrolled, when it is longer than the room for it. */
     private var listScroll = 0
 
-    private fun listBottom() = height - MARGIN - if (myTurn()) 24 else 0
+    /** The list ends on a whole row, so scrolling never leaves half a section showing. */
+    private fun listBottom() = top + (height - MARGIN - (if (myTurn()) 24 else 0) - top) / ROW * ROW
 
     private fun maxListScroll() = (sections.size * ROW - (listBottom() - top)).coerceAtLeast(0)
 
