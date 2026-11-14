@@ -55,7 +55,7 @@ class TableArt {
         }
         val facing = table.blockState.getValue(CardTableBlock.FACING)
         look.radius = (table.blockState.block as? CardTableBlock)?.radius ?: 1
-        val seats = SeatPlace.of(facing, look.radius, client.snapshot.seats.size)
+        val seats = SeatPlace.of(facing, look.radius, client.snapshot.seats.size, client.snapshot.places)
         val now = ClientTables.ticks + partialTick.toDouble()
         val cards = motions.getOrPut(table.blockPos) { CardMotion() }.cards(client.scene(seats), now)
         look.cards = TablePointer.dress(table.blockPos, cards)

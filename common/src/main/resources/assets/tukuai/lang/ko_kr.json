@@ -18,6 +18,7 @@
   "tukuai.table.timer.off": "제한 시간: 없음",
   "tukuai.table.seat": "%s번 자리",
   "tukuai.table.empty": "빈자리",
+  "tukuai.table.place.free": "클릭하여 앉기",
   "tukuai.table.bot": "컴퓨터 (%s)",
   "tukuai.table.bot_seat": "컴퓨터 %2$s (%1$s)",
   "tukuai.table.bot_level": "컴퓨터 난이도: %s",

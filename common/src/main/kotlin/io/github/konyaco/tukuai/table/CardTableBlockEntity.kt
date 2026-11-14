@@ -28,6 +28,7 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
@@ -69,6 +70,15 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     private val harms = ArrayList<Pair<Seat, Long>>()
 
     private var seats: MutableList<Occupant?> = MutableList(3) { null }
+
+    /**
+     * The place round the table of each seat, as [TableSeats] numbers them, in seat order;
+     * see [placeList]. Players choose them, so a game for three may leave any side empty.
+     */
+    private var places: List<Int> = emptyList()
+
+    /** Players who stood up from the table during a game: the computer plays for them until they sit down again. */
+    private var stood = BooleanArray(3)
     private var auto = BooleanArray(3)
     private var present = BooleanArray(3)
     private var absentChecks = IntArray(3)
@@ -147,8 +157,19 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         val occupant = seats[seat] as? Occupant.Human ?: return false
         if (!present[seat]) return false
         if (!auto[seat]) return true
-        val vehicle = (level as? ServerLevel)?.server?.playerList?.getPlayer(occupant.uuid)?.vehicle
-        return vehicle is SeatEntity && vehicle.table == worldPosition
+        return inPlace(seat, (level as? ServerLevel)?.server?.playerList?.getPlayer(occupant.uuid))
+    }
+
+    /**
+     * Whether the player in [seat] is at their place: on its chair, or where it has none,
+     * standing by the table and not having stood up from it.
+     */
+    private fun inPlace(seat: Seat, player: ServerPlayer?): Boolean {
+        if (player == null) return false
+        val vehicle = player.vehicle
+        if (vehicle is SeatEntity && vehicle.table == worldPosition) return true
+        if (stood[seat] || vehicle != null || hasChair(spotOf(seat))) return false
+        return player.position().distanceToSqr(standPosition(spotOf(seat))) < STAND_RANGE * STAND_RANGE
     }
 
     private val center: Vec3 get() = Vec3.atCenterOf(worldPosition)
@@ -168,9 +189,25 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     /** The 3x3 or the 5x5 table this is the middle of. */
     val table: CardTableBlock get() = blockState.block as? CardTableBlock ?: TuKuaiContent.CARD_TABLE
 
+    private val facing: Direction get() = blockState.getValue(CardTableBlock.FACING)
+
+    /** How many places there are round the table for this game, see [TableSeats.placeCount]. */
+    private fun placeTotal(): Int = TableSeats.placeCount(table.radius, seats.size)
+
+    /** Each seat's place, in seat order and so counterclockwise round the table. */
+    private fun placeList(): List<Int> = TableSeats.orDefault(table.radius, seats.size, places)
+
+    /** The seat at [place], or null when nobody may sit there now. */
+    private fun seatAt(place: Int): Seat? = placeList().indexOf(place).takeIf { it >= 0 }
+
+    /** Where [place] is, as it is now or would be with a seat there. */
+    private fun spotAt(place: Int): SeatSpot {
+        val used = placeList()
+        return TableSeats.spotOf(facing, placeTotal(), place, if (place in used) used else used + place)
+    }
+
     /** Where seat [seat] is at this table; play goes counterclockwise seen from above. */
-    fun spotOf(seat: Seat): SeatSpot =
-        TableSeats.spots(blockState.getValue(CardTableBlock.FACING), table.radius, seats.size)[seat]
+    fun spotOf(seat: Seat): SeatSpot = spotAt(placeList()[seat])
 
     /** The side of the table seat [seat] sits on. */
     fun sideOf(seat: Seat): Direction = spotOf(seat).side
@@ -193,22 +230,94 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
 
     private fun resizeSeats(count: Int) {
         if (count == seats.size) return
-        // Players in seats that go away stand up.
+        val radius = table.radius
+        val before = placeList()
+        val beforeTotal = placeTotal()
+        val total = TableSeats.placeCount(radius, count)
+        // Players stay first, then computers, then empty seats; the rest go away and their players stand up.
+        val keep = seats.indices.sortedBy { rank(seats[it]) }.take(count)
         val server = (level as? ServerLevel)?.server
-        for (seat in count until seats.size) {
+        for (seat in seats.indices - keep.toSet()) {
             val occupant = seats[seat] as? Occupant.Human ?: continue
             server?.playerList?.getPlayer(occupant.uuid)?.let(::dismount)
         }
-        seats = MutableList(count) { seats.getOrNull(it) }
+        // Each keeps their side of the table, between one place a side and two.
+        val carried = keep.map { seat ->
+            val p = before[seat]
+            when {
+                total == beforeTotal -> p
+                total > beforeTotal -> p * 2
+                else -> p / 2
+            }
+        }
+        val taken = if (carried.distinct().size == carried.size) carried else TableSeats.defaultPlaces(radius, count).take(keep.size)
+        // New seats take the free places the table would use first.
+        val free = (TableSeats.defaultPlaces(radius, count) + (0 until total)).distinct().filter { it !in taken }
+        val entries = keep.zip(taken) + free.take(count - keep.size).map { null to it }
+        rebuild(entries)
         // The players who stay keep their state; only the scores start over.
-        auto = BooleanArray(count) { auto.getOrElse(it) { false } }
-        present = BooleanArray(count) { present.getOrElse(it) { false } }
-        absentChecks = IntArray(count) { absentChecks.getOrElse(it) { 0 } }
-        timeouts = IntArray(count) { timeouts.getOrElse(it) { 0 } }
         ready = BooleanArray(count)
         tally = IntArray(count)
         rounds = 0
         matchOver = false
+    }
+
+    /** Who keeps a seat when there are fewer: players, then computers, then nobody. */
+    private fun rank(occupant: Occupant?): Int = when (occupant) {
+        is Occupant.Human -> 0
+        is Occupant.Computer -> 1
+        null -> 2
+    }
+
+    /**
+     * Sets the seats to [entries]: each an old seat with all that goes with it, or null for a
+     * new empty one, and its place. They are put in the order of their places, so play goes
+     * round the table. A finished game's cards lie by the old seats, so it is cleared away.
+     */
+    private fun rebuild(entries: List<Pair<Seat?, Int>>) {
+        val sorted = entries.sortedBy { it.second }
+        fun <T> pick(old: Seat?, from: (Seat) -> T, empty: T): T = if (old == null) empty else from(old)
+        val oldSeats = seats
+        val oldAuto = auto
+        val oldPresent = present
+        val oldAbsent = absentChecks
+        val oldTimeouts = timeouts
+        val oldReady = ready
+        val oldTally = tally
+        val oldStood = stood
+        seats = sorted.map { (old, _) -> pick(old, { oldSeats.getOrNull(it) }, null) }.toMutableList()
+        auto = BooleanArray(sorted.size) { pick(sorted[it].first, { s -> oldAuto.getOrElse(s) { false } }, false) }
+        present = BooleanArray(sorted.size) { pick(sorted[it].first, { s -> oldPresent.getOrElse(s) { false } }, false) }
+        absentChecks = IntArray(sorted.size) { pick(sorted[it].first, { s -> oldAbsent.getOrElse(s) { 0 } }, 0) }
+        timeouts = IntArray(sorted.size) { pick(sorted[it].first, { s -> oldTimeouts.getOrElse(s) { 0 } }, 0) }
+        ready = BooleanArray(sorted.size) { pick(sorted[it].first, { s -> oldReady.getOrElse(s) { false } }, false) }
+        tally = IntArray(sorted.size) { pick(sorted[it].first, { s -> oldTally.getOrElse(s) { 0 } }, 0) }
+        stood = BooleanArray(sorted.size) { pick(sorted[it].first, { s -> oldStood.getOrElse(s) { false } }, false) }
+        places = sorted.map { it.second }
+        if (status == TableStatus.FINISHED) {
+            match = null
+            dealtIn = emptyMap()
+        }
+        // Moving a seat can move others on its side of a big table, so whoever sits gets put right.
+        val server = (level as? ServerLevel)?.server ?: return
+        seats.forEachIndexed { seat, occupant ->
+            val player = (occupant as? Occupant.Human)?.let { server.playerList.getPlayer(it.uuid) } ?: return@forEachIndexed
+            val vehicle = player.vehicle
+            if (vehicle is SeatEntity && vehicle.table == worldPosition) mount(player.level() as ServerLevel, player, seat)
+        }
+    }
+
+    /**
+     * Gives [place] a seat between games, so someone may sit there: [own] seat moves there
+     * when given, or else an empty one. Null when neither can.
+     */
+    private fun seatFor(place: Int, own: Seat?): Seat? {
+        seatAt(place)?.let { return it }
+        if (!idle || place !in 0 until placeTotal()) return null
+        val moving = own ?: seats.indices.firstOrNull { seats[it] == null } ?: return null
+        val now = placeList()
+        rebuild(seats.indices.map { it to if (it == moving) place else now[it] })
+        return seatAt(place)
     }
 
     /**
@@ -249,12 +358,13 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         level.playSound(null, worldPosition, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1f, 0.8f)
     }
 
-    /** Right-click on the table: take the free seat on the side the player stands on, if there is one. */
+    /** Right-click on the table: take the free place on the side the player stands on, if there is one. */
     fun onUse(player: ServerPlayer) {
         val level = level as? ServerLevel ?: return
         sentRevision.remove(player.uuid)
         val mine = seatOf(player.uuid)
         if (mine != null) {
+            stood[mine] = false
             mount(level, player, mine)
             return
         }
@@ -263,30 +373,50 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             return
         }
         if (!idle) return
-        nearestSeat(player, seats.indices.filter { seats[it] == null })?.let { takeSeat(level, player, it) }
+        val anyFree = seats.any { it == null }
+        val free = (0 until placeTotal()).filter { place -> seatAt(place)?.let { seats[it] == null } ?: anyFree }
+        free.minByOrNull { standPosition(spotAt(it)).distanceToSqr(player.position()) }?.let { sitAtPlace(level, player, it) }
     }
 
     private fun nearestSeat(player: ServerPlayer, among: List<Seat>): Seat? =
-        among.minByOrNull { seatPosition(it).distanceToSqr(player.position()) }
+        among.minByOrNull { standPosition(spotOf(it)).distanceToSqr(player.position()) }
 
     /**
      * Sitting on the chair on [side] of the table, [along] blocks to the right of its middle:
-     * takes the nearest seat on that side if it is free, or goes back to it. False if that
-     * side has no seat, so the chair is just a chair.
+     * takes the nearest place on that side if it is free, or goes back to it. False if no seat
+     * can be there, so the chair is just a chair.
      */
     fun sitAt(player: ServerPlayer, side: Direction, along: Int = 0): Boolean {
         val level = level as? ServerLevel ?: return false
-        val seat = seats.indices.filter { spotOf(it).side == side }.minByOrNull { abs(spotOf(it).along - along) } ?: return false
+        val place = (0 until placeTotal()).filter { spotAt(it).side == side }
+            .minWithOrNull(compareBy<Int>({ abs(spotAt(it).along - along) }, { if (seatAt(it) != null) 0 else 1 })) ?: return false
         sentRevision.remove(player.uuid)
+        // A place with a seat belongs to the table even when someone else sits there; one without is the table's only if a seat can move there.
+        val seated = seatAt(place) != null
+        return sitAtPlace(level, player, place) || seated
+    }
+
+    /**
+     * Sits [player] at [place]: in the seat there, or between games in a seat that moves there,
+     * their own or a free one. False if they may not.
+     */
+    private fun sitAtPlace(level: ServerLevel, player: ServerPlayer, place: Int): Boolean {
+        val seat = seatAt(place) ?: seatFor(place, seatOf(player.uuid)) ?: return false
+        return sitIn(level, player, seat)
+    }
+
+    /** Sits [player] in [seat], as [TableOp.SIT] does. False if they may not. */
+    private fun sitIn(level: ServerLevel, player: ServerPlayer, seat: Seat): Boolean {
         val occupant = seats[seat]
-        if (occupant is Occupant.Human && occupant.uuid == player.uuid) {
-            auto[seat] = false
-            changed()
-            mount(level, player, seat)
-        } else if (mayTake(player, seat)) {
-            takeSeat(level, player, seat)
-        } else if (occupant is Occupant.Human && paused && seatOf(player.uuid) == null) {
-            takeOver(level, player, seat)
+        when {
+            occupant is Occupant.Human && occupant.uuid == player.uuid -> {
+                auto[seat] = false
+                changed()
+                mount(level, player, seat)
+            }
+            mayTake(player, seat) -> takeSeat(level, player, seat)
+            occupant is Occupant.Human && paused && seatOf(player.uuid) == null -> takeOver(level, player, seat)
+            else -> return false
         }
         return true
     }
@@ -329,24 +459,24 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         restartTurn()
     }
 
-    /**
-     * On the chair just outside the table's edge in front of the seat, or on the floor there
-     * when there is no chair.
-     */
-    private fun seatPosition(seat: Seat): Vec3 {
-        val spot = spotOf(seat)
-        val side = spot.side
+    /** On the chair just outside the table's edge in front of the seat. */
+    private fun chairSeatPosition(spot: SeatSpot): Vec3 {
         val chair = chairPos(spot)
-        if (level?.getBlockState(chair)?.block is ChairBlock) {
-            return Vec3(chair.x + 0.5, chair.y + ChairBlock.SEAT_HEIGHT - SeatEntity.HEIGHT, chair.z + 0.5)
-        }
-        val distance = table.halfWidth + SEAT_GAP
+        return Vec3(chair.x + 0.5, chair.y + ChairBlock.SEAT_HEIGHT - SeatEntity.HEIGHT, chair.z + 0.5)
+    }
+
+    /** On the floor just outside the table's edge at [spot], where a player stands when there is no chair. */
+    private fun standPosition(spot: SeatSpot): Vec3 {
+        val side = spot.side
+        val distance = table.halfWidth + STAND_GAP
         return Vec3(
             worldPosition.x + 0.5 + side.stepX * distance + spot.right.stepX * spot.along,
             worldPosition.y.toDouble(),
             worldPosition.z + 0.5 + side.stepZ * distance + spot.right.stepZ * spot.along,
         )
     }
+
+    private fun hasChair(spot: SeatSpot): Boolean = level?.getBlockState(chairPos(spot))?.block is ChairBlock
 
     /** Where a chair for [spot] stands: just outside the table's edge. */
     private fun chairPos(spot: SeatSpot): BlockPos = worldPosition.relative(spot.side, table.radius + 1).relative(spot.right, spot.along)
@@ -369,8 +499,19 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         }
     }
 
+    /**
+     * Puts [player] at [seat]'s place: on its chair, or where there is none, standing at the
+     * table's edge facing its middle.
+     */
     private fun mount(level: ServerLevel, player: ServerPlayer, seat: Seat) {
+        stood[seat] = false
+        val spot = spotOf(seat)
         val current = player.vehicle
+        if (!hasChair(spot)) {
+            if (player.isPassenger) player.stopRiding()
+            stand(level, player, spot)
+            return
+        }
         if (current is SeatEntity && current.table == worldPosition) {
             placeSeat(current, seat)
             return
@@ -382,8 +523,18 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         if (level.addFreshEntity(entity) && !player.startRiding(entity)) entity.discard()
     }
 
+    /** Moves [player] to stand at [spot] facing the middle of the table, unless something is in the way there. */
+    private fun stand(level: ServerLevel, player: ServerPlayer, spot: SeatSpot) {
+        val target = standPosition(spot)
+        val box = player.boundingBox.move(target.subtract(player.position()))
+        if (player.position().distanceToSqr(target) > 0.01 && level.noCollision(player, box)) {
+            player.teleportTo(target.x, target.y, target.z)
+        }
+        player.lookAt(EntityAnchorArgument.Anchor.EYES, Vec3(center.x, worldPosition.y + LOOK_HEIGHT, center.z))
+    }
+
     private fun placeSeat(entity: SeatEntity, seat: Seat) {
-        val p = seatPosition(seat)
+        val p = chairSeatPosition(spotOf(seat))
         entity.setPos(p.x, p.y, p.z)
         entity.setYRot(sideOf(seat).opposite.toYRot())
     }
@@ -402,25 +553,30 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         when (request.op) {
             TableOp.SIT -> {
                 val seat = request.a
-                val occupant = seats.getOrNull(seat)
                 if (seat == -1 && mine == null && paused) {
                     // Take whichever seat is nearest, as right-clicking the table does.
                     nearestSeat(player, seats.indices.filter { seats[it] is Occupant.Human })?.let { takeOver(level, player, it) }
-                } else if (seat !in seats.indices) {
-                    return
-                } else if (mayTake(player, seat)) {
-                    takeSeat(level, player, seat)
-                } else if (occupant is Occupant.Human && occupant.uuid != player.uuid && mine == null && paused) {
-                    takeOver(level, player, seat)
-                } else if (occupant is Occupant.Human && occupant.uuid == player.uuid) {
-                    auto[seat] = false
-                    changed()
-                    mount(level, player, seat)
+                } else if (seat in seats.indices) {
+                    sitIn(level, player, seat)
                 }
+            }
+            TableOp.SIT_AT -> sitAtPlace(level, player, request.a)
+            TableOp.BOT_AT -> {
+                if (!idle || !ServerSettings.allowBots) return
+                val botLevel = BotLevel.entries.getOrNull(request.b) ?: return
+                val seat = seatAt(request.a)?.takeIf { seats[it] == null } ?: seatFor(request.a, null) ?: return
+                if (seats[seat] != null) return
+                seats[seat] = Occupant.Computer(botLevel)
+                lobbyChanged()
             }
             TableOp.STAND -> {
                 if (mine == null) return
-                if (idle) seats[mine] = null else auto[mine] = true
+                if (idle) {
+                    seats[mine] = null
+                } else {
+                    auto[mine] = true
+                    stood[mine] = true
+                }
                 dismount(player)
                 if (idle) lobbyChanged() else changed()
             }
@@ -748,8 +904,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         // game, and so has a say in when it starts; those who stood up are not.
         for (seat in seats.indices) {
             val occupant = seats[seat] as? Occupant.Human ?: continue
-            val vehicle = level.server.playerList.getPlayer(occupant.uuid)?.vehicle
-            if (auto[seat] && vehicle is SeatEntity && vehicle.table == worldPosition) auto[seat] = false
+            if (auto[seat] && inPlace(seat, level.server.playerList.getPlayer(occupant.uuid))) auto[seat] = false
         }
         level.playSound(null, worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7f, 1f)
         StatsStore.record(level.server, gameId, seats, result.scores, result.winners)
@@ -768,8 +923,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         for ((seat, _) in due) {
             val occupant = seats.getOrNull(seat) as? Occupant.Human ?: continue
             val player = level.server.playerList.getPlayer(occupant.uuid) ?: continue
-            val vehicle = player.vehicle
-            if (vehicle !is SeatEntity || vehicle.table != worldPosition) continue
+            if (!inPlace(seat, player)) continue
             val sources = player.damageSources()
             if (harm == TableSnapshot.HARM_LETHAL) {
                 player.hurtOnServer(level, sources.explosion(null, null), LETHAL_HARM)
@@ -855,6 +1009,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
             view = view,
             spectators = spectators,
             harm = harm,
+            places = placeList(),
             host = host?.let(::seatOf),
             matchRounds = matchRounds,
             matchOver = matchOver,
@@ -879,6 +1034,7 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         output.putInt("match_over", if (matchOver) 1 else 0)
         output.putIntArray("tally", tally)
         output.putInt("seat_count", seats.size)
+        output.putIntArray("places", placeList().toIntArray())
         seats.forEachIndexed { i, occupant -> output.putString("seat_$i", occupant?.save() ?: "") }
         output.putIntArray("auto", IntArray(auto.size) { if (auto[it]) 1 else 0 })
         match?.let { output.putString("match", Base64.getEncoder().encodeToString(it.replay(playerNames()).encode())) }
@@ -897,7 +1053,9 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
         input.getStringOr("arrivals", "").split(',').mapNotNullTo(arrivals) { runCatching { UUID.fromString(it) }.getOrNull() }
         val count = input.getIntOr("seat_count", game.seatCount(presetId))
         seats = MutableList(count) { Occupant.load(input.getStringOr("seat_$it", "")) }
+        places = input.getIntArray("places").map { it.toList() }.orElse(emptyList())
         auto = BooleanArray(count)
+        stood = BooleanArray(count)
         input.getIntArray("auto").ifPresent { saved -> saved.take(count).forEachIndexed { i, v -> auto[i] = v != 0 } }
         present = BooleanArray(count)
         absentChecks = IntArray(count)
@@ -926,8 +1084,17 @@ class CardTableBlockEntity(pos: BlockPos, state: BlockState) :
     }
 
     companion object {
-        /** How far outside the table's edge a seat is, in blocks. */
+        /** How far outside the table's edge a seat is, in blocks, for whoever films the table. */
         const val SEAT_GAP = 0.35
+
+        /** How far outside the table's edge a player stands at a place without a chair, in blocks. */
+        const val STAND_GAP = 0.4
+
+        /** A player standing this close to their place without a chair is at the table, see [inPlace]. */
+        const val STAND_RANGE = 3.0
+
+        /** How high above the floor a player who comes to stand at the table looks, at the middle of its top. */
+        const val LOOK_HEIGHT = 0.9
 
         /** Players farther than this cannot change the table. */
         const val REACH = 8.0

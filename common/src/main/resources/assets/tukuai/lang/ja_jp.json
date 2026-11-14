@@ -18,6 +18,7 @@
   "tukuai.table.timer.off": "持ち時間：なし",
   "tukuai.table.seat": "%s 番席",
   "tukuai.table.empty": "空席",
+  "tukuai.table.place.free": "クリックで着席",
   "tukuai.table.bot": "CPU（%s）",
   "tukuai.table.bot_seat": "CPU %2$s（%1$s）",
   "tukuai.table.bot_level": "CPU の強さ：%s",

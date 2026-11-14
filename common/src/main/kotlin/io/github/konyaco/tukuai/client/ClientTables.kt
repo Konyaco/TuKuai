@@ -56,7 +56,7 @@ class ClientTable(val pos: BlockPos, val snapshot: TableSnapshot, private val re
     fun seatPlaces(): List<SeatPlace> {
         val state = Minecraft.getInstance().level?.getBlockState(pos) ?: return emptyList()
         val block = state.block as? CardTableBlock ?: return emptyList()
-        return SeatPlace.of(state.getValue(CardTableBlock.FACING), block.radius, snapshot.seats.size)
+        return SeatPlace.of(state.getValue(CardTableBlock.FACING), block.radius, snapshot.seats.size, snapshot.places)
     }
 
     /** True for a player who is not in the game on this table, only looking on. */

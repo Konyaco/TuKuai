@@ -18,6 +18,7 @@
   "tukuai.table.timer.off": "出牌時限：不限",
   "tukuai.table.seat": "%s 號位",
   "tukuai.table.empty": "空位",
+  "tukuai.table.place.free": "空位，點擊坐下",
   "tukuai.table.bot": "電腦（%s）",
   "tukuai.table.bot_seat": "電腦%2$s·%1$s",
   "tukuai.table.bot_level": "電腦難度：%s",
