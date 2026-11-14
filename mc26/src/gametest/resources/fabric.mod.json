@@ -16,6 +16,7 @@
       "io.github.konyaco.tukuai.fabric.test.MatchGameTest",
       "io.github.konyaco.tukuai.fabric.test.BigTableGameTest",
       "io.github.konyaco.tukuai.fabric.test.LobbyGameTest",
+      "io.github.konyaco.tukuai.fabric.test.SeatsGameTest",
       "io.github.konyaco.tukuai.fabric.test.ShowcaseGameTest",
       "io.github.konyaco.tukuai.fabric.test.MultiplayerGameTest"
     ]

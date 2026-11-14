@@ -96,10 +96,10 @@ In creative mode, all three are in the Functional Blocks tab.
 ### First game
 
 1. **Place a card table.** It takes 3×3 blocks and spreads out from the block you click, so leave room in front and to both sides.
-2. **Right-click it**, click "Sit", and click "Add computer" on any empty seat.
+2. **Right-click it**: the lobby shows the table from above. Click an empty place to take it, or click "Add computer" there. In a game for fewer players than the table has sides, any sides may stay empty; play goes counterclockwise round the table.
 3. **Choose a game and its rules**, then click "Start".
 
-Place a chair just outside the middle of a side with a seat, and right-click it to sit there. The big card table takes 5×5 blocks and seats two to a side, up to eight.
+Without a chair you stand at the table. Place a chair just outside the middle of a side, and right-click it to sit there. The big card table takes 5×5 blocks and seats two to a side, up to eight.
 
 The mod is available in English, Simplified Chinese, Traditional Chinese, Japanese and Korean, and follows your game language.
 

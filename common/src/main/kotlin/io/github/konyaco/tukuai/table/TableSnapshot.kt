@@ -90,6 +90,11 @@ data class TableSnapshot(
      * [io.github.konyaco.tukuai.engine.core.GameDefinition.mayHarm]: one of [HARM_OFF], [HARM_LIGHT] or [HARM_LETHAL].
      */
     val harm: Int = HARM_LETHAL,
+    /**
+     * The place round the table of each seat, in seat order, see
+     * [io.github.konyaco.tukuai.content.TableSeats]; empty for the usual places.
+     */
+    val places: List<Int> = emptyList(),
 ) {
     /** The people at the table who are here and playing for themselves; they decide together when to start. */
     val voters: List<Seat>
@@ -102,7 +107,7 @@ data class TableSnapshot(
     override fun hashCode(): Int = encode().contentHashCode()
 
     companion object {
-        private const val VERSION = 6
+        private const val VERSION = 7
 
         /** The game stays on the table. */
         const val HARM_OFF = 0
@@ -132,6 +137,7 @@ data class TableSnapshot(
                     .bool(value.paused)
                 writer.list(value.leaderboard) { string(it.name).int(it.games).int(it.wins).int(it.points) }
                 writer.int(value.harm)
+                writer.ints(value.places)
             }
 
             override fun read(reader: WireReader): TableSnapshot {
@@ -164,6 +170,7 @@ data class TableSnapshot(
                     paused = reader.bool(),
                     leaderboard = reader.list { LeaderEntry(string(), int(), int(), int()) },
                     harm = reader.int(),
+                    places = reader.ints(),
                 )
             }
         }
@@ -222,4 +229,13 @@ enum class TableOp {
 
     /** How much a game that may hurt its players does so in the world, `a` = [TableSnapshot.HARM_OFF] to [TableSnapshot.HARM_LETHAL]. Only the host may. */
     HURT,
+
+    /**
+     * Sit at place `a` round the table, see [io.github.konyaco.tukuai.content.TableSeats]. Between
+     * games a place without a seat gets one: the player's own moves there, or else a free one.
+     */
+    SIT_AT,
+
+    /** Put a computer of level `b` at place `a`, which gets a free seat as for [SIT_AT]. */
+    BOT_AT,
 }

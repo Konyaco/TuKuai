@@ -2,6 +2,8 @@ package io.github.konyaco.tukuai.client
 
 import com.mojang.blaze3d.platform.InputConstants
 import io.github.konyaco.tukuai.compat.*
+import io.github.konyaco.tukuai.content.CardTableBlock
+import io.github.konyaco.tukuai.content.TableSeats
 import io.github.konyaco.tukuai.engine.card.PlayingCard
 import io.github.konyaco.tukuai.engine.card.Rank
 import io.github.konyaco.tukuai.engine.card.Suit
@@ -19,6 +21,7 @@ import net.minecraft.client.gui.components.Button
 import net.minecraft.client.gui.components.Tooltip
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.DyeColor
 
@@ -283,24 +286,111 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
      */
     private fun lobbyTop(t: ClientTable): Int {
         // The panel reaches 8 pixels above the title and 26 below the bottom row of buttons, and the hint below that.
-        val centred = (height - (8 + lobbyBottomRow(0) + 26 + hintHeight(t))) / 2 + 8
+        val centred = (height - (8 + lobbyBottomRow(t, 0) + 26 + hintHeight(t))) / 2 + 8
         val underButtons = lobbyLeft() + lobbyWidth + 8 > width - CORNER - 2
         return if (underButtons) maxOf(centred, 56) else centred
     }
 
-    /** The row of buttons along the bottom of the lobby, below room for the most seats. */
-    private fun lobbyBottomRow(top: Int) = top + SEATS_Y + MAX_SEAT_ROWS * 24 + 6
+    /** The row of buttons along the bottom of the lobby, below the table. */
+    private fun lobbyBottomRow(t: ClientTable, top: Int) = top + SEATS_Y + placesHeight(t) + 6
 
-    /** More than four seats go in two columns, each seat in a narrower cell. */
-    private fun twoColumns(t: ClientTable) = t.snapshot.seats.size > 4
+    /**
+     * The table seen from above in the lobby: as wide as a big table or a small one, so the
+     * lobby keeps its size at one table whatever its game.
+     */
+    private fun tableSize(t: ClientTable) = if (t.maxSeats > 4) BIG_TABLE else SMALL_TABLE
 
-    private fun seatRows(t: ClientTable) = if (twoColumns(t)) (t.snapshot.seats.size + 1) / 2 else t.snapshot.seats.size
+    /** The table and the boxes above and below it. */
+    private fun placesHeight(t: ClientTable) = BOX_H + GAP + tableSize(t) + GAP + BOX_H
 
-    /** Top left corner of seat [i]'s row in the lobby. */
-    private fun seatCell(t: ClientTable, i: Int, left: Int, top: Int): Pair<Int, Int> {
-        if (!twoColumns(t)) return left to top + SEATS_Y + i * 24
-        val rows = seatRows(t)
-        return left + (i / rows) * (CELL_WIDTH + CELL_GAP) to top + SEATS_Y + (i % rows) * 24
+    /**
+     * One place round the table in the lobby's picture, and the box beside it that says who
+     * sits there. [seat] is null for a place without a seat, where a free seat moves when
+     * someone sits down. [side] counts quarter turns counterclockwise from the bottom of the
+     * screen, and [along] is -1 or 1 for the left or right of two places on a side, as whoever
+     * sits there sees it, or 0 for the only one.
+     */
+    private class PlaceBox(val place: Int, val seat: Int?, val x: Int, val y: Int, val side: Int, val along: Int)
+
+    /** The table seen from above: its top left corner, its size, and the places round it. */
+    private class TablePicture(val x: Int, val y: Int, val size: Int, val boxes: List<PlaceBox>)
+
+    /**
+     * The table seen from above with the player's own side at the bottom: their seat's, or
+     * the side they stand on. Places without a seat show only while a seat is free to move there.
+     */
+    private fun tablePicture(t: ClientTable, left: Int, top: Int): TablePicture {
+        val s = t.snapshot
+        val state = mc.level?.getBlockState(pos)
+        val block = state?.block as? CardTableBlock
+        val facing = if (block != null) state.getValue(CardTableBlock.FACING) else Direction.SOUTH
+        val radius = block?.radius ?: 1
+        val count = s.seats.size
+        val total = TableSeats.placeCount(radius, count)
+        val places = TableSeats.orDefault(radius, count, s.places)
+        val size = tableSize(t)
+        val cx = left + lobbyWidth / 2
+        val tx = cx - size / 2
+        val ty = top + SEATS_Y + BOX_H + GAP
+        val cy = ty + size / 2
+        val sideOf = { place: Int -> TableSeats.turn(facing, if (total == 4) place else place / 2) }
+        val bottom = s.you?.let { places.getOrNull(it) }?.let(sideOf) ?: standingSide() ?: facing
+        val anyFree = s.seats.any { it.occupant == null }
+        val boxes = (0 until total).mapNotNull { place ->
+            val seat = places.indexOf(place).takeIf { it >= 0 }
+            if (seat == null && !anyFree) return@mapNotNull null
+            val side = (0 until 4).first { TableSeats.turn(bottom, it) == sideOf(place) }
+            val along = if (total == 4) 0 else if (place % 2 == 0) -1 else 1
+            val (x, y) = when (side) {
+                0 -> cx - BOX_W / 2 + along * (BOX_W / 2 + 2) to ty + size + GAP
+                1 -> tx + size + GAP to cy - BOX_H / 2 - along * (BOX_H / 2 + 2)
+                2 -> cx - BOX_W / 2 - along * (BOX_W / 2 + 2) to ty - GAP - BOX_H
+                else -> tx - GAP - BOX_W to cy - BOX_H / 2 + along * (BOX_H / 2 + 2)
+            }
+            PlaceBox(place, seat, x, y, side, along)
+        }
+        return TablePicture(tx, ty, size, boxes)
+    }
+
+    /** The side of the table the player stands on, by where they are. */
+    private fun standingSide(): Direction? {
+        val player = mc.player ?: return null
+        val dx = player.x - (pos.x + 0.5)
+        val dz = player.z - (pos.z + 0.5)
+        return when {
+            kotlin.math.abs(dx) > kotlin.math.abs(dz) -> if (dx > 0) Direction.EAST else Direction.WEST
+            else -> if (dz > 0) Direction.SOUTH else Direction.NORTH
+        }
+    }
+
+    /**
+     * What clicking [box] does between games: sit at a free place, in a computer's seat, or
+     * in the seat of a player who walked away. Null when it does nothing.
+     */
+    private fun placeAction(s: TableSnapshot, box: PlaceBox): (() -> Unit)? {
+        if (s.status == TableStatus.PLAYING) return null
+        val seat = box.seat
+        val info = seat?.let { s.seats.getOrNull(it) }
+        return when (val occupant = info?.occupant) {
+            null -> { { send(TableOp.SIT_AT, box.place) } }
+            is Occupant.Computer -> { { send(TableOp.SIT, seat) } }
+            is Occupant.Human -> if (s.you != seat && !info.present) { { send(TableOp.SIT, seat) } } else null
+        }
+    }
+
+    /** The middle of [place]'s box round the table in the lobby, in GUI pixels, or null when it is not shown; for tests. */
+    fun placeBoxCenter(place: Int): Pair<Int, Int>? {
+        val t = table?.takeIf { inLobby(it) } ?: return null
+        val box = tablePicture(t, lobbyLeft(), lobbyTop(t)).boxes.firstOrNull { it.place == place } ?: return null
+        return box.x + BOX_W / 2 to box.y + 6
+    }
+
+    /** A click on a place in the lobby's table, outside its buttons. */
+    private fun clickPlace(t: ClientTable, mx: Double, my: Double): Boolean {
+        val box = tablePicture(t, lobbyLeft(), lobbyTop(t)).boxes.firstOrNull { inBox(mx.toInt(), my.toInt(), it.x, it.y, BOX_W, BOX_H) } ?: return false
+        val action = placeAction(t.snapshot, box) ?: return false
+        action()
+        return true
     }
 
     /** Until the player has opened the rule book, a line at the bottom of the lobby points to it. */
@@ -315,7 +405,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             Choice.RULES -> intArrayOf(left + 152, top + 16, 148, 20)
             Choice.TIMER -> intArrayOf(left, top + 40, 97, 20)
             Choice.ROUNDS -> intArrayOf(left + 101, top + 40, 98, 20)
-            Choice.BOTS -> intArrayOf(left, lobbyBottomRow(top), 96, 20)
+            Choice.BOTS -> intArrayOf(left, lobbyBottomRow(t, top), 96, 20)
             // Beside the leaderboard, for a game that may hurt its players.
             Choice.HARM -> intArrayOf(left + lobbyWidth - 64 - 4 - 92, top - 3, 92, 14)
         }
@@ -365,36 +455,31 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             choiceButton(Choice.HARM, t, harmText(s.harm), canEdit && mayChange).setTooltip(Tooltip.create(tip))
         }
 
-        val narrow = twoColumns(t)
-        s.seats.forEachIndexed { i, seat ->
-            val (cellX, y) = seatCell(t, i, left, top)
-            // In two columns the buttons share the right half of a cell half as wide.
-            val x = if (narrow) cellX + NAME_WIDTH + 2 else left + 150
-            val w = if (narrow) 30 else 70
-            val gap = if (narrow) 3 else 4
-            val botW = if (narrow) 40 else 76
-            when (seat.occupant) {
-                null -> {
-                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
-                    button(Component.translatable("tukuai.table.add_bot"), x + w + gap, y, botW, canEdit) {
-                        send(TableOp.ADD_BOT, i, ClientConfig.botLevel.ordinal)
+        // In each place's box, under who sits there: adding or removing a computer, or standing up.
+        for (box in tablePicture(t, left, top).boxes) {
+            val seat = box.seat
+            val info = seat?.let { s.seats.getOrNull(it) }
+            val x = box.x + 4
+            val y = box.y + BOX_H - 14
+            val w = BOX_W - 8
+            when (info?.occupant) {
+                null -> if (canEdit) {
+                    button(Component.translatable("tukuai.table.add_bot"), x, y, w, h = 13) {
+                        send(TableOp.BOT_AT, box.place, ClientConfig.botLevel.ordinal)
                     }
                 }
-                // A player may take a computer's seat, or the seat of someone who walked away, without waiting.
-                is Occupant.Computer -> {
-                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
-                    button(Component.translatable("tukuai.table.remove_bot"), x + w + gap, y, botW, canEdit) { send(TableOp.REMOVE_BOT, i) }
+                is Occupant.Computer -> if (canEdit) {
+                    button(Component.translatable("tukuai.table.remove_bot"), x, y, w, h = 13) { send(TableOp.REMOVE_BOT, seat) }
                 }
-                is Occupant.Human -> if (s.you == i) {
-                    button(Component.translatable("tukuai.table.stand"), x, y, if (narrow) w + gap + botW else 70) { send(TableOp.STAND) }
-                } else if (!seat.present) {
-                    button(Component.translatable("tukuai.table.sit"), x, y, w, canEdit) { send(TableOp.SIT, i) }
-                        .setTooltip(Tooltip.create(Component.translatable("tukuai.table.sit.away")))
+                is Occupant.Human -> if (s.you == seat) {
+                    // The host's own box says so beside the button.
+                    val hostW = if (s.host == seat) font.width(Component.translatable("tukuai.table.host")) + 4 else 0
+                    button(Component.translatable("tukuai.table.stand"), x, y, w - hostW, h = 13) { send(TableOp.STAND) }
                 }
             }
         }
 
-        val bottom = lobbyBottomRow(top)
+        val bottom = lobbyBottomRow(t, top)
         choiceButton(Choice.BOTS, t, botLevelText(ClientConfig.botLevel), true)
         button(Component.translatable("tukuai.table.fill_bots"), left + 100, bottom, 96, canEdit && s.seats.any { it.occupant == null }) {
             send(TableOp.ADD_BOT, -1, ClientConfig.botLevel.ordinal)
@@ -528,11 +613,11 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             .setTooltip(Tooltip.create(tip))
     }
 
-    private fun renderLobby(g: GuiGraphicsExtractor, t: ClientTable) {
+    private fun renderLobby(g: GuiGraphicsExtractor, t: ClientTable, mouseX: Int, mouseY: Int) {
         val s = t.snapshot
         val left = lobbyLeft()
         val top = lobbyTop(t)
-        val panelBottom = lobbyBottomRow(top) + 26 + hintHeight(t)
+        val panelBottom = lobbyBottomRow(t, top) + 26 + hintHeight(t)
         panelBox(g, left - 8, top - 8, left + lobbyWidth + 8, panelBottom)
         if (hintHeight(t) > 0) {
             g.text(font, Component.translatable("tukuai.guide.first_time"), left, panelBottom - 14, YELLOW, false)
@@ -544,55 +629,95 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         }
         // A thin line between the rules and the seats.
         g.fill(left, top + SEATS_Y - 7, left + lobbyWidth, top + SEATS_Y - 6, DIVIDER)
+        renderTable(g, t, tablePicture(t, left, top), mouseX, mouseY)
+    }
+
+    /** The table from above, in its cloth's colour, with a box for each place round it. */
+    private fun renderTable(g: GuiGraphicsExtractor, t: ClientTable, pic: TablePicture, mouseX: Int, mouseY: Int) {
+        val s = t.snapshot
+        val (x, y, size) = Triple(pic.x, pic.y, pic.size)
+        val felt = DyeColor.byId(s.felt).textureDiffuseColor
+        g.fill(x, y, x + size, y + size, TABLE_WOOD)
+        g.fill(x + 3, y + 3, x + size - 3, y + size - 3, 0xFF000000.toInt() or felt)
+        g.centeredText(font, Component.translatable("tukuai.table.players", s.seats.size), x + size / 2, y + size / 2 - 4, WHITE)
+        val overButton = children().any { it.isMouseOver(mouseX.toDouble(), mouseY.toDouble()) }
         val voters = s.voters
-        val narrow = twoColumns(t)
-        s.seats.forEachIndexed { i, seat ->
-            val (cellX, y) = seatCell(t, i, left, top)
+        for (box in pic.boxes) {
+            val seat = box.seat
+            val info = seat?.let { s.seats.getOrNull(it) }
+            val occupant = info?.occupant
+            val mine = seat != null && seat == s.you
+            val hovered = !overButton && choice == null && placeAction(s, box) != null && inBox(mouseX, mouseY, box.x, box.y, BOX_W, BOX_H)
+            g.fill(box.x, box.y, box.x + BOX_W, box.y + BOX_H, if (hovered) BOX_HOVER else BOX_FILL)
+            frame(g, box.x + 2, box.y + 2, BOX_W - 4, BOX_H - 4, mine, hovered)
+            renderMarker(g, pic, box, when {
+                occupant == null -> MARK_FREE
+                mine -> GOLD
+                occupant is Occupant.Computer -> MARK_BOT
+                else -> WHITE
+            })
+
+            // The first line: who sits here, with their points and whether they are ready on the right.
+            val pointsText = if (s.rounds > 0 && seat != null && occupant != null) Scoreboard.signed(s.tally.getOrNull(seat) ?: 0) else ""
+            val ready = info != null && info.ready && seat in voters && voters.size > 1
+            var right = box.x + BOX_W - 4
+            if (pointsText.isNotEmpty()) {
+                right -= font.width(pointsText)
+                g.text(font, pointsText, right, box.y + 3, Scoreboard.pointsColor(s.tally.getOrNull(seat!!) ?: 0), false)
+                right -= 3
+            }
+            if (ready) {
+                right -= font.width("✔")
+                g.text(font, "✔", right, box.y + 3, GREEN, false)
+                right -= 2
+            }
+            val nameX = box.x + 4
+            val name = when {
+                occupant != null -> seatName(occupant)
+                s.status == TableStatus.PLAYING -> Component.translatable("tukuai.table.empty")
+                else -> Component.translatable("tukuai.table.place.free")
+            }
             val color = when {
-                seat.occupant == null -> GRAY
-                s.you == i -> YELLOW
+                occupant == null -> if (hovered) WHITE else GRAY
+                mine -> YELLOW
                 else -> WHITE
             }
-            // In two columns the seat is just its number, and the name gets what room is left before the buttons.
-            val label = if (narrow) Component.literal("${i + 1}") else Component.translatable("tukuai.table.seat", i + 1)
-            g.text(font, label, cellX, y + 6, GRAY, false)
-            // A player who has played before gets their record under the name.
-            val nameY = if (seat.games > 0) y + 1 else y + 6
-            val nameX = if (narrow) cellX + 10 else left + 40
-            val pointsText = if (s.rounds > 0) Scoreboard.signed(s.tally.getOrNull(i) ?: 0) else ""
-            val ready = seat.ready && i in voters && voters.size > 1
-            val nameEnd = if (narrow) {
-                cellX + NAME_WIDTH - (if (pointsText.isEmpty()) 0 else font.width(pointsText) + 3) - (if (ready) font.width("✔") + 2 else 0)
-            } else {
-                Int.MAX_VALUE
-            }
-            val name = if (narrow) Component.literal(font.plainSubstrByWidth(seatName(seat.occupant).string, nameEnd - nameX)) else seatName(seat.occupant)
-            g.text(font, name, nameX, nameY, color, false)
-            if (seat.games > 0) {
-                g.text(font, Component.translatable("tukuai.table.record", seat.games, seat.wins), nameX, y + 12, GRAY, false)
-            }
-            if (s.rounds > 0) {
-                val points = s.tally.getOrNull(i) ?: 0
-                val right = if (narrow) cellX + NAME_WIDTH else left + 146
-                g.text(font, pointsText, right - font.width(pointsText), y + 6, Scoreboard.pointsColor(points), false)
-            }
-            if (narrow) {
-                // No room for the tags, but who is ready still shows.
-                if (ready) g.text(font, "✔", nameX + font.width(name) + 2, nameY, GREEN, false)
-                return@forEachIndexed
-            }
-            var tagX = nameX + font.width(name) + 4
-            if (seat.occupant is Occupant.Human && !seat.present) {
-                val away = Component.translatable("tukuai.table.away")
-                g.text(font, away, tagX, nameY, GRAY, false)
-                tagX += font.width(away) + 4
-            }
-            if (s.host == i) {
+            g.text(font, font.plainSubstrByWidth(name.string, right - nameX), nameX, box.y + 3, color, false)
+
+            // The second line, where there is no button: a player's record, and whether they host or left.
+            val lineY = box.y + BOX_H - 11
+            if (occupant is Occupant.Human && mine && s.host == seat) {
                 val host = Component.translatable("tukuai.table.host")
-                g.text(font, host, tagX, nameY, YELLOW, false)
-                tagX += font.width(host) + 4
+                g.text(font, host, box.x + BOX_W - 4 - font.width(host), lineY, YELLOW, false)
+            } else if (occupant is Occupant.Human && !mine) {
+                val parts = ArrayList<Pair<String, Int>>()
+                if (!info.present) parts += Component.translatable("tukuai.table.away").string to GRAY
+                if (s.host == seat) parts += Component.translatable("tukuai.table.host").string to YELLOW
+                if (info.games > 0) parts += Component.translatable("tukuai.table.record", info.games, info.wins).string to GRAY
+                var px = nameX
+                for ((text, c) in parts) {
+                    val room = box.x + BOX_W - 4 - px
+                    if (room <= 0) break
+                    val shown = font.plainSubstrByWidth(text, room)
+                    g.text(font, shown, px, lineY, c, false)
+                    px += font.width(shown) + 4
+                }
             }
-            if (ready) g.text(font, "✔", tagX, nameY, GREEN, false)
+        }
+    }
+
+    /** A short bar on the table's edge where [box]'s place is, like a chair pulled up to it. */
+    private fun renderMarker(g: GuiGraphicsExtractor, pic: TablePicture, box: PlaceBox, color: Int) {
+        val (x, y, size) = Triple(pic.x, pic.y, pic.size)
+        val shift = box.along * size / 4
+        val cx = x + size / 2
+        val cy = y + size / 2
+        val half = MARK_LENGTH / 2
+        when (box.side) {
+            0 -> g.fill(cx + shift - half, y + size + 1, cx + shift + half, y + size + 3, color)
+            2 -> g.fill(cx - shift - half, y - 3, cx - shift + half, y - 1, color)
+            1 -> g.fill(x + size + 1, cy - shift - half, x + size + 3, cy - shift + half, color)
+            else -> g.fill(x - 3, cy + shift - half, x - 1, cy + shift + half, color)
         }
     }
 
@@ -787,7 +912,7 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         }
         when {
             t == null -> g.centeredText(font, Component.translatable("tukuai.table.loading"), width / 2, height / 2, WHITE)
-            inLobby(t) -> if (popup == null || popup == Popup.MENU) renderLobby(g, t)
+            inLobby(t) -> if (popup == null || popup == Popup.MENU) renderLobby(g, t, mouseX, mouseY)
             else -> {
                 panel?.render(g, t, mouseX, mouseY)
                 if (t.snapshot.paused) renderPaused(g, t)
@@ -820,7 +945,8 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
             startTurning()
             return true
         }
-        if (t == null || inLobby(t)) return false
+        if (t == null) return false
+        if (inLobby(t)) return event.button() == InputConstants.MOUSE_BUTTON_LEFT && popup == null && clickPlace(t, event.x(), event.y())
         if (inWorld && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             val card = tableCardAt(event.x(), event.y())
             if (card != null && panel?.clickTableCard(t, card) == true) {
@@ -1003,13 +1129,20 @@ class TableScreen(val pos: BlockPos) : CompatScreen(Component.translatable("tuku
         /** Where the rows of seats start in the lobby, below the game and rules buttons. */
         private const val SEATS_Y = 72
 
-        /** The most rows of seats the lobby has: four seats, or eight in two columns. */
-        private const val MAX_SEAT_ROWS = 4
+        /** A place's box round the table in the lobby, and the table from above, small and big. */
+        private const val BOX_W = 92
+        private const val BOX_H = 26
+        private const val GAP = 3
+        private const val SMALL_TABLE = 40
 
-        /** A seat's cell in two columns, the gap between the columns, and the room for its name and points. */
-        private const val CELL_WIDTH = 148
-        private const val CELL_GAP = 4
-        private const val NAME_WIDTH = 72
+        /** Room beside it for two boxes a side, for five to eight players. */
+        private const val BIG_TABLE = 2 * BOX_H + 4
+        private const val TABLE_WOOD = 0xFF7A5230.toInt()
+        private const val BOX_FILL = 0x40000000
+        private const val BOX_HOVER = 0x30FFFFFF
+        private const val MARK_LENGTH = 12
+        private const val MARK_FREE = 0x80A0A0A0.toInt()
+        private const val MARK_BOT = 0xFF88BBEE.toInt()
 
         /** The height of one line in a list that drops down. */
         private const val CHOICE_ROW = 14

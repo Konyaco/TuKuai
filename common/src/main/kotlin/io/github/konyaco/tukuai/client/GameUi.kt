@@ -169,8 +169,9 @@ data class TableCard(
  */
 data class SeatPlace(val side: Direction, val shiftX: Float = 0f, val shiftZ: Float = 0f) {
     companion object {
-        fun of(facing: Direction, radius: Int, count: Int): List<SeatPlace> =
-            TableSeats.spots(facing, radius, count).map { spot ->
+        /** For [count] seats at the [places] round the table their players chose, see [TableSeats]. */
+        fun of(facing: Direction, radius: Int, count: Int, places: List<Int> = emptyList()): List<SeatPlace> =
+            TableSeats.spots(facing, radius, count, places).map { spot ->
                 val out = radius - 1
                 SeatPlace(
                     spot.side,

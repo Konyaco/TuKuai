@@ -115,8 +115,10 @@ class MultiplayerGameTest : FabricClientGameTest {
                 connection.clientLevel.waitForChunksRender()
                 context.waitFor({ (ClientTables[table]?.view as? DdzView)?.seat == MY_SEAT }, 200)
                 context.waitTicks(20)
-                check(server.computeOnServer<Boolean, RuntimeException> { s -> s.playerList.getPlayer(me)?.vehicle is SeatEntity }) { "We were not back in our seat on the server" }
-                check(context.computeOnClient<Boolean, RuntimeException> { it.player?.vehicle is SeatEntity }) { "We were not back in our seat on our own screen" }
+                // The table has no chairs, so we stand at its edge, as when we left.
+                check(server.computeOnServer<Boolean, RuntimeException> { s ->
+                    s.playerList.getPlayer(me)?.let { it.vehicle !is SeatEntity && it.position().distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(table)) < 3.0 * 3.0 } == true
+                }) { "We were not back at our place by the table on the server" }
                 waitPeer(context, peer, 200, "The other player did not see us come back") { it["seats"].toString().startsWith("$myName/here/self") }
                 val sentBefore = player.sent
                 play(context, player, table, peer) { false }
